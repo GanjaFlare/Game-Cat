@@ -1,0 +1,1925 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>GanjaCatRun</title>
+  <!-- 📱 iPhoneの「ホーム画面に追加」で使われる名前(titleより優先される) -->
+  <meta name="apple-mobile-web-app-title" content="GanjaCatRun">
+  <!-- 📱 iPhoneの「ホーム画面に追加」で使われるアイコン -->
+  <link rel="apple-touch-icon" href="icon.png">
+  <!-- 🌐 ブラウザのタブに表示されるアイコン -->
+  <link rel="icon" type="image/png" href="icon.png">
+  <!-- 📱 Brave・Android Chrome等が参照するWebアプリマニフェスト -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#0f172a">
+  <style>
+    body { 
+      margin: 0; 
+      padding: 0; 
+      background-color: #0f172a;
+      
+      font-family: 'Courier New', Courier, monospace; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+      height: 100dvh; 
+      user-select: none; 
+      -webkit-user-select: none; 
+      overflow: hidden;
+    }
+    
+    .game-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; }
+    .game-wrapper { width: 340px; height: 680px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(1); transform-origin: center center; flex-shrink: 0; }
+    
+    .gameboy-body { width: 100%; height: 100%; background: #cfcfc4; border-radius: 10px 10px 40px 10px; box-shadow: inset -5px -5px 0px #999, inset 5px 5px 0px #fff, 0 20px 40px rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; padding: 25px 15px; box-sizing: border-box; position: relative; }
+    
+    .gb-screen-border { width: 92%; height: 230px; background: #777773; border-radius: 5px 5px 25px 5px; border: 3px solid #555; display: flex; justify-content: center; align-items: center; position: relative; margin-top: 10px; }
+    #gameCanvas { background: #8b956d; border: 4px solid #555; image-rendering: pixelated; }
+    
+    .gb-title { width: 92%; text-align: left; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 21px; font-weight: bold; color: #232323; margin-top: 10px; margin-bottom: 5px; padding-left: 6px; box-sizing: border-box; letter-spacing: -0.3px; }
+
+    .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.98); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; text-align: center; border-radius: 10px 10px 40px 10px;}
+    
+    .input-wrapper { position: relative; width: 80%; margin-bottom: 8px; display: flex; align-items: center; }
+    .input-at { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #34d399; font-size: 16px; font-weight: bold; pointer-events: none; z-index: 10; }
+    input[type="text"] {
+      width: 100%; padding: 12px 35px; border-radius: 8px; border: 2px solid #10b981;
+      background: #0f172a; color: #fff; font-size: 16px; text-align: left; box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700;
+      box-shadow: 0 0 14px rgba(52, 211, 153, 0.25);
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    input[type="text"]:focus { outline: none; border-color: #34d399; box-shadow: 0 0 22px rgba(52, 211, 153, 0.45); }
+    .clear-btn { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #ef4444; font-size: 20px; font-weight: bold; cursor: pointer; z-index: 10; }
+
+    .remember-wrapper { width: 80%; text-align: left; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; letter-spacing: 0.2px; color: #d1fae5; }
+    .remember-wrapper label { cursor: pointer; }
+    .remember-wrapper input[type="checkbox"] { accent-color: #34d399; }
+
+    .mode-buttons { display: flex; gap: 10px; width: 80%; flex-direction: column; }
+    .start-btn {
+      border: 2px solid transparent; padding: 14px 20px; font-size: 14px; cursor: pointer;
+      border-radius: 10px; width: 100%; touch-action: manipulation;
+      font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; letter-spacing: 0.4px;
+      background-color: #0f172a;
+      color: #ffffff;
+      transition: transform 0.12s, box-shadow 0.12s, filter 0.12s;
+    }
+    .start-btn:active { transform: translateY(2px) scale(0.99); filter: brightness(1.15); }
+
+    .normal-btn {
+      border-color: #3b82f6;
+      background: linear-gradient(135deg, rgba(59,130,246,0.22) 0%, #0f172a 70%);
+      box-shadow: 0 0 18px rgba(59, 130, 246, 0.35), inset 0 0 16px rgba(59, 130, 246, 0.08);
+      text-shadow: 0 0 10px rgba(96, 165, 250, 0.8);
+    }
+    .boost-btn {
+      border-color: #ef4444;
+      background: linear-gradient(135deg, rgba(239,68,68,0.22) 0%, #0f172a 70%);
+      box-shadow: 0 0 18px rgba(239, 68, 68, 0.35), inset 0 0 16px rgba(239, 68, 68, 0.08);
+      text-shadow: 0 0 10px rgba(248, 113, 113, 0.8);
+    }
+    .hell-btn {
+      border-color: #b91c1c;
+      background: linear-gradient(135deg, rgba(185,28,28,0.28) 0%, #0f172a 70%);
+      box-shadow: 0 0 18px rgba(185, 28, 28, 0.45), inset 0 0 16px rgba(185, 28, 28, 0.12);
+      text-shadow: 0 0 10px rgba(248, 113, 113, 0.8);
+    }
+
+    .dpad { position: absolute; left: 35px; bottom: 180px; width: 80px; height: 80px; cursor: pointer; z-index: 5; }
+    .dpad-axis { position: absolute; background: #2b2b2b; border-radius: 3px; box-shadow: 0 4px 0 #111; }
+    .dpad-h { top: 27px; left: 0; width: 80px; height: 26px; }
+    .dpad-v { top: 0; left: 27px; width: 26px; height: 80px; }
+    
+    /* 🎯 押し損ね防止用：A/Bボタン周辺の親タップエリア */
+    .gb-buttons-area { 
+      position: absolute; 
+      right: 15px; 
+      bottom: 155px; 
+      width: 140px; 
+      height: 120px; 
+      z-index: 5; 
+      cursor: pointer;
+    }
+    .gb-buttons { position: absolute; right: 20px; bottom: 40px; display: flex; gap: 15px; transform: rotate(-25deg); pointer-events: none; }
+    .gb-btn { width: 44px; height: 44px; background: #a32249; border-radius: 50%; box-shadow: 0 4px 0 #5c1126, inset -2px -2px 3px rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; color: rgba(255,255,255,0.7); font-size: 14px; font-weight: bold; pointer-events: auto; }
+    .gb-btn:active, .gb-btn.active { transform: translateY(4px); box-shadow: 0 0px 0 #5c1126; }
+
+    .gb-menu { position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%); display: flex; gap: 25px; z-index: 5; }
+    .gb-menu-btn { width: 45px; height: 10px; background: #7b7b77; border-radius: 5px; box-shadow: 0 2px 0 #444; position: relative; cursor: pointer; }
+    .gb-menu-label { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 9px; color: #555; font-weight: bold; font-family: 'Courier New', monospace; }
+
+    .gb-speaker { position: absolute; right: 30px; bottom: 45px; width: 50px; height: 45px; display: flex; gap: 6px; transform: rotate(-28deg); }
+    .gb-speaker-line { width: 4px; height: 100%; background: #9a9a91; border-radius: 2px; box-shadow: inset 1px 1px 0px rgba(0,0,0,0.2); }
+
+    .music-btn {
+      position: absolute;
+      bottom: 25px;
+      left: 25px;
+      background: #0f172a;
+      color: #64748b;
+      border: 2px solid #334155;
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      z-index: 300;
+      box-shadow: none;
+      outline: none;
+      transition: color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+    }
+    .music-btn.is-on {
+      color: #6ee7b7;
+      border-color: #34d399;
+      box-shadow: 0 0 14px rgba(52, 211, 153, 0.4), inset 0 0 10px rgba(52, 211, 153, 0.1);
+    }
+    .music-btn:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    #statusMessage { position: absolute; color: #333; font-size: 11px; bottom: 20px; font-weight: bold; width: 80%; text-align: center; z-index: 200; pointer-events: none;}
+
+    .share-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      padding: 6px;
+      font-size: 0;
+      cursor: pointer;
+      z-index: 120;
+      border-radius: 4px;
+      display: none;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+      line-height: 0;
+      transition: background 0.2s;
+    }
+    .share-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0px 0px 0px rgba(0,0,0,0);
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    /* 🌿 タイトル文字：白→エメラルドグリーンのグラデーション + ネオン風の光彩 */
+    .title-glow {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      margin: 0;
+      background: linear-gradient(135deg, #ffffff 0%, #34d399 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
+    }
+  </style>
+</head>
+<body>
+<audio id="bgmMusic" loop preload="auto">
+  <source src="https://ganjaflare.github.io/GanjaCatRun-Web/iwashiro_tebasakioroshi.mp3" type="audio/mpeg">
+</audio>
+
+  <div class="game-container">
+    <div id="gameWrapper" class="game-wrapper">
+      <div class="gameboy-body">
+        
+        <button id="btnMusicToggle" class="music-btn">🎵 OFF</button>
+
+        <div class="gb-screen-border">
+          <canvas id="gameCanvas" width="240" height="160"></canvas>
+          <button id="shareButton" class="share-btn" title="Share">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+              <polyline points="16 6 12 2 8 6"></polyline>
+              <line x1="12" y1="2" x2="12" y2="15"></line>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="gb-title">Ganja Cat Run</div>
+
+        <div id="statusMessage"></div>
+        
+        <div id="dpadControl" class="dpad">
+          <div class="dpad-axis dpad-h"></div>
+          <div class="dpad-axis dpad-v"></div>
+        </div>
+        
+        <!-- 🎯 タップ判定エリアを拡張したボタンエリア構造 -->
+        <div id="btnArea" class="gb-buttons-area">
+          <div class="gb-buttons">
+            <div id="btnB" class="gb-btn">B</div>
+            <div id="btnA" class="gb-btn">A</div>
+          </div>
+        </div>
+        
+        <div class="gb-menu">
+          <div id="btnSelect" class="gb-menu-btn"><span class="gb-menu-label">SELECT</span></div>
+          <div id="btnStart" class="gb-menu-btn"><span class="gb-menu-label">START</span></div>
+        </div>
+        
+        <div class="gb-speaker">
+          <div class="gb-speaker-line"></div>
+          <div class="gb-speaker-line"></div>
+          <div class="gb-speaker-line"></div>
+          <div class="gb-speaker-line"></div>
+        </div>
+
+        <div id="setupOverlay" class="overlay">
+          <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:0;">
+            <h1 class="title-glow" style="font-size: 28px; margin-bottom: 5px;">GanjaCatRun</h1>
+          </div>
+          <canvas id="titleWalkCanvas" width="200" height="50" style="image-rendering: pixelated; margin: 2px 0 8px;"></canvas>
+          <p style="font-size: 11px; margin-bottom: 15px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; letter-spacing: 0.3px; color: #a7f3d0;">Enter X (Twitter) ID to Start</p>
+          
+          <div class="input-wrapper">
+            <span class="input-at">@</span>
+            <input type="text" id="twitterInput" placeholder="YourUsername">
+            <span id="btnClearId" class="clear-btn" title="Clear ID">×</span>
+          </div>
+          
+          <div class="remember-wrapper">
+            <input type="checkbox" id="rememberId" checked>
+            <label for="rememberId">IDを記憶する</label>
+          </div>
+
+          <div class="mode-buttons">
+            <button id="btnNormal" class="start-btn normal-btn">NORMAL MODE (+1)</button>
+            <button id="btnBoost" class="start-btn boost-btn">BOOST MODE (+2)</button>
+            <button id="btnHell" class="start-btn hell-btn">HELL MODE (+10)</button>
+          </div>
+        </div>
+
+        <div id="rewardOverlay" class="overlay" style="display: none;">
+          <h1 style="color:#ffd700; font-size: 24px; margin-bottom: 5px;">🎉 CLEAR!! 🎉</h1>
+          <p style="font-size: 11px; margin-bottom: 15px; color: #fff;">150点達成！報酬を獲得しました！</p>
+          
+          <div class="input-wrapper" style="width: 85%;">
+            <input type="text" id="walletInput" placeholder="0x... (Wallet Address)" style="padding: 12px 15px; border: 2px solid #ffd700;">
+          </div>
+          
+          <div class="mode-buttons" style="width: 85%;">
+            <button id="btnClaim" class="start-btn" style="background: #ffd700; color: #000; box-shadow: 0 4px 0 #b8860b; font-weight: bold;">
+              CLAIM REWARD & SAVE
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('error', function(e) {
+      const msgDiv = document.getElementById('statusMessage');
+      if (msgDiv) {
+        msgDiv.innerText = 'Error: ' + e.message;
+        msgDiv.style.color = '#ff4444';
+      }
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+      const msgDiv = document.getElementById('statusMessage');
+      if (msgDiv) {
+        msgDiv.innerText = 'Promise Err: ' + e.reason;
+        msgDiv.style.color = '#ff4444';
+      }
+    });
+
+    const canvas = document.getElementById("gameCanvas"); 
+    const ctx = canvas.getContext("2d");
+    let audioCtx = null;
+    let sessionToken = "";
+    let isClaiming = false;
+
+    // 🌐 ブラウザ → Cloudflare Worker(中継) → GAS、という経路で通信する
+    // (以前はJSONP方式でGASへ直接<script>タグ経由で呼んでいたが、
+    //  クロスオリジンの二段階リダイレクト(exec→echo)がモバイル回線等で不安定になる
+    //  問題が確認されたため、サーバー間fetch()で中継するこちらの方式に戻した)
+    const WORKER_API_URL = "https://ganjacatrun-proxy.ganjaflare.workers.dev";
+
+    // GASへ action 付きのリクエストを送り、JSON形式で結果を受け取る共通関数
+    function callGasApi(action, payload) {
+      var body = Object.assign({ action: action }, payload || {});
+
+      var controller = new AbortController();
+      // 🕐 20秒で諦めるタイムアウト(モバイル回線での遅延に余裕を持たせる)
+      var timeoutId = setTimeout(function() { controller.abort(); }, 20000);
+
+      return fetch(WORKER_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal
+      }).then(function(response) {
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+          throw new Error("通信に失敗しました (HTTP " + response.status + ")");
+        }
+        return response.json();
+      }).catch(function(error) {
+        clearTimeout(timeoutId);
+        if (error && error.name === "AbortError") {
+          throw new Error("通信がタイムアウトしました");
+        }
+        throw error;
+      });
+    }
+
+    let activePlayTime = 0;      // 累積アクティブプレイ時間（ミリ秒）
+    let lastFrameTimestamp = null;
+    let twitterId="", isPlaying=false, gameOver=false, score=0, hiScore=0, playerY=115, playerVelocityY=0, isJumping=false, obstacles=[], coins=[], gameSpeed=4.5, frameCount=0;
+    let isSaving = false;
+    let hellLives = 3;
+    let hitFlashFrames = 0;
+    let gameMode = 'NORMAL';
+    let coinValue = 1;
+    let currentLevel = 1;
+    let obstacleSpawnChance = 0.009;
+    const speedMap = [0, 3.5, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.5, 13.0, 14.0];
+    let isPaused = false;
+    let pauseFrame = null;
+    let showLeaderboard = false;
+    let isLoadingLeaderboard = false;
+    let leaderboardCurrentPage = 0; 
+    let leaderboardData = [null, null, null];
+    let clouds = [];
+    let groundDots = [];
+    // 🌥️ ページを開いた瞬間に1回だけ生成しておく(演出中に雲が見えないと、
+    //    ゲーム開始時に「いきなり湧いて出る」ように見えてしまうため)
+    for (let i = 0; i < 4; i++) clouds.push({x: Math.random()*240, y: 15 + Math.random()*30, speed: 0.2 + Math.random()*0.4, width: 20 + Math.random()*20});
+    for (let i = 0; i < 30; i++) groundDots.push({x: Math.random()*240, y: 135 + Math.random()*20, width: 1 + Math.random()*3});
+    for(let i=0; i<4; i++) clouds.push({x: Math.random()*240, y: 15 + Math.random()*30, speed: 0.2 + Math.random()*0.4, width: 20 + Math.random()*20});
+    for(let i=0; i<30; i++) groundDots.push({x: Math.random()*240, y: 135 + Math.random()*20, width: 1 + Math.random()*3});
+    let particles = [];
+    let isExploding = false;
+
+    let isMusicOn = false;
+
+    let isReviving = false;
+    let revivalTimer = 0;
+    let revivalParticles = [];
+
+    let maxStamina = 4;        
+    let currentStamina = 4;    
+    let staminaRecoveryRate = 0.015; 
+
+    // 🚀 先行入力（ジャンプバッファ）管理用変数
+    let jumpBufferCounter = 0;
+    const JUMP_BUFFER_TIME = 10; // 先行入力を受け付けるフレーム数（約0.16秒）
+
+    function tryPlayBGM() {
+      const bgm = document.getElementById("bgmMusic");
+      if (bgm && isMusicOn) {
+        bgm.volume = 0.2;
+        if (bgm.paused) {
+          bgm.play().catch(function(e){});
+        }
+      }
+    }
+
+    function initializeEvents() {
+      // 🔥 ページを開いた瞬間に、GASを軽く1回呼んで「起こして」おく
+      //    (GASはしばらく使われないと次のリクエストが遅くなることがあるため、
+      //     実際にプレイが始まる前の、ユーザー名入力中などの時間で先に温めておく)
+      callGasApi("startSession").catch(function() {
+        // 結果は使わない(実際のプレイ開始時に、resetGame()側で改めて取得し直すため)
+      });
+
+      try {
+        if (typeof window.localStorage !== 'undefined' && window.localStorage) {
+          const savedId = window.localStorage.getItem('ganjaCatRunId');
+          if (savedId) {
+            const tInput = document.getElementById('twitterInput');
+            const rId = document.getElementById('rememberId');
+            if (tInput) tInput.value = savedId;
+            if (rId) rId.checked = true;
+          }
+        }
+      } catch (e) {
+        console.warn("localStorage is blocked or not available");
+      }
+
+      resizeGame();
+
+      function attachStartBtn(btnId, modeStr) {
+        const btn = document.getElementById(btnId);
+        if(!btn) return;
+        btn.addEventListener("click", function(e) {
+          e.preventDefault();
+          initAudioAndStart(modeStr);
+        });
+        btn.addEventListener("touchstart", function(e) {
+          e.preventDefault();
+          initAudioAndStart(modeStr);
+        }, {passive: false});
+      }
+
+      attachStartBtn("btnNormal", "NORMAL");
+      attachStartBtn("btnBoost", "BOOST");
+      attachStartBtn("btnHell", "HELL");
+
+      const btnClearId = document.getElementById("btnClearId");
+      if (btnClearId) {
+        btnClearId.addEventListener("click", clearSavedId);
+        btnClearId.addEventListener("touchstart", function(e){ e.preventDefault(); clearSavedId(); }, {passive: false});
+      }
+
+      const dpad = document.getElementById("dpadControl");
+      if (dpad) {
+        dpad.addEventListener("mousedown", handleDpadClick);
+        dpad.addEventListener("touchstart", function(e){ e.preventDefault(); handleDpadClick(e); }, {passive: false});
+      }
+
+      // 🎯 ボタン周りの判定エリアのイベント登録（A/Bどこを押してもジャンプ）
+      const btnArea = document.getElementById("btnArea");
+      if (btnArea) {
+        btnArea.addEventListener("mousedown", function(e) {
+          e.preventDefault();
+          triggerJump();
+        });
+        btnArea.addEventListener("touchstart", function(e) {
+          e.preventDefault();
+          triggerJump();
+        }, {passive: false});
+      }
+
+      const selectBtn = document.getElementById("btnSelect");
+      if (selectBtn) { selectBtn.addEventListener("click", showLeaderboardScreen); selectBtn.addEventListener("touchstart", function(e){ e.preventDefault(); showLeaderboardScreen(); }, {passive: false}); }
+
+      const startBtn = document.getElementById("btnStart");
+      if (startBtn) { startBtn.addEventListener("click", togglePause); startBtn.addEventListener("touchstart", function(e){ e.preventDefault(); togglePause(); }, {passive: false}); }
+
+      const shareBtn = document.getElementById("shareButton");
+      if (shareBtn) {
+        shareBtn.addEventListener("click", shareOnX);
+      }
+      
+      const btnMusicToggle = document.getElementById("btnMusicToggle");
+      if (btnMusicToggle) {
+        btnMusicToggle.addEventListener("click", function(e) {
+          isMusicOn = !isMusicOn;
+          this.innerText = isMusicOn ? "🎵 ON" : "🎵 OFF";
+          this.classList.toggle("is-on", isMusicOn);
+          
+          const bgm = document.getElementById("bgmMusic");
+          if (bgm) {
+            if (isMusicOn) {
+              bgm.volume = 0.2;
+              bgm.play().catch(function(){});
+            } else {
+              bgm.pause();
+            }
+          }
+          this.blur();
+        });
+      }
+
+      const btnClaim = document.getElementById("btnClaim");
+      if (btnClaim) {
+        const claimHandler = function(e) {
+          e.preventDefault();
+          if (isClaiming) return; 
+          
+          const walletInput = document.getElementById("walletInput");
+          const walletAddress = walletInput ? walletInput.value.trim() : "";
+          
+          if (!walletAddress.startsWith("0x") || walletAddress.length !== 42) {
+            alert("有効なウォレットアドレス（0xから始まる42桁）を入力してください。");
+            return;
+          }
+          
+          isClaiming = true;
+          document.getElementById("rewardOverlay").style.display = "none";
+          
+          ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(0,0,240,160);
+          ctx.textAlign = "center";
+          ctx.fillStyle = "#FFD700"; ctx.font = "bold 18px 'Courier New'";
+          ctx.fillText("GAME CLEAR!!", 120, 60);
+          ctx.font = "bold 11px 'Courier New'";
+          ctx.fillText(`YOU SCORED ${score} POINTS`, 120, 82);
+          captureSavingArea();
+          ctx.fillStyle = "#ffffff";
+          ctx.fillText("SENDING CLAIM SIGNAL...", 108, 122);
+          ctx.textAlign = "left";
+          
+          isSaving = true;
+          startSavingAnimation();
+          sendScoreToGAS(twitterId, score, gameMode, walletAddress, activePlayTime);
+        };
+        btnClaim.addEventListener("click", claimHandler);
+      }
+    }
+
+    if (document.getElementById("btnNormal")) {
+      initializeEvents();
+    } else {
+      window.addEventListener('DOMContentLoaded', initializeEvents);
+      window.addEventListener('load', initializeEvents);
+    }
+
+    function clearSavedId() {
+      try {
+        if (typeof window.localStorage !== 'undefined' && window.localStorage) {
+           window.localStorage.removeItem('ganjaCatRunId');
+        }
+      } catch (e) {}
+      const tInput = document.getElementById('twitterInput');
+      if (tInput) tInput.value = '';
+    }
+
+    function initAudioAndStart(mode) { 
+      gameMode = mode;
+      if (mode === 'BOOST') { 
+        coinValue = 2; 
+        obstacleSpawnChance = 0.008;
+      }
+      else if (mode === 'HELL') { 
+        coinValue =  10; 
+        obstacleSpawnChance = 0.045;
+      }
+      else { 
+        coinValue = 1; 
+        obstacleSpawnChance = 0.007;
+      }
+      
+      const tInput = document.getElementById("twitterInput");
+      let rawInput = tInput ? tInput.value.trim() : "";
+      if (rawInput.startsWith('@')) { rawInput = rawInput.slice(1); }
+      
+      try {
+        if (typeof window.localStorage !== 'undefined' && window.localStorage) {
+           const rId = document.getElementById('rememberId');
+           if (rId && rId.checked && rawInput) {
+              window.localStorage.setItem('ganjaCatRunId', rawInput);
+           } else if (rId && !rId.checked) {
+              window.localStorage.removeItem('ganjaCatRunId');
+           }
+        }
+      } catch (e) {
+        console.warn("localStorage access denied.");
+      }
+
+      twitterId = rawInput ? "@" + rawInput : "@Guest";
+
+      try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass && !audioCtx) {
+          audioCtx = new AudioContextClass();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          let promise = audioCtx.resume();
+          if (promise !== undefined) {
+            promise.catch(function(err) { console.warn("Audio resume error:", err); });
+          }
+        }
+      } catch (e) {
+        console.warn("AudioContext setup failed or blocked.");
+      }
+      
+      startGame(); 
+    }
+
+    function playSound(type) {
+      if (!audioCtx) {
+        try {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) audioCtx = new AudioContextClass();
+        } catch(e) {}
+      }
+      if (!audioCtx) return;
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(function(){});
+      }
+
+      try {
+        const osc = audioCtx.createOscillator(); 
+        const gain = audioCtx.createGain();
+        osc.connect(gain); 
+        gain.connect(audioCtx.destination);
+        
+        if (type === 'jump') { 
+          osc.type = 'square'; osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1); 
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        }
+        else if (type === 'coin') { 
+          osc.type = 'triangle'; osc.frequency.setValueAtTime(900, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1800, audioCtx.currentTime + 0.1); 
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        }
+        else if (type === 'hit') { 
+          osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, audioCtx.currentTime); 
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime); osc.start();
+          osc.stop(audioCtx.currentTime + 0.4); 
+        }
+        else if (type === 'deflect') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.15);
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+          osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+        }
+        else if (type === 'explosion') {
+          osc.type = 'sawtooth'; 
+          osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.8);
+          
+          const osc2 = audioCtx.createOscillator();
+          osc2.type = 'square';
+          osc2.frequency.setValueAtTime(50, audioCtx.currentTime);
+          osc2.frequency.exponentialRampToValueAtTime(5, audioCtx.currentTime + 0.8);
+          osc2.connect(gain);
+          osc2.start(); osc2.stop(audioCtx.currentTime + 0.8);
+
+          gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+          osc.start(); osc.stop(audioCtx.currentTime + 0.8);
+        }
+        else if (type === 'thunder') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(850, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.4);
+          gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+          osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        }
+        else if (type === 'gather') { 
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(55, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.12);
+          gain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+          osc.start(); osc.stop(audioCtx.currentTime + 0.12);
+        }
+        else if (type === 'glow') { 
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(45, audioCtx.currentTime);
+          osc.frequency.linearRampToValueAtTime(65, audioCtx.currentTime + 0.9);
+          osc.frequency.exponentialRampToValueAtTime(1100, audioCtx.currentTime + 1.5);
+          
+          const mod = audioCtx.createOscillator();
+          mod.type = 'triangle';
+          mod.frequency.setValueAtTime(50, audioCtx.currentTime);
+          mod.frequency.linearRampToValueAtTime(5, audioCtx.currentTime + 1.5);
+          mod.connect(gain);
+          
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.9);
+          gain.gain.exponentialRampToValueAtTime(0.4, audioCtx.currentTime + 1.4);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+          
+          osc.start(); osc.stop(audioCtx.currentTime + 1.5);
+          mod.start(); mod.stop(audioCtx.currentTime + 1.5);
+        }
+        else if (type === 'form') { 
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(35, audioCtx.currentTime);
+          osc.frequency.linearRampToValueAtTime(30, audioCtx.currentTime + 1.0);
+          
+          const osc2 = audioCtx.createOscillator();
+          osc2.type = 'square';
+          osc2.frequency.setValueAtTime(32, audioCtx.currentTime);
+          osc2.frequency.linearRampToValueAtTime(27, audioCtx.currentTime + 1.0);
+          osc2.connect(gain);
+          
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.8);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.0);
+          
+          osc.start(); osc.stop(audioCtx.currentTime + 1.0);
+          osc2.start(); osc2.stop(audioCtx.currentTime + 1.0);
+        }
+        else if (type === 'teleport') {
+          // 🌀 ビーム降下音：低い音から一気に駆け上がる「シュー」
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1600, audioCtx.currentTime + 0.32);
+          gain.gain.setValueAtTime(0.22, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.34);
+          osc.start(); osc.stop(audioCtx.currentTime + 0.34);
+
+          // 着地の「ボン」という短いチャイム音
+          const osc2 = audioCtx.createOscillator();
+          const gain2 = audioCtx.createGain();
+          osc2.connect(gain2); gain2.connect(audioCtx.destination);
+          osc2.type = 'triangle';
+          osc2.frequency.setValueAtTime(900, audioCtx.currentTime + 0.3);
+          osc2.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.5);
+          gain2.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+          gain2.gain.setValueAtTime(0.3, audioCtx.currentTime + 0.3);
+          gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.55);
+          osc2.start(audioCtx.currentTime + 0.3); osc2.stop(audioCtx.currentTime + 0.55);
+        }
+      } catch (e) {
+      }
+    }
+
+    function shareOnX(e) {
+      e.stopPropagation(); 
+      const lines = [
+        "Played Ganja Cat Run and earned points! 🔥🐈",
+        "",
+        "Let's aim for victory together! 🏆",
+        "https://script.google.com/macros/s/AKfycbynwDqLFmF0lG4Ree0WWVEdm3Twl98SYd7Mtdi8fI7iMun3G9zAzoXA5Ohwy-t2RhJU/exec",
+        "",
+        "$GANJA $FLR #FlareNetwork"
+      ];
+      const tweetText = lines.join("\n");
+      
+      const dataUrl = canvas.toDataURL('image/png');
+      try {
+        fetch(dataUrl).then(function(response) {
+          return response.blob();
+        }).then(function(blob) {
+          const file = new File([blob], 'ganjacat_score.png', { type: 'image/png' });
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({ text: tweetText, files: [file] }).catch(function(err){});
+          } else {
+            const twUrl = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(tweetText);
+            window.open(twUrl, '_blank');
+          }
+        }).catch(function(err) {
+          const twUrl = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(tweetText);
+          window.open(twUrl, '_blank');
+        });
+      } catch (err) {
+        const twUrl = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(tweetText);
+        window.open(twUrl, '_blank');
+      }
+    }
+
+    function drawGanjaCat(x, y, state, frame) {
+      if (isExploding) return; 
+      
+      const isHell = (gameMode === 'HELL');
+      const isBoost = (gameMode === 'BOOST');
+
+      const bodyColor = isHell ? "#1a1a1a" : "#87CEEB"; 
+      const stripeColor = isHell ? "#333333" : "#4169E1";  
+      const eyeColor = isHell ? "#ff0000" : "#ffffff";
+      const subEyeColor = isHell ? "#990000" : "#00FFFF";
+
+      const hx = isBoost ? x + 5 : x + 16;
+      const hy = isBoost ? y - 14 : y - 10;
+
+      if (isBoost) {
+        ctx.fillStyle = bodyColor; ctx.fillRect(x + 7, y - 2, 10, 16);
+        ctx.fillStyle = stripeColor; ctx.fillRect(x + 7, y + 2, 10, 3); ctx.fillRect(x + 7, y + 9, 10, 3);
+      } else {
+        ctx.fillStyle = bodyColor; ctx.fillRect(x, y, 22, 14); 
+        ctx.fillStyle = stripeColor; ctx.fillRect(x + 4, y, 3, 14); ctx.fillRect(x + 11, y, 3, 14);
+      }
+
+      ctx.fillStyle = bodyColor; ctx.fillRect(hx, hy, 12, 12); 
+      ctx.fillStyle = stripeColor; ctx.fillRect(hx + 4, hy, 2, 4);
+      ctx.fillStyle = bodyColor; ctx.fillRect(hx + 2, hy - 3, 3, 3); ctx.fillRect(hx + 9, hy - 3, 3, 3); 
+      
+      if (state === 'hit') {
+        ctx.fillStyle = isHell ? "#ff0000" : "#fff"; 
+        ctx.fillRect(hx+3, hy+3, 2, 1); ctx.fillRect(hx+4, hy+4, 1, 1); ctx.fillRect(hx+3, hy+5, 2, 1); 
+        ctx.fillRect(hx+8, hy+3, 2, 1); ctx.fillRect(hx+8, hy+4, 1, 1); ctx.fillRect(hx+8, hy+5, 2, 1); 
+        ctx.fillRect(hx+5, hy+8, 4, 3); ctx.fillStyle = stripeColor; ctx.fillRect(hx+6, hy+9, 2, 1);
+      } else {
+        ctx.fillStyle = eyeColor; ctx.fillRect(hx + 2, hy + 2, 4, 4);
+        ctx.fillStyle = "#FF69B4"; ctx.fillRect(hx + 2, hy + 2, 2, 1); ctx.fillRect(hx + 2, hy + 3, 1, 2); 
+        ctx.fillStyle = "#FFD700"; ctx.fillRect(hx + 4, hy + 2, 2, 1); ctx.fillRect(hx + 5, hy + 3, 1, 2); 
+        ctx.fillStyle = subEyeColor; ctx.fillRect(hx + 3, hy + 4, 2, 1); ctx.fillRect(hx + 4, hy + 5, 1, 1); 
+        ctx.fillStyle = "#9370DB"; ctx.fillRect(hx + 3, hy + 3, 1, 1); 
+        
+        ctx.fillStyle = eyeColor; ctx.fillRect(hx + 7, hy + 2, 4, 4);
+        ctx.fillStyle = "#FF69B4"; ctx.fillRect(hx + 7, hy + 2, 2, 1); ctx.fillRect(hx + 7, hy + 3, 1, 2); 
+        ctx.fillStyle = "#FFD700"; ctx.fillRect(hx + 9, hy + 2, 2, 1); ctx.fillRect(hx + 10, hy + 3, 1, 2); 
+        ctx.fillStyle = subEyeColor; ctx.fillRect(hx + 8, hy + 4, 2, 1); ctx.fillRect(hx + 9, hy + 5, 1, 1); 
+        ctx.fillStyle = "#9370DB"; ctx.fillRect(hx + 8, hy + 3, 1, 1); 
+      }
+
+      if (state !== 'hit') {
+        if (isBoost) {
+          ctx.fillStyle = isHell ? "#333" : "#ffffff"; ctx.fillRect(hx + 10, hy + 8, 6, 2); 
+          ctx.fillStyle = "#ff0000"; ctx.fillRect(hx + 15, hy + 8, 1, 2); 
+        } else {
+          ctx.fillStyle = isHell ? "#333" : "#ffffff"; ctx.fillRect(x + 28, y - 2, 6, 2); 
+          ctx.fillStyle = "#ff0000"; ctx.fillRect(x + 33, y - 2, 1, 2); 
+        }
+      }
+      
+      ctx.fillStyle = bodyColor;
+      if (isBoost) {
+        if (state === 'jump') {
+          ctx.fillRect(x + 7, y + 14, 3, 6); ctx.fillRect(x + 14, y + 14, 3, 6);
+        } else if (state === 'hit') {
+          ctx.fillRect(x + 3, y + 14, 5, 3); ctx.fillRect(x + 15, y + 14, 5, 3); 
+        } else {
+          if (frame % 20 < 10) { 
+            ctx.fillRect(x + 7, y + 14, 3, 6); ctx.fillRect(x + 14, y + 12, 3, 4); 
+          } else { 
+            ctx.fillRect(x + 7, y + 12, 3, 4); ctx.fillRect(x + 14, y + 14, 3, 6); 
+          }
+        }
+      } else {
+        if (state === 'jump') {
+          ctx.fillRect(x, y + 14, 3, 5); ctx.fillRect(x + 6, y + 14, 3, 5); 
+          ctx.fillRect(x + 13, y + 14, 3, 5); ctx.fillRect(x + 19, y + 14, 3, 5);
+        } else if (state === 'hit') {
+          ctx.fillRect(x, y + 14, 5, 3); ctx.fillRect(x + 17, y + 14, 5, 3); 
+        } else {
+          if (frame % 20 < 10) { 
+            ctx.fillRect(x+1, y + 14, 4, 4); ctx.fillRect(x + 12, y + 14, 4, 4); 
+          } else { 
+            ctx.fillRect(x+5, y + 14, 4, 4); ctx.fillRect(x + 17, y + 14, 4, 4); 
+          }
+        }
+      }
+    }
+
+    function drawRock(x, y) { ctx.fillStyle = "#444"; ctx.fillRect(x, y, 20, 16); ctx.fillStyle = "#666"; ctx.fillRect(x+2, y+2, 6, 6); ctx.fillRect(x+12, y+8, 5, 5); ctx.fillStyle = "#222"; ctx.fillRect(x+5, y+10, 8, 4); }
+    function drawCrow(x, y, frame) { ctx.fillStyle = "#111"; ctx.fillRect(x, y, 16, 8); ctx.fillRect(x - 5, y - 2, 6, 6); ctx.fillStyle="#ff8c00"; ctx.fillRect(x-8, y, 3, 2); ctx.fillStyle = "#111"; if (frame % 30 < 15) { ctx.fillRect(x+3, y - 6, 10, 6); } else { ctx.fillRect(x+3, y + 4, 10, 6); } }
+    function drawGanjaCoin(x, y) { ctx.fillStyle = "#ffd700"; ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = "#b8860b"; ctx.lineWidth=1; ctx.stroke(); ctx.fillStyle = "#10b981"; ctx.fillRect(x-1, y-6, 2, 12); ctx.fillRect(x-5, y-2, 10, 2); ctx.fillRect(x-4, y-4, 2, 2); ctx.fillRect(x+2, y-4, 2, 2); ctx.fillRect(x-3, y+2, 2, 2); ctx.fillRect(x+1, y+2, 2, 2); }
+
+    // 🐈 タイトル(モード選択)画面用：キャラクターが左右にてくてく歩くアニメーション
+    // (本編のゲームロジック・ctx とは完全に独立した、専用の小さいcanvasで動かす)
+    (function() {
+      const walkCanvas = document.getElementById('titleWalkCanvas');
+      if (!walkCanvas) return;
+
+      const walkCtx = walkCanvas.getContext('2d');
+
+      const CAT_W = 24, MARGIN = 10, SPEED = 0.6;
+      let catX = (200 - CAT_W) / 2;
+      let direction = 1; // 1:右へ, -1:左へ
+      let walkFrame = 0;
+      let rafId = null;
+
+      function drawTitleCat(x, y, frame, facingRight) {
+        walkCtx.save();
+        if (!facingRight) {
+          // 左向きのときは水平反転して描く(通常は右向きの絵として描いているため)
+          walkCtx.translate(x * 2 + CAT_W, 0);
+          walkCtx.scale(-1, 1);
+        }
+        const bodyColor = "#87CEEB", stripeColor = "#4169E1", eyeColor = "#ffffff";
+        walkCtx.fillStyle = bodyColor; walkCtx.fillRect(x, y, 22, 14);
+        walkCtx.fillStyle = stripeColor; walkCtx.fillRect(x + 4, y, 3, 14); walkCtx.fillRect(x + 11, y, 3, 14);
+        const hx = x + 16, hy = y - 10;
+        walkCtx.fillStyle = bodyColor; walkCtx.fillRect(hx, hy, 12, 12);
+        walkCtx.fillStyle = stripeColor; walkCtx.fillRect(hx + 4, hy, 2, 4);
+        walkCtx.fillStyle = bodyColor; walkCtx.fillRect(hx + 2, hy - 3, 3, 3); walkCtx.fillRect(hx + 9, hy - 3, 3, 3);
+        walkCtx.fillStyle = eyeColor; walkCtx.fillRect(hx + 2, hy + 2, 4, 4); walkCtx.fillRect(hx + 7, hy + 2, 4, 4);
+        walkCtx.fillStyle = "#9370DB"; walkCtx.fillRect(hx + 3, hy + 3, 1, 1); walkCtx.fillRect(hx + 8, hy + 3, 1, 1);
+        walkCtx.fillStyle = "#ffffff"; walkCtx.fillRect(x + 28, y - 2, 6, 2);
+        walkCtx.fillStyle = bodyColor;
+        if (frame % 20 < 10) {
+          walkCtx.fillRect(x + 1, y + 14, 4, 4); walkCtx.fillRect(x + 12, y + 14, 4, 4);
+        } else {
+          walkCtx.fillRect(x + 5, y + 14, 4, 4); walkCtx.fillRect(x + 17, y + 14, 4, 4);
+        }
+        walkCtx.restore();
+      }
+
+      function isTitleVisible() {
+        const overlay = document.getElementById('setupOverlay');
+        return !!overlay && overlay.style.display !== 'none';
+      }
+
+      function tickTitleWalk() {
+        if (!isTitleVisible()) { rafId = null; return; }
+        walkCtx.clearRect(0, 0, 200, 50);
+        catX += SPEED * direction;
+        walkFrame++;
+        if (catX > 200 - CAT_W - MARGIN) direction = -1;
+        if (catX < MARGIN) direction = 1;
+        drawTitleCat(catX, 12, walkFrame, direction === 1);
+        rafId = requestAnimationFrame(tickTitleWalk);
+      }
+
+      // タイトル画面が(再)表示されるたびにアニメーションを再開する
+      setInterval(function() {
+        if (isTitleVisible() && rafId === null) {
+          rafId = requestAnimationFrame(tickTitleWalk);
+        }
+      }, 300);
+
+      if (isTitleVisible()) {
+        rafId = requestAnimationFrame(tickTitleWalk);
+      }
+    })();
+
+    function drawDiamond(x, y) {
+      ctx.fillStyle = "#00FFFF";
+      ctx.beginPath();
+      ctx.moveTo(x, y - 9); 
+      ctx.lineTo(x + 7, y - 2); 
+      ctx.lineTo(x + 4, y + 8); 
+      ctx.lineTo(x - 4, y + 8); 
+      ctx.lineTo(x - 7, y - 2); 
+      ctx.closePath();
+      ctx.fill();
+      
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(x - 2, y - 5, 4, 3);
+    }
+
+    function drawClouds() {
+      ctx.fillStyle = (gameMode === 'HELL') ? "rgba(255, 100, 100, 0.15)" : "rgba(255, 255, 255, 0.4)";
+      clouds.forEach(function(c) {
+        ctx.fillRect(c.x, c.y, c.width, 10);
+        ctx.fillRect(c.x + 5, c.y - 5, c.width - 10, 5);
+        ctx.fillRect(c.x + 10, c.y - 10, c.width - 20, 5);
+        if (!isPaused && !gameOver && !isReviving) c.x -= c.speed;
+        if (c.x + c.width < 0) {
+          c.x = 240 + Math.random() * 50;
+          c.y = 15 + Math.random() * 30;
+        }
+      });
+    }
+
+    function drawGround() {
+      ctx.fillStyle="#444"; ctx.fillRect(0, 133, 240, 27); 
+      ctx.fillRect(0, 133, 240, 2);
+      ctx.fillStyle = (gameMode === 'HELL') ? "#111" : "#222";
+      groundDots.forEach(function(d) {
+        ctx.fillRect(d.x, d.y, d.width, 2);
+        if (!isPaused && !gameOver && !isReviving) d.x -= gameSpeed;
+        if (d.x < -10) d.x = 240 + Math.random() * 20;
+      });
+    }
+
+    function drawStaminaBar() {
+      const barWidth = 60;
+      const barHeight = 6;
+      const x = 240 - barWidth - 5; 
+      const y = 8;                  
+      
+      ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+      ctx.fillRect(x, y, barWidth, barHeight);
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, barWidth, barHeight);
+      
+      const fillWidth = (currentStamina / maxStamina) * barWidth;
+      
+      if (currentStamina < 1) {
+        ctx.fillStyle = "#ff4444";
+      } else {
+        ctx.fillStyle = "#10b981";
+      }
+      ctx.fillRect(x, y, fillWidth, barHeight);
+
+      ctx.fillStyle = "#ffffff";
+      for (let i = 1; i < maxStamina; i++) {
+         ctx.fillRect(x + (barWidth / maxStamina) * i, y, 1, barHeight);
+      }
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 8px 'Courier New'";
+      ctx.textAlign = "right";
+      ctx.fillText("JUMP", x - 3, y + 6);
+      ctx.textAlign = "left";
+    }
+
+    // 🌀 初回プレイ前だけの「READY→ビーム降下→着地」演出(ロックマン風)
+    function playIntroSequence(onComplete) {
+      const LANDING_X = 20, LANDING_Y = 115;
+      let step = 0;
+      let stepStartTime = performance.now();
+      // 🧊 演出中は背景(雲・地面)が動かないよう、一時的にポーズ扱いにする
+      //    (resetGame()が呼ばれる時に自動でfalseに戻る)
+      isPaused = true;
+
+      function drawSceneBackground() {
+        ctx.fillStyle = (gameMode === 'HELL') ? "#2d0202" : "#8b956d";
+        ctx.fillRect(0, 0, 240, 160);
+        drawClouds();
+        drawGround();
+      }
+
+      function frame(now) {
+        const elapsed = now - stepStartTime;
+
+        if (step === 0) {
+          // READYを5回点滅させる(200msごとに切り替え、合計1000ms)
+          drawSceneBackground();
+          const blinkIndex = Math.floor(elapsed / 200);
+          if (blinkIndex % 2 === 0) {
+            ctx.font = "bold 16px 'Courier New'";
+            ctx.fillStyle = "#ffffff";
+            ctx.textAlign = "center";
+            ctx.fillText("READY", 120, 82);
+            ctx.textAlign = "left";
+          }
+          if (elapsed >= 1000) {
+            step = 1;
+            stepStartTime = now;
+            playSound('teleport');
+          }
+        } else if (step === 1) {
+          // ビームが空から着地点まで一気に降りてくる(320ms)
+          drawSceneBackground();
+          const progress = Math.min(elapsed / 320, 1);
+          const beamBottom = progress * (LANDING_Y + 4);
+          ctx.fillStyle = "#eafcff";
+          ctx.fillRect(LANDING_X + 8, 0, 6, beamBottom);
+          ctx.fillStyle = "rgba(120, 230, 255, 0.5)";
+          ctx.fillRect(LANDING_X + 5, 0, 12, beamBottom);
+          if (progress >= 1) {
+            step = 2;
+            stepStartTime = now;
+          }
+        } else if (step === 2) {
+          // 着地の瞬間:シアン色のシルエットでパッと実体化(180ms)
+          drawSceneBackground();
+          ctx.fillStyle = "rgba(120, 230, 255, 0.35)";
+          ctx.beginPath();
+          ctx.ellipse(LANDING_X + 11, LANDING_Y + 18, 16, 5, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.save();
+          ctx.globalAlpha = 0.85;
+          ctx.filter = "brightness(2) saturate(0.3)";
+          drawGanjaCat(LANDING_X, LANDING_Y, 'run', 0);
+          ctx.restore();
+          if (elapsed >= 180) {
+            step = 3;
+            stepStartTime = now;
+          }
+        } else if (step === 3) {
+          // 通常の色にパッと切り替わって、少し余韻を残して終了(150ms)
+          drawSceneBackground();
+          drawGanjaCat(LANDING_X, LANDING_Y, 'run', 0);
+          if (elapsed >= 150) {
+            onComplete();
+            return;
+          }
+        }
+
+        requestAnimationFrame(frame);
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    let introPlayed = false;
+
+    function startGame() { 
+      const overlay = document.getElementById("setupOverlay");
+      if (overlay) overlay.style.display = "none";
+      const rewardOverlay = document.getElementById("rewardOverlay");
+      if (rewardOverlay) rewardOverlay.style.display = "none";
+      
+      if (gameMode === 'HELL' && gameOver) {
+        startRevivalRitual();
+        return;
+      }
+
+      if (!introPlayed) {
+        introPlayed = true;
+        playIntroSequence(function() {
+          resetGame(); 
+          isPlaying = true; 
+          gameLoop(); 
+        });
+        return;
+      }
+
+      resetGame(); 
+      isPlaying = true; 
+      gameLoop(); 
+    }
+    
+    function returnToTitle() {
+      const overlay = document.getElementById("setupOverlay");
+      if (overlay) overlay.style.display = "flex";
+      const rewardOverlay = document.getElementById("rewardOverlay");
+      if (rewardOverlay) rewardOverlay.style.display = "none";
+      isPlaying = false;
+      gameOver = false;
+      isExploding = false;
+      isReviving = false;
+      // 🌀 モード選択画面に戻ったので、次にモードを選んだ時にまた演出が出るようにする
+      introPlayed = false;
+    }
+    
+    function resetGame() { 
+      gameOver = false;
+      isPaused = false; showLeaderboard = false; 
+      score = 0; currentLevel = 1; playerY = 115; obstacles = [];
+      coins = []; 
+      frameCount = 0; gameSpeed = speedMap[1]; 
+      activePlayTime = 0;
+      lastFrameTimestamp = null;
+
+      // 🔑 ゲームが(再)スタートするたびに、新しいセッショントークンを発行してもらう
+      // （モード選択からでも、その場のリトライからでも、必ずここを通る）
+      sessionToken = "";
+      requestNewSessionToken();
+      
+      const statusMsg = document.getElementById("statusMessage");
+      if (statusMsg) {
+        statusMsg.innerText = "";
+        statusMsg.style.color = "#333";
+      }
+      
+      const sBtn = document.getElementById("shareButton");
+      if (sBtn) sBtn.style.display = "none";
+      
+      const rewardOverlay = document.getElementById("rewardOverlay");
+      if (rewardOverlay) rewardOverlay.style.display = "none";
+
+      hellLives = 3;
+      hitFlashFrames = 0;
+      isExploding = false;
+      isReviving = false;
+      particles = [];
+
+      currentStamina = maxStamina; 
+      jumpBufferCounter = 0;
+
+      // 🌥️ すでに雲・地面の模様があれば、そのまま使う(演出からの続きが自然に見えるように)
+      if (clouds.length === 0) {
+        for(let i=0; i<4; i++) clouds.push({x: Math.random()*240, y: 15 + Math.random()*30, speed: 0.2 + Math.random()*0.4, width: 20 + Math.random()*20});
+      }
+      if (groundDots.length === 0) {
+        for(let i=0; i<30; i++) groundDots.push({x: Math.random()*240, y: 135 + Math.random()*20, width: 1 + Math.random()*3});
+      }
+    }
+
+    // 🔄 トークン取得に失敗しても、自動で数回リトライする
+    //    (Val Town経由になり、まれに通信が失敗することがあるための保険)
+    function requestNewSessionToken(attemptsLeft) {
+      if (attemptsLeft === undefined) attemptsLeft = 4;
+      console.log("[DEBUG] startSession リクエスト送信 (残り試行回数:", attemptsLeft, ")", new Date().toISOString());
+      callGasApi("startSession").then(function(data) {
+        if (data && data.status === "success" && data.token) {
+          sessionToken = data.token;
+          console.log("[DEBUG] startSession 成功、token受領:", sessionToken, new Date().toISOString());
+        } else {
+          console.warn("[DEBUG] startSession 応答が異常:", data, new Date().toISOString());
+          if (attemptsLeft > 1) {
+            setTimeout(function() { requestNewSessionToken(attemptsLeft - 1); }, 500);
+          }
+        }
+      }).catch(function(err) {
+        console.error("startSession failed:", err, new Date().toISOString());
+        if (attemptsLeft > 1) {
+          setTimeout(function() { requestNewSessionToken(attemptsLeft - 1); }, 500);
+        }
+      });
+    }
+    
+    // 🚀 先行入力および跳躍処理を適用した triggerJump
+    function triggerJump() { 
+      if (!isPlaying || isPaused || isReviving) return; 
+      if (gameOver) { 
+        if (isSaving) return;
+        const statusMsg = document.getElementById("statusMessage");
+        if (statusMsg) statusMsg.innerText = ""; 
+        startGame(); 
+        return;
+      } 
+      
+      if (playerY === 115) { 
+        if (currentStamina >= 1) {
+          playerVelocityY = -12.3; // 🚀 初期速度をわずかにUP (-11.8 → -12.3)
+          isJumping = true; 
+          currentStamina -= 1; 
+          jumpBufferCounter = 0;
+          playSound('jump');
+        }
+      } else {
+        // 空中にいる場合は先行入力バッファにセット
+        jumpBufferCounter = JUMP_BUFFER_TIME;
+      }
+    }
+    
+    function handleDpadClick(event) {
+      if (isReviving) return; 
+      if (showLeaderboard) {
+        changeLeaderboardPage(1); 
+      } else {
+        triggerJump();
+      }
+    }
+
+    function changeLeaderboardPage(dir) {
+      if (!showLeaderboard) return;
+      leaderboardCurrentPage += dir;
+      if (leaderboardCurrentPage < 0) leaderboardCurrentPage = 2;
+      if (leaderboardCurrentPage > 2) leaderboardCurrentPage = 0;
+      drawPauseScreen();
+    }
+
+    function togglePause() {
+      if (!isPlaying || gameOver || isReviving) return;
+      isPaused = !isPaused;
+      if (isPaused) {
+        lastFrameTimestamp = null;
+        showLeaderboard = false; 
+        leaderboardCurrentPage = 0; 
+        pauseFrame = ctx.getImageData(0, 0, 240, 160); 
+        drawPauseScreen();
+      } else {
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    function showLeaderboardScreen() {
+      if (gameOver) {
+        if (isSaving) return;
+        returnToTitle();
+        return;
+      }
+      if (!isPaused || showLeaderboard || isReviving) return;
+      showLeaderboard = true; 
+      isLoadingLeaderboard = true;
+      leaderboardCurrentPage = 0; 
+      leaderboardData = [null, null, null]; 
+      drawPauseScreen();
+      
+      callGasApi("getWinnerData").then(function(res) { 
+        leaderboardData[0] = (res && res.data) || []; checkLeaderboardLoad(); 
+      }).catch(function(e) { 
+        leaderboardData[0] = []; checkLeaderboardLoad(); 
+      });
+      
+      callGasApi("getPlayCountData").then(function(res) { 
+        leaderboardData[1] = (res && res.data) || []; checkLeaderboardLoad(); 
+      }).catch(function(e) { 
+        leaderboardData[1] = []; checkLeaderboardLoad(); 
+      });
+      
+      callGasApi("getLegendData").then(function(res) { 
+        leaderboardData[2] = (res && res.data) || []; checkLeaderboardLoad(); 
+      }).catch(function(e) { 
+        leaderboardData[2] = []; checkLeaderboardLoad(); 
+      });
+    }
+    
+    function checkLeaderboardLoad() {
+      isLoadingLeaderboard = false; 
+      drawPauseScreen();
+    }
+
+    function drawPauseScreen() {
+      if (!isPaused) return;
+      ctx.putImageData(pauseFrame, 0, 0);
+      ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, 0, 240, 160);
+      
+      if (!showLeaderboard) {
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 22px 'Courier New'"; ctx.textAlign = "center"; ctx.fillText("PAUSE", 120, 75);
+        ctx.font = "bold 9px 'Courier New'";
+        ctx.fillText("Press SELECT for LEADERBOARD", 120, 105);
+      } else {
+        ctx.fillStyle = "#ccc";
+        ctx.font = "bold 12px 'Courier New'"; ctx.textAlign = "center"; 
+        ctx.fillText("<", 15, 85); ctx.fillText(">", 225, 85);
+        
+        let titles = ["--- 2WEEKS SCORE ---", "--- 2WEEKS PLAYS ---", "--- LEGEND ---"];
+        ctx.fillStyle = (leaderboardCurrentPage === 2) ? "#FFD700" : "#10b981";
+        ctx.font = "bold 11px 'Courier New'"; ctx.fillText(titles[leaderboardCurrentPage], 120, 25);
+        
+        ctx.textAlign = "left";
+        ctx.font = "bold 9px 'Courier New'";
+        
+        let currentData = leaderboardData[leaderboardCurrentPage];
+        
+        if (isLoadingLeaderboard && !currentData) { 
+          ctx.fillStyle = "#fff";
+          ctx.font = "bold 14px 'Courier New'"; ctx.textAlign = "center"; ctx.fillText("Loading...", 120, 85);
+        } else if (currentData && currentData.length > 0) {
+          for (let i = 0; i < Math.min(10, currentData.length); i++) { 
+            if (currentData[i]) { 
+              let yPos = 40 + (i * 11); 
+              
+              ctx.textAlign = "left";
+              ctx.fillStyle = "#fff";
+              ctx.fillText(currentData[i][0], 15, yPos); 
+              
+              ctx.textAlign = "right";
+              ctx.fillStyle = "#ffd700";
+              let valStr = currentData[i][1];
+              if (currentData[i][2]) valStr += " (" + currentData[i][2] + ")";
+              ctx.fillText(valStr, 225, yPos);
+            } 
+          }
+        } else {
+          ctx.fillStyle = "#fff";
+          ctx.fillText("No Data / Loading...", 25, 85);
+        }
+        
+        ctx.fillStyle = "#ccc";
+        ctx.textAlign = "center"; ctx.font = "bold 8px 'Courier New'"; ctx.fillText("Press START to resume", 120, 150);
+      }
+      ctx.textAlign = "left";
+    }
+
+    function startRevivalRitual() {
+      isReviving = true;
+      lastFrameTimestamp = null;
+      gameOver = false;
+      isPlaying = true;
+      revivalTimer = 0;
+      
+      revivalParticles = [];
+      const centerX = 20 + 11;
+      const centerY = 115 + 7;
+      
+      for (let i = 0; i < 50; i++) {
+        let angle = Math.random() * Math.PI * 2;
+        let distance = 60 + Math.random() * 120;
+        revivalParticles.push({
+          startX: centerX + Math.cos(angle) * distance,
+          startY: centerY + Math.sin(angle) * distance,
+          size: Math.random() * 4 + 1,
+          color: Math.random() > 0.3 ? "#1a1a1a" : "#ff0000"
+        });
+      }
+      
+      requestAnimationFrame(revivalLoop);
+    }
+
+    function revivalLoop() {
+      if (!isReviving) return;
+      revivalTimer++;
+
+      if (revivalTimer === 1) {
+        playSound('thunder'); 
+      } else if (revivalTimer === 40 || revivalTimer === 80 || revivalTimer === 120) {
+        playSound('gather');  
+      } else if (revivalTimer === 150) {
+        playSound('glow');    
+      } else if (revivalTimer === 240) {
+        playSound('form');    
+      }
+
+      ctx.fillStyle = "#2d0202"; ctx.fillRect(0, 0, 240, 160);
+      drawClouds();
+      drawGround();
+
+      const catX = 20;
+      const catY = 115;
+      const centerX = catX + 11;
+      const centerY = catY + 7;
+
+      if (revivalTimer <= 30) {
+        if (revivalTimer < 6) {
+          ctx.fillStyle = "rgba(255, 255, 220, 0.9)";
+          ctx.fillRect(0, 0, 240, 160);
+        }
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(centerX, 0);
+        ctx.lineTo(centerX - 15, 35);
+        ctx.lineTo(centerX + 15, 75);
+        ctx.lineTo(centerX, centerY);
+        ctx.stroke();
+        
+        ctx.strokeStyle = "#ff3333";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
+      if (revivalTimer > 30 && revivalTimer <= 150) {
+        let progress = (revivalTimer - 30) / 120;
+        let easeOutCubic = 1 - Math.pow(1 - progress, 3); 
+        
+        revivalParticles.forEach(function(p) {
+          let currentX = p.startX + (centerX - p.startX) * easeOutCubic;
+          let currentY = p.startY + (centerY - p.startY) * easeOutCubic;
+          ctx.fillStyle = p.color;
+          ctx.fillRect(currentX, currentY, p.size, p.size);
+        });
+      }
+
+      if (revivalTimer > 150 && revivalTimer <= 240) {
+        let progress = (revivalTimer - 150) / 90;
+        let radius = 4 + progress * 10;
+        
+        ctx.fillStyle = "#7a1fa2";
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        let glowGrad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * 3.5);
+        glowGrad.addColorStop(0, "rgba(122, 31, 162, 0.7)");
+        glowGrad.addColorStop(0.6, "rgba(16, 185, 129, 0.4)"); 
+        glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        if (revivalTimer >= 234) {
+          ctx.fillStyle = "rgba(16, 185, 129, 0.95)"; 
+          ctx.fillRect(0, 0, 240, 160);
+        }
+      }
+
+      if (revivalTimer > 240 && revivalTimer <= 300) {
+        let progress = (revivalTimer - 240) / 60;
+        
+        if (revivalTimer < 256) {
+          let flashAlpha = 0.95 * (1 - (revivalTimer - 240) / 16);
+          ctx.fillStyle = `rgba(16, 185, 129, ${flashAlpha})`;
+          ctx.fillRect(0, 0, 240, 160);
+        }
+        
+        let shakeX = (Math.random() - 0.5) * 4 * (1 - progress);
+        let shakeY = (Math.random() - 0.5) * 4 * (1 - progress);
+        
+        ctx.save();
+        ctx.globalAlpha = progress; 
+        drawGanjaCat(catX + shakeX, catY + shakeY, 'run', frameCount);
+        ctx.restore();
+      }
+
+      ctx.fillStyle = "#ff0000"; ctx.font = "bold 11px 'Courier New'"; 
+      ctx.fillText(`SCORE:${score} HI:${hiScore} H-LV:${currentLevel}`, 5, 18);
+      drawStaminaBar();
+
+      if (revivalTimer < 300) {
+        requestAnimationFrame(revivalLoop);
+      } else {
+        isReviving = false;
+        resetGame();
+        isPlaying = true;
+        gameLoop();
+      }
+    }
+
+    function gameLoop() {
+      if (gameOver || isPaused || isReviving) return;
+
+      // ⏱️ 実際に動いているフレームだけ経過時間を積算する
+      const nowTs = performance.now();
+      if (lastFrameTimestamp !== null) {
+        activePlayTime += nowTs - lastFrameTimestamp;
+      }
+      lastFrameTimestamp = nowTs;
+
+      frameCount++;
+      
+      // 先行入力カウンターの更新
+      if (jumpBufferCounter > 0) {
+        jumpBufferCounter--;
+      }
+
+      if (currentStamina < maxStamina) {
+        currentStamina += staminaRecoveryRate;
+        if (currentStamina > maxStamina) currentStamina = maxStamina;
+      }
+
+      if (gameMode === 'HELL') {
+        ctx.fillStyle = "#2d0202";
+        ctx.fillRect(0, 0, 240, 160);
+        currentLevel = (score < 50) ? 1 : 2;
+        gameSpeed = (currentLevel === 1) ? 16.5 : 20.0;
+      } else {
+        ctx.fillStyle = "#8b956d";
+        ctx.fillRect(0, 0, 240, 160);
+        currentLevel = Math.min(10, Math.floor(score / 10) + 1);
+        gameSpeed = speedMap[currentLevel];
+      }
+
+      drawClouds();
+      drawGround();
+
+      let catState = 'run'; if (playerY < 115) catState = 'jump';
+      
+      if (hitFlashFrames > 0) {
+        hitFlashFrames--;
+        if (Math.floor(hitFlashFrames / 4) % 2 === 0) {
+          ctx.globalCompositeOperation = 'lighter';
+          drawGanjaCat(20, playerY, catState, frameCount);
+          ctx.globalCompositeOperation = 'source-over';
+        }
+      } else {
+        drawGanjaCat(20, playerY, catState, frameCount);
+      }
+      
+      let canSpawn = true;
+      if (obstacles.length > 0) {
+        let requiredDistance = 30 * gameSpeed;
+        if ((240 - obstacles[obstacles.length - 1].x) < requiredDistance) {
+          canSpawn = false;
+        }
+      }
+
+      if (canSpawn && Math.random() < obstacleSpawnChance) { 
+        let type = Math.random() < 0.7 ? "rock" : "crow"; 
+        obstacles.push({x:240, y:type==="rock"?118:60, type:type, width:type==="rock"?20:16, height:type==="rock"?16:10}); 
+      }
+
+      if (frameCount % 75 === 0) {
+        let isDiamond = false;
+        if (gameMode === 'NORMAL' && Math.random() < 0.035) {
+          isDiamond = true;
+        }
+        coins.push({
+          x: 240, 
+          y: Math.random() > 0.5 ? 100 : 60, 
+          collected: false, 
+          isDiamond: isDiamond
+        });
+      }
+      
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        let o = obstacles[i];
+        o.x -= gameSpeed;
+        if (o.type === "rock") drawRock(o.x, o.y); else drawCrow(o.x, o.y, frameCount);
+        
+        if (o.x < 20+22 && o.x+o.width > 20+2 && playerY+14 > o.y && playerY < o.y+o.height) { 
+          if (hitFlashFrames > 0) {
+          } else if (gameMode === 'HELL' && hellLives > 1) {
+            hellLives--;
+            hitFlashFrames = 10; 
+            playSound('deflect');
+          } else {
+            endGame(false); 
+            return;
+          }
+        }
+        if (o.x < -30) obstacles.splice(i, 1);
+      }
+
+      for (let i = coins.length - 1; i >= 0; i--) {
+        let c = coins[i];
+        if(!c.collected){
+          c.x -= gameSpeed; 
+          
+          if (c.isDiamond) {
+            drawDiamond(c.x, c.y); 
+          } else {
+            drawGanjaCoin(c.x, c.y);
+          }
+
+          if (c.x < 20+28 && c.x > 20-5 && playerY+14 > c.y-9 && playerY-10 < c.y+9) { 
+            c.collected = true;
+            
+            let gainedScore = c.isDiamond ? 10 : coinValue;
+            score += gainedScore; 
+            
+            if(score > hiScore) hiScore = score; 
+            playSound('coin'); 
+            
+            if (score >= 150) { 
+              score = 150;      
+              if (gameMode === 'HELL') currentLevel = 2; else currentLevel = 10;
+              endGame(true);
+              return;
+            }
+          }
+        }
+        if (c.x < -20) coins.splice(i, 1);
+      }
+
+      ctx.fillStyle = (gameMode === 'HELL') ? "#ff0000" : "#000"; 
+      ctx.font = "bold 11px 'Courier New'"; 
+      let lvText = (gameMode === 'HELL') ? `H-LV:${currentLevel}` : `LV:${currentLevel}`;
+      ctx.fillText(`SCORE:${score} HI:${hiScore} ${lvText}`, 5, 18);
+
+      drawStaminaBar();
+
+      // 重力計算と着地判定
+      playerVelocityY += 1.0; 
+      playerY += playerVelocityY;
+
+      if (playerY >= 115) { 
+        playerY = 115;
+        playerVelocityY = 0; 
+        isJumping = false;
+
+        // 🚀 着地時に先行入力が残っていれば即座にジャンプを実行
+        if (jumpBufferCounter > 0 && currentStamina >= 1) {
+          playerVelocityY = -12.3;
+          isJumping = true;
+          currentStamina -= 1;
+          jumpBufferCounter = 0;
+          playSound('jump');
+        }
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function explosionLoop() {
+      if (!isExploding) return;
+      
+      ctx.fillStyle = "#2d0202"; ctx.fillRect(0, 0, 240, 160);
+      drawClouds(); 
+      drawGround();
+      obstacles.forEach(function(o) { if (o.type === "rock") drawRock(o.x, o.y); else drawCrow(o.x, o.y, frameCount); });
+      
+      coins.forEach(function(c) { 
+        if (!c.collected) {
+          if (c.isDiamond) {
+            drawDiamond(c.x, c.y);
+          } else {
+            drawGanjaCoin(c.x, c.y);
+          }
+        } 
+      });
+
+      let aliveParticles = false;
+      particles.forEach(function(p) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.6; 
+        if (p.y < 160) {
+          aliveParticles = true;
+          ctx.fillStyle = p.color;
+          ctx.fillRect(p.x, p.y, p.size, p.size);
+        }
+      });
+
+      ctx.fillStyle = "#ff0000"; ctx.font = "bold 11px 'Courier New'"; 
+      ctx.fillText(`SCORE:${score} HI:${hiScore} H-LV:${currentLevel}`, 5, 18);
+
+      if (aliveParticles) {
+        requestAnimationFrame(explosionLoop);
+      } else {
+        isExploding = false;
+        showGameOverUI(false); 
+      }
+    }
+
+    function endGame(isClear) {
+      gameOver = true;
+      lastFrameTimestamp = null;
+      isSaving = true;
+
+      if (!isClear) {
+        if (gameMode === 'HELL') {
+          isExploding = true;
+          playSound('explosion');
+          particles = [];
+          for (let i = 0; i < 40; i++) {
+            particles.push({
+              x: 20 + 11, y: playerY + 7, 
+              vx: (Math.random() - 0.5) * 14,
+              vy: (Math.random() - 1.5) * 10,
+              size: Math.random() * 4 + 1,
+              color: Math.random() > 0.3 ? "#1a1a1a" : "#ff0000" 
+            });
+          }
+          explosionLoop();
+          return;
+        } else {
+          playSound('hit');
+          drawGanjaCat(20, playerY, 'hit', frameCount);
+        }
+      }
+      showGameOverUI(isClear);
+    }
+
+    function showGameOverUI(isClear) {
+      if (isClear) {
+        const rewardOverlay = document.getElementById("rewardOverlay");
+        if (rewardOverlay) {
+          rewardOverlay.style.display = "flex";
+          return; 
+        }
+      }
+
+      ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(0,0,240,160);
+      ctx.textAlign = "center";
+      
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 20px 'Courier New'"; ctx.fillText("GAME OVER", 120, 60);
+      
+      ctx.fillStyle = "#FFD700";
+      ctx.font = "bold 12px 'Courier New'";
+      ctx.fillText(`YOU SCORED ${score} POINTS`, 120, 82);
+
+      ctx.fillStyle = "#00FF00"; 
+      ctx.font = "bold 10px 'Courier New'";
+      
+      try {
+        let actualLevel = typeof currentLevel !== 'undefined' ? currentLevel : 1;
+        if (gameMode === "HELL") {
+          ctx.fillText(`[ H-LV.${actualLevel} ]`, 120, 98);
+        } else {
+          ctx.fillText(`[ LV.${actualLevel} ]`, 120, 98);
+        }
+      } catch (err) {}
+
+      isSaving = true;
+
+      captureSavingArea();
+      ctx.font = "bold 10px 'Courier New'"; 
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.fillText("NOW SAVING SCORE...", 108, 122);
+      ctx.textAlign = "left"; 
+      
+      startSavingAnimation();
+      sendScoreToGAS(twitterId, score, gameMode, "", activePlayTime);
+    }
+
+    // 🐱 「NOW SAVING SCORE...」の右側で、小さいキャラクターをテクテク歩かせる
+    let savingAnimTimer = null;
+    let savingAnimStep = 0;
+    let savingAnimBackup = null;
+    // 🖼️ 「保存中」の文字を出す前の、画面下部(y=106〜)の元の絵を保存しておく。
+    //    保存完了時に、黒い帯を重ねず、これに戻して「NOW SAVING SCORE...」を消すために使う
+    let savingAreaBackup = null;
+    function captureSavingArea() {
+      savingAreaBackup = ctx.getImageData(0, 106, 240, 54);
+    }
+    const SAVING_ANIM_X = 172, SAVING_ANIM_Y = 100, SAVING_ANIM_W = 40, SAVING_ANIM_H = 30;
+
+    function startSavingAnimation() {
+      savingAnimStep = 0;
+      // キャラクターを描く場所の「元の背景」を保存しておく(消すときに重ね塗りせず、これに戻す)
+      savingAnimBackup = ctx.getImageData(SAVING_ANIM_X, SAVING_ANIM_Y, SAVING_ANIM_W, SAVING_ANIM_H);
+      if (savingAnimTimer) clearInterval(savingAnimTimer);
+      savingAnimTimer = setInterval(function() {
+        if (!isSaving) {
+          stopSavingAnimation();
+          return;
+        }
+        savingAnimStep += 3;
+        ctx.save();
+        // 前のフレームのキャラクターを消す(重ね塗りではなく、元の背景に戻す)
+        if (savingAnimBackup) {
+          ctx.putImageData(savingAnimBackup, SAVING_ANIM_X, SAVING_ANIM_Y);
+        }
+        ctx.translate(178, 113);
+        ctx.scale(0.55, 0.55);
+        drawGanjaCat(0, 0, 'run', savingAnimStep);
+        ctx.restore();
+      }, 120);
+    }
+
+    function stopSavingAnimation() {
+      if (savingAnimTimer) {
+        clearInterval(savingAnimTimer);
+        savingAnimTimer = null;
+      }
+    }
+
+    function sendScoreToGAS(tId, sc, mode, wallet, playTime, retriesLeft) {
+      isSaving = true;
+
+      // 🕐 ゲーム開始直後の一瞬など、sessionTokenがまだ届いていない場合は
+      // 少し待ってから再試行する（最大5秒 = 100ms × 50回。Val Town経由で
+      // 往復が1段階増えた分、以前より長めに待つ）
+      if (!sessionToken && retriesLeft === undefined) retriesLeft = 50;
+      if (!sessionToken && retriesLeft > 0) {
+        setTimeout(function() {
+          sendScoreToGAS(tId, sc, mode, wallet, playTime, retriesLeft - 1);
+        }, 100);
+        return;
+      }
+
+      // 🎁 ウォレットアドレス付き＝クリア報酬のクレーム。それ以外は通常のスコア保存
+      var isClaim = !!wallet;
+
+      // 🛟 保険：22秒たっても応答が返ってこなければ、強制的にフリーズを解除する
+      var safetyTimer = setTimeout(function() {
+        if (isSaving) {
+          console.warn("[DEBUG] 22秒タイムアウトで強制解除。使用したtoken:", sessionToken, new Date().toISOString());
+          finishScoreSave();
+        }
+      }, 22000);
+
+      console.log("[DEBUG] submitScoreFromGame リクエスト送信。使用するtoken:", sessionToken, new Date().toISOString());
+
+      callGasApi("submitScoreFromGame", {
+        twitterId: tId,
+        score: sc,
+        mode: mode,
+        walletAddress: wallet,
+        sessionToken: sessionToken,
+        playTime: playTime
+      }).then(function(response){
+        clearTimeout(safetyTimer);
+        console.log("[DEBUG] submitScoreFromGame 応答受信:", JSON.stringify(response), new Date().toISOString());
+        if (response && response.status === "error") {
+          if (isClaim) {
+            alert("⚠️ 報酬の送信に失敗した可能性があります。\n詳細: " + response.message + "\n※届いていない場合はお知らせください。");
+          } else {
+            // サーバーが書き込み前に弾いた場合(セッション無効など)は、スコアが保存されていない。
+            // OKを押させるポップアップは出さず、画面下に小さく知らせるだけにする
+            console.warn("[DEBUG] 通常保存でサーバーエラー:", response.message);
+            finishScoreSave();
+            showSaveNotice();
+            return;
+          }
+        }
+        finishScoreSave();
+      }).catch(function(error){
+        clearTimeout(safetyTimer);
+        console.error("[DEBUG] submitScoreFromGame 通信失敗:", error, new Date().toISOString());
+        if (isClaim) {
+          // 報酬クレームの通信失敗は、黙って進めると「届いた」と誤解されるので必ず知らせる
+          alert("⚠️ 通信エラーが発生しました。\n詳細: " + (error && error.message ? error.message : error) + "\n※報酬の送信を確認できませんでした。届いていない場合はお知らせください。");
+        }
+        // 通常のゲームオーバー時は、ポップアップは出さず、画面下に小さく知らせるだけで次へ進む
+        finishScoreSave();
+        if (!isClaim) showSaveNotice();
+      });
+    }
+
+    // 📢 保存に失敗した可能性があるとき、ゲーム画面の下部に白文字で小さく知らせる
+    //    (OKボタンを押させない。すぐ次のプレイに進めるようにするため)
+    function showSaveNotice() {
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#ccc";
+      ctx.font = "bold 8px 'Courier New'";
+      ctx.fillText("SCORE MAY NOT BE SAVED", 120, 147);
+      ctx.fillText("TRY SWITCHING WI-FI / MOBILE DATA", 120, 156);
+      ctx.restore();
+    }
+
+    function finishScoreSave() {
+      isSaving = false; 
+      isClaiming = false;
+      stopSavingAnimation();
+      // 歩くキャラクターと「NOW SAVING SCORE...」を消して、元の絵に戻す(黒い帯は使わない)
+      if (savingAnimBackup) {
+        ctx.putImageData(savingAnimBackup, SAVING_ANIM_X, SAVING_ANIM_Y);
+      }
+      if (savingAreaBackup) {
+        ctx.putImageData(savingAreaBackup, 0, 106);
+        savingAreaBackup = null;
+      }
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#ccc"; ctx.font = "bold 10px 'Courier New'";
+      ctx.fillText("A / SPACE : REPLAY", 120, 118);
+      ctx.fillText("SELECT    : MODE MENU", 120, 133);
+      ctx.restore();
+      
+      const sBtn = document.getElementById("shareButton");
+      if (sBtn) sBtn.style.display = "block";
+    }
+
+    function resizeGame() {
+      const wrapper = document.getElementById("gameWrapper");
+      if (!wrapper) return;
+      const scale = Math.min(window.innerWidth / 340, window.innerHeight / 680);
+      wrapper.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    }
+    window.addEventListener("resize", resizeGame);
+    
+    window.addEventListener("keydown", function(e) { 
+      if (isReviving) { 
+        if (e.code === "Space" || e.code === "Enter") e.preventDefault();
+        return;
+      }
+      if (e.code === "Space" || e.code === "ArrowUp") {
+          e.preventDefault(); 
+          if (!showLeaderboard) triggerJump(); 
+      }
+      if (e.code === "Enter") togglePause();
+      if (e.code === "KeyM" || e.code === "Backspace") showLeaderboardScreen(); 
+      
+      if (showLeaderboard) {
+        if (e.code === "ArrowLeft") changeLeaderboardPage(-1);
+        if (e.code === "ArrowRight") changeLeaderboardPage(1);
+      }
+    });
+
+    function handleCanvasInteraction(e) {
+        if (isReviving) return; 
+        if (showLeaderboard) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX = e.clientX;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+            }
+            const x = clientX - rect.left;
+            if (x < rect.width / 2) {
+                changeLeaderboardPage(-1); 
+            } else {
+                changeLeaderboardPage(1);  
+            }
+        } else {
+            triggerJump();
+        }
+    }
+
+    canvas.addEventListener("mousedown", handleCanvasInteraction);
+    canvas.addEventListener("touchstart", function(e) {
+      e.preventDefault(); 
+      handleCanvasInteraction(e);
+    }, { passive: false });
+  </script>
+</body>
+</html>
