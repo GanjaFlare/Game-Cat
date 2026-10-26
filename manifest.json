@@ -1,6 +1,6 @@
 {
   "name": "GameCat",
-  "short_name": "GanjaCatRun",
+  "short_name": "GameCat",
   "start_url": "https://ganjaflare.github.io/Game-Cat/",
   "display": "standalone",
   "background_color": "#1a0933",
