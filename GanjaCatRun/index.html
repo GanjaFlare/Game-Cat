@@ -337,6 +337,7 @@
     let hitFlashFrames = 0;
     let gameMode = 'NORMAL';
     let visualMode = 'NORMAL'; // 見た目だけ NORMAL → BOOST(LV3) → HELL(LV6) と変化
+    function bgColor() { return visualMode === 'HELL' ? "#2d0202" : visualMode === 'GOLD' ? "#a07f12" : "#8b956d"; }
     let powerFlash = 0, powerFlashMax = 30, powerFlashColor = '110,225,255';
     let coinValue = 1;
     let currentLevel = 1;
@@ -442,6 +443,26 @@
           o.connect(gn); gn.connect(c.destination);
           o.start(st); o.stop(st + 1);
         });
+      });
+    }
+    // 👑 GOLD: 「きゅいーーーーーん！！」と高く駆け上がる音
+    function playKyuin() {
+      const c = ensureAudioCtx();
+      if (!c) return;
+      if (c.state === 'suspended') c.resume().catch(function(){});
+      const t = c.currentTime, d = 1.4;
+      [[900, 5200, 0.14, 'sine'], [1800, 7800, 0.05, 'triangle']].forEach(function(v) {
+        const o = c.createOscillator(), gn = c.createGain(), vib = c.createOscillator(), vg = c.createGain();
+        o.type = v[3];
+        o.frequency.setValueAtTime(v[0], t);
+        o.frequency.exponentialRampToValueAtTime(v[1], t + d * 0.8);
+        vib.frequency.value = 9; vg.gain.value = 40; vib.connect(vg); vg.connect(o.frequency);
+        gn.gain.setValueAtTime(0.0001, t);
+        gn.gain.exponentialRampToValueAtTime(v[2], t + 0.05);
+        gn.gain.setValueAtTime(v[2], t + d * 0.7);
+        gn.gain.exponentialRampToValueAtTime(0.0001, t + d);
+        o.connect(gn); gn.connect(c.destination);
+        o.start(t); o.stop(t + d); vib.start(t); vib.stop(t + d);
       });
     }
     // 🔥 HELL: 「ゴゴゴゴ！！」と鳴る、地鳴りのような低い音
@@ -850,7 +871,20 @@
         gr.addColorStop(1, `rgba(${powerFlashColor},0)`);
         ctx.save(); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
       }
+      if (visualMode === 'GOLD' && !isExploding) {
+        const cx = x + 14, cy = y + 2, r = 26 + 4 * Math.sin(frameCount * 0.12);
+        const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        gr.addColorStop(0, 'rgba(255,230,80,0.75)'); gr.addColorStop(0.6, 'rgba(255,200,0,0.35)'); gr.addColorStop(1, 'rgba(255,200,0,0)');
+        ctx.save(); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      }
       drawGanjaCatBase(x, y, state, frame);
+      if (visualMode === 'GOLD' && !isExploding) {
+        ctx.fillStyle = '#ffffff';
+        for (let k = 0; k < 3; k++) {
+          const an = frameCount * 0.08 + k * 2.09;
+          ctx.fillRect(Math.round(x + 14 + Math.cos(an) * 22), Math.round(y + 2 + Math.sin(an) * 15), 2, 2);
+        }
+      }
     }
 
     function drawGanjaCatBase(x, y, state, frame) {
@@ -859,10 +893,11 @@
       const isHell = (visualMode === 'HELL');
       const isBoost = (visualMode === 'BOOST');
 
-      const bodyColor = isHell ? "#1a1a1a" : "#87CEEB"; 
-      const stripeColor = isHell ? "#333333" : "#4169E1";  
+      const isGold = (visualMode === 'GOLD');
+      const bodyColor = isHell ? "#1a1a1a" : isGold ? "#FFD700" : "#87CEEB"; 
+      const stripeColor = isHell ? "#333333" : isGold ? "#B8860B" : "#4169E1";  
       const eyeColor = isHell ? "#ff0000" : "#ffffff";
-      const subEyeColor = isHell ? "#990000" : "#00FFFF";
+      const subEyeColor = isHell ? "#990000" : isGold ? "#fff3a0" : "#00FFFF";
 
       const hx = isBoost ? x + 5 : x + 16;
       const hy = isBoost ? y - 14 : y - 10;
@@ -1029,7 +1064,7 @@
     }
 
     function drawClouds() {
-      ctx.fillStyle = (visualMode === 'HELL') ? "rgba(255, 100, 100, 0.15)" : "rgba(255, 255, 255, 0.4)";
+      ctx.fillStyle = (visualMode === 'HELL') ? "rgba(255, 100, 100, 0.15)" : (visualMode === 'GOLD') ? "rgba(255, 235, 140, 0.35)" : "rgba(255, 255, 255, 0.4)";
       clouds.forEach(function(c) {
         ctx.fillRect(c.x, c.y, c.width, 10);
         ctx.fillRect(c.x + 5, c.y - 5, c.width - 10, 5);
@@ -1045,7 +1080,7 @@
     function drawGround() {
       ctx.fillStyle="#444"; ctx.fillRect(0, 133, 240, 27); 
       ctx.fillRect(0, 133, 240, 2);
-      ctx.fillStyle = (visualMode === 'HELL') ? "#111" : "#222";
+      ctx.fillStyle = (visualMode === 'HELL') ? "#111" : (visualMode === 'GOLD') ? "#3a2c00" : "#222";
       groundDots.forEach(function(d) {
         ctx.fillRect(d.x, d.y, d.width, 2);
         if (!isPaused && !gameOver && !isReviving) d.x -= gameSpeed;
@@ -1054,6 +1089,28 @@
     }
 
     function drawStaminaBar() {
+      drawStaminaBarBase();
+      drawLives();
+    }
+
+    // ❤️ ライフゲージ：赤いハートが3つ。ダメージを受けると黒くなる
+    function drawLives() {
+      const pat = ["01010", "11111", "11111", "01110", "00100"];
+      const sc = 2, w = 5 * sc, gap = 3, x0 = 240 - 5 - (3 * w + 2 * gap), y0 = 17;
+      for (let i = 0; i < 3; i++) {
+        const hx = x0 + i * (w + gap);
+        const put = function(ox, oy, col) {
+          ctx.fillStyle = col;
+          for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+            if (pat[r][c] === "1") ctx.fillRect(hx + c * sc + ox, y0 + r * sc + oy, sc, sc);
+          }
+        };
+        put(-1, 0, "#ffffff"); put(1, 0, "#ffffff"); put(0, -1, "#ffffff"); put(0, 1, "#ffffff");
+        put(0, 0, i < hellLives ? "#ef2b3a" : "#111111");
+      }
+    }
+
+    function drawStaminaBarBase() {
       const barWidth = 60;
       const barHeight = 6;
       const x = 240 - barWidth - 5; 
@@ -1096,7 +1153,7 @@
       isPaused = true;
 
       function drawSceneBackground() {
-        ctx.fillStyle = (visualMode === 'HELL') ? "#2d0202" : "#8b956d";
+        ctx.fillStyle = bgColor();
         ctx.fillRect(0, 0, 240, 160);
         drawClouds();
         drawGround();
@@ -1585,14 +1642,16 @@
         currentLevel = (score < 50) ? 1 : 2;
         gameSpeed = (currentLevel === 1) ? 16.5 : 20.0;
       } else {
-        ctx.fillStyle = (visualMode === 'HELL') ? "#2d0202" : "#8b956d";
+        ctx.fillStyle = bgColor();
         ctx.fillRect(0, 0, 240, 160);
         currentLevel = Math.min(10, Math.floor(score / 10) + 1);
         gameSpeed = speedMap[currentLevel];
       }
 
       // ✨ LV3でBOOST、LV6でHELLの見た目に自動変化（得点・速度・ダイヤは通常のまま）
-      if (currentLevel >= 5 && visualMode !== 'HELL') {
+      if (currentLevel >= 7 && visualMode !== 'GOLD') {
+        visualMode = 'GOLD'; powerFlashColor = '255,215,0'; powerFlashMax = powerFlash = 60; playKyuin();
+      } else if (currentLevel >= 5 && visualMode !== 'HELL' && visualMode !== 'GOLD') {
         visualMode = 'HELL'; powerFlashColor = '255,30,30'; powerFlashMax = powerFlash = 50; playRumble();
       } else if (currentLevel >= 3 && visualMode === 'NORMAL') {
         visualMode = 'BOOST'; powerFlashColor = '110,225,255'; powerFlashMax = powerFlash = 30; playKirarin();
@@ -1648,7 +1707,7 @@
         
         if (o.x < 20+22 && o.x+o.width > 20+2 && playerY+14 > o.y && playerY < o.y+o.height) { 
           if (hitFlashFrames > 0) {
-          } else if (gameMode === 'HELL' && hellLives > 1) {
+          } else if (hellLives > 1) {
             hellLives--;
             hitFlashFrames = 10; 
             playSound('deflect');
