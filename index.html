@@ -304,7 +304,7 @@
     // (以前はJSONP方式でGASへ直接<script>タグ経由で呼んでいたが、
     //  クロスオリジンの二段階リダイレクト(exec→echo)がモバイル回線等で不安定になる
     //  問題が確認されたため、サーバー間fetch()で中継するこちらの方式に戻した)
-    const WORKER_API_URL = "https://ganjacatrun-proxy.ganjaflare.workers.dev";
+    const WORKER_API_URL = "https://gcr2-proxy.ganjaflare.workers.dev";
 
     // GASへ action 付きのリクエストを送り、JSON形式で結果を受け取る共通関数
     function callGasApi(action, payload) {
