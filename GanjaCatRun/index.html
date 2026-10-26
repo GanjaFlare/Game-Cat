@@ -337,7 +337,7 @@
     let hitFlashFrames = 0;
     let gameMode = 'NORMAL';
     let visualMode = 'NORMAL'; // 見た目だけ NORMAL → BOOST(LV3) → HELL(LV6) と変化
-    let powerFlash = 0;
+    let powerFlash = 0, powerFlashMax = 30, powerFlashColor = '110,225,255';
     let coinValue = 1;
     let currentLevel = 1;
     let obstacleSpawnChance = 0.009;
@@ -425,21 +425,50 @@
       };
       evs.forEach(function(ev){ window.addEventListener(ev, h, true); });
     }
-    // ✨ レベルアップ時の「シャキーン！」効果音
-    function playShakin() {
+    // ✨ BOOST: 「キラリン！」と鳴る、きらめく上昇音
+    function playKirarin() {
       const c = ensureAudioCtx();
       if (!c) return;
       if (c.state === 'suspended') c.resume().catch(function(){});
       const t = c.currentTime;
-      [2093, 3136, 4186].forEach(function(f, i) {
-        const o = c.createOscillator(), gn = c.createGain(), st = t + i * 0.05;
-        o.type = 'triangle'; o.frequency.setValueAtTime(f, st);
-        gn.gain.setValueAtTime(0.0001, st);
-        gn.gain.exponentialRampToValueAtTime(0.18, st + 0.01);
-        gn.gain.exponentialRampToValueAtTime(0.0001, st + 0.35);
-        o.connect(gn); gn.connect(c.destination);
-        o.start(st); o.stop(st + 0.4);
+      [1319, 1760, 2349, 2794, 3520, 4699, 5920].forEach(function(f, i) {
+        const st = t + i * 0.055;
+        [['sine', f, 0.16], ['triangle', f * 2, 0.05]].forEach(function(v) {
+          const o = c.createOscillator(), gn = c.createGain();
+          o.type = v[0]; o.frequency.setValueAtTime(v[1], st);
+          gn.gain.setValueAtTime(0.0001, st);
+          gn.gain.exponentialRampToValueAtTime(v[2], st + 0.006);
+          gn.gain.exponentialRampToValueAtTime(0.0001, st + (i === 6 ? 0.9 : 0.35));
+          o.connect(gn); gn.connect(c.destination);
+          o.start(st); o.stop(st + 1);
+        });
       });
+    }
+    // 🔥 HELL: 「ゴゴゴゴ！！」と鳴る、地鳴りのような低い音
+    function playRumble() {
+      const c = ensureAudioCtx();
+      if (!c) return;
+      if (c.state === 'suspended') c.resume().catch(function(){});
+      const t = c.currentTime, d = 1.5;
+      const master = c.createGain();
+      master.gain.setValueAtTime(0.0001, t);
+      master.gain.exponentialRampToValueAtTime(0.45, t + 0.08);
+      master.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 220;
+      const trem = c.createGain(); trem.gain.value = 0.6;
+      const lfo = c.createOscillator(), lfoG = c.createGain();
+      lfo.frequency.value = 13; lfoG.gain.value = 0.4;
+      lfo.connect(lfoG); lfoG.connect(trem.gain);
+      [38, 57, 76].forEach(function(f) {
+        const o = c.createOscillator(); o.type = 'sawtooth';
+        o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * 0.7, t + d);
+        o.connect(lp); o.start(t); o.stop(t + d);
+      });
+      const len = Math.floor(c.sampleRate * d), nb = c.createBuffer(1, len, c.sampleRate), data = nb.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+      const ns = c.createBufferSource(); ns.buffer = nb; ns.connect(lp);
+      lp.connect(trem); trem.connect(master); master.connect(c.destination);
+      lfo.start(t); lfo.stop(t + d); ns.start(t); ns.stop(t + d);
     }
 
     function initializeEvents() {
@@ -487,6 +516,7 @@
         btnBack.addEventListener("touchstart", goBack, {passive: false});
       }
       armBgmUnlock();
+      startBgm(); // タイトル画面に入った瞬間からBGM開始（ブラウザに止められた場合は最初の操作で開始）
 
       const btnClearId = document.getElementById("btnClearId");
       if (btnClearId) {
@@ -813,14 +843,14 @@
 
     function drawGanjaCat(x, y, state, frame) {
       if (powerFlash > 0 && !isExploding) {
-        ctx.save(); ctx.globalAlpha = Math.min(0.7, powerFlash / 30 + 0.1); ctx.fillStyle = "#ffffff";
-        ctx.fillRect(x - 6, y - 20, 42, 40); ctx.restore();
+        const a = powerFlash / powerFlashMax, k = 1 - a, cx = x + 14, cy = y + 2, r = 16 + 26 * k;
+        const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        gr.addColorStop(0, `rgba(${powerFlashColor},${0.85 * a})`);
+        gr.addColorStop(0.55, `rgba(${powerFlashColor},${0.45 * a})`);
+        gr.addColorStop(1, `rgba(${powerFlashColor},0)`);
+        ctx.save(); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
       }
       drawGanjaCatBase(x, y, state, frame);
-      if (powerFlash > 0 && !isExploding) {
-        ctx.save(); ctx.globalAlpha = Math.min(0.5, powerFlash / 40); ctx.fillStyle = "#ffffff";
-        ctx.fillRect(x - 2, y - 16, 34, 32); ctx.restore();
-      }
     }
 
     function drawGanjaCatBase(x, y, state, frame) {
@@ -999,7 +1029,7 @@
     }
 
     function drawClouds() {
-      ctx.fillStyle = (gameMode === 'HELL') ? "rgba(255, 100, 100, 0.15)" : "rgba(255, 255, 255, 0.4)";
+      ctx.fillStyle = (visualMode === 'HELL') ? "rgba(255, 100, 100, 0.15)" : "rgba(255, 255, 255, 0.4)";
       clouds.forEach(function(c) {
         ctx.fillRect(c.x, c.y, c.width, 10);
         ctx.fillRect(c.x + 5, c.y - 5, c.width - 10, 5);
@@ -1015,7 +1045,7 @@
     function drawGround() {
       ctx.fillStyle="#444"; ctx.fillRect(0, 133, 240, 27); 
       ctx.fillRect(0, 133, 240, 2);
-      ctx.fillStyle = (gameMode === 'HELL') ? "#111" : "#222";
+      ctx.fillStyle = (visualMode === 'HELL') ? "#111" : "#222";
       groundDots.forEach(function(d) {
         ctx.fillRect(d.x, d.y, d.width, 2);
         if (!isPaused && !gameOver && !isReviving) d.x -= gameSpeed;
@@ -1066,7 +1096,7 @@
       isPaused = true;
 
       function drawSceneBackground() {
-        ctx.fillStyle = (gameMode === 'HELL') ? "#2d0202" : "#8b956d";
+        ctx.fillStyle = (visualMode === 'HELL') ? "#2d0202" : "#8b956d";
         ctx.fillRect(0, 0, 240, 160);
         drawClouds();
         drawGround();
@@ -1555,17 +1585,17 @@
         currentLevel = (score < 50) ? 1 : 2;
         gameSpeed = (currentLevel === 1) ? 16.5 : 20.0;
       } else {
-        ctx.fillStyle = "#8b956d";
+        ctx.fillStyle = (visualMode === 'HELL') ? "#2d0202" : "#8b956d";
         ctx.fillRect(0, 0, 240, 160);
         currentLevel = Math.min(10, Math.floor(score / 10) + 1);
         gameSpeed = speedMap[currentLevel];
       }
 
       // ✨ LV3でBOOST、LV6でHELLの見た目に自動変化（得点・速度・ダイヤは通常のまま）
-      if (currentLevel >= 6 && visualMode !== 'HELL') {
-        visualMode = 'HELL'; powerFlash = 30; playShakin();
+      if (currentLevel >= 5 && visualMode !== 'HELL') {
+        visualMode = 'HELL'; powerFlashColor = '255,30,30'; powerFlashMax = powerFlash = 50; playRumble();
       } else if (currentLevel >= 3 && visualMode === 'NORMAL') {
-        visualMode = 'BOOST'; powerFlash = 30; playShakin();
+        visualMode = 'BOOST'; powerFlashColor = '110,225,255'; powerFlashMax = powerFlash = 30; playKirarin();
       }
       if (powerFlash > 0) powerFlash--;
 
@@ -1661,7 +1691,7 @@
         if (c.x < -20) coins.splice(i, 1);
       }
 
-      ctx.fillStyle = (gameMode === 'HELL') ? "#ff0000" : "#000"; 
+      ctx.fillStyle = (visualMode === 'HELL') ? "#ff0000" : "#000"; 
       ctx.font = "bold 11px 'Courier New'"; 
       let lvText = (gameMode === 'HELL') ? `H-LV:${currentLevel}` : `LV:${currentLevel}`;
       ctx.fillText(`SCORE:${score} HI:${hiScore} ${lvText}`, 5, 18);
