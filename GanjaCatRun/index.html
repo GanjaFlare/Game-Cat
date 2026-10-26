@@ -337,7 +337,8 @@
     let hitFlashFrames = 0;
     let gameMode = 'NORMAL';
     let visualMode = 'NORMAL'; // 見た目だけ NORMAL → BOOST(LV3) → HELL(LV6) と変化
-    function bgColor() { return visualMode === 'HELL' ? "#2d0202" : visualMode === 'GOLD' ? "#a07f12" : "#8b956d"; }
+    function bgColor() { return visualMode === 'HELL' ? "#450c0c" : visualMode === 'GOLD' ? "#a07f12" : "#8b956d"; }
+    let nitroFrames = 0, nitroNodes = []; const NITRO_TOTAL = 240; // 4秒
     let powerFlash = 0, powerFlashMax = 30, powerFlashColor = '110,225,255';
     let coinValue = 1;
     let currentLevel = 1;
@@ -443,6 +444,35 @@
           o.connect(gn); gn.connect(c.destination);
           o.start(st); o.stop(st + 1);
         });
+      });
+    }
+    function startNitro() { nitroFrames = NITRO_TOTAL; playNitroSound(); }
+    function stopNitroSound() {
+      nitroNodes.forEach(function(n) { try { n.stop(); } catch(e) {} try { n.disconnect(); } catch(e) {} });
+      nitroNodes = [];
+    }
+    // 🟢 ニトロ：0〜3.4秒「キュイーーーン！！」と鳴り続け、3.4〜4秒でだんだん低くなって終わる
+    function playNitroSound() {
+      const c = ensureAudioCtx();
+      if (!c) return;
+      if (c.state === 'suspended') c.resume().catch(function(){});
+      stopNitroSound();
+      const t = c.currentTime;
+      [['sine', 1, 0.13], ['triangle', 2, 0.05]].forEach(function(v) {
+        const o = c.createOscillator(), gn = c.createGain(), vib = c.createOscillator(), vg = c.createGain();
+        o.type = v[0];
+        o.frequency.setValueAtTime(600 * v[1], t);
+        o.frequency.exponentialRampToValueAtTime(2400 * v[1], t + 0.5);
+        o.frequency.setValueAtTime(2400 * v[1], t + 3.4);
+        o.frequency.exponentialRampToValueAtTime(220 * v[1], t + 4.0);
+        vib.frequency.value = 7; vg.gain.value = 25 * v[1]; vib.connect(vg); vg.connect(o.frequency);
+        gn.gain.setValueAtTime(0.0001, t);
+        gn.gain.exponentialRampToValueAtTime(v[2], t + 0.05);
+        gn.gain.setValueAtTime(v[2], t + 3.4);
+        gn.gain.exponentialRampToValueAtTime(0.0001, t + 4.0);
+        o.connect(gn); gn.connect(c.destination);
+        o.start(t); o.stop(t + 4.05); vib.start(t); vib.stop(t + 4.05);
+        nitroNodes.push(o, vib);
       });
     }
     // 👑 GOLD: 「きゅいーーーーーん！！」と高く駆け上がる音
@@ -877,7 +907,26 @@
         gr.addColorStop(0, 'rgba(255,230,80,0.75)'); gr.addColorStop(0.6, 'rgba(255,200,0,0.35)'); gr.addColorStop(1, 'rgba(255,200,0,0)');
         ctx.save(); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
       }
+      if (nitroFrames > 0 && !isExploding) {
+        const s = nitroFrames < 30 ? nitroFrames / 30 : 1, cx = x + 14, cy = y + 2, r = (30 + 3 * Math.sin(frameCount * 0.4)) * s;
+        const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        gr.addColorStop(0, 'rgba(90,255,130,0.65)'); gr.addColorStop(1, 'rgba(60,220,100,0)');
+        ctx.save(); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      }
       drawGanjaCatBase(x, y, state, frame);
+      if (nitroFrames > 0 && !isExploding) {
+        const s = nitroFrames < 30 ? nitroFrames / 30 : 1, cx = x + 14, cy = y + 2, cols = ['#22c55e', '#86efac', '#bbf7d0'];
+        for (let k = 0; k < 10; k++) {
+          const an = k / 10 * Math.PI * 2 + frameCount * 0.25, rr = (15 + (k % 3) * 3 + Math.sin(frameCount * 0.6 + k) * 3) * s;
+          ctx.fillStyle = cols[k % 3];
+          ctx.fillRect(Math.round(cx + Math.cos(an) * rr * 1.1), Math.round(cy + Math.sin(an) * rr * 0.9 - 3), 3, 5 + (k % 2) * 2);
+        }
+        for (let i = 0; i < 6; i++) {
+          ctx.fillStyle = cols[i % 3];
+          const sz = Math.max(1, (6 - i) * s);
+          ctx.fillRect(Math.round(x - 2 - i * 6), Math.round(cy + Math.sin(frameCount * 0.7 + i) * 5), sz + 2, sz);
+        }
+      }
       if (visualMode === 'GOLD' && !isExploding) {
         ctx.fillStyle = '#ffffff';
         for (let k = 0; k < 3; k++) {
@@ -1044,6 +1093,21 @@
       }
     })();
 
+    function drawNitro(x, y) {
+      const r = 17 + 3 * Math.sin(frameCount * 0.2);
+      const gr = ctx.createRadialGradient(x, y, 0, x, y, r);
+      gr.addColorStop(0, 'rgba(80,255,120,0.7)'); gr.addColorStop(1, 'rgba(80,255,120,0)');
+      ctx.save();
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#9ca3af"; ctx.fillRect(x - 2, y - 10, 4, 3);
+      ctx.fillStyle = "#6b7280"; ctx.fillRect(x - 4, y - 8, 8, 2);
+      ctx.fillStyle = "#16a34a"; ctx.fillRect(x - 6, y - 6, 12, 14);
+      ctx.fillStyle = "#4ade80"; ctx.fillRect(x - 4, y - 5, 2, 12);
+      ctx.fillStyle = "#14532d"; ctx.fillRect(x - 6, y - 1, 12, 2);
+      ctx.strokeStyle = "#052e16"; ctx.lineWidth = 1; ctx.strokeRect(x - 6.5, y - 6.5, 13, 15);
+      ctx.restore();
+    }
+
     function drawDiamond(x, y) {
       ctx.fillStyle = "#00FFFF";
       ctx.beginPath();
@@ -1106,7 +1170,7 @@
           }
         };
         put(-1, 0, "#ffffff"); put(1, 0, "#ffffff"); put(0, -1, "#ffffff"); put(0, 1, "#ffffff");
-        put(0, 0, i < hellLives ? "#ef2b3a" : "#111111");
+        put(0, 0, i < hellLives ? "#cf4a55" : "#111111");
       }
     }
 
@@ -1290,7 +1354,7 @@
       const rewardOverlay = document.getElementById("rewardOverlay");
       if (rewardOverlay) rewardOverlay.style.display = "none";
 
-      visualMode = 'NORMAL'; powerFlash = 0;
+      visualMode = 'NORMAL'; powerFlash = 0; nitroFrames = 0; stopNitroSound();
       hellLives = 3;
       hitFlashFrames = 0;
       isExploding = false;
@@ -1658,6 +1722,15 @@
       }
       if (powerFlash > 0) powerFlash--;
 
+      // 🟢 ニトロ：4秒間無敵＋爆速。最後の0.5秒でだんだん減速して終わる
+      if (nitroFrames > 0) {
+        const e = NITRO_TOTAL - nitroFrames;
+        const m = e < 18 ? 1 + 1.6 * (e / 18) : (e < 210 ? 2.6 : 2.6 - 1.6 * ((e - 210) / 30));
+        gameSpeed = speedMap[currentLevel] * m;
+        nitroFrames--;
+        if (nitroFrames === 0) gameSpeed = speedMap[currentLevel];
+      }
+
       drawClouds();
       drawGround();
 
@@ -1688,15 +1761,16 @@
       }
 
       if (frameCount % 75 === 0) {
-        let isDiamond = false;
-        if (gameMode === 'NORMAL' && Math.random() < 0.035) {
-          isDiamond = true;
-        }
+        let isDiamond = false, isNitro = false;
+        const rnd = Math.random();
+        if (gameMode === 'NORMAL' && rnd < 0.035) { isDiamond = true; }
+        else if (gameMode === 'NORMAL' && rnd < 0.07) { isNitro = true; }
         coins.push({
           x: 240, 
           y: Math.random() > 0.5 ? 100 : 60, 
           collected: false, 
-          isDiamond: isDiamond
+          isDiamond: isDiamond,
+          isNitro: isNitro
         });
       }
       
@@ -1706,10 +1780,10 @@
         if (o.type === "rock") drawRock(o.x, o.y); else drawCrow(o.x, o.y, frameCount);
         
         if (o.x < 20+22 && o.x+o.width > 20+2 && playerY+14 > o.y && playerY < o.y+o.height) { 
-          if (hitFlashFrames > 0) {
+          if (hitFlashFrames > 0 || nitroFrames > 0) {
           } else if (hellLives > 1) {
             hellLives--;
-            hitFlashFrames = 10; 
+            hitFlashFrames = 30; // 被弾後0.5秒の無敵 
             playSound('deflect');
           } else {
             endGame(false); 
@@ -1724,7 +1798,9 @@
         if(!c.collected){
           c.x -= gameSpeed; 
           
-          if (c.isDiamond) {
+          if (c.isNitro) {
+            drawNitro(c.x, c.y);
+          } else if (c.isDiamond) {
             drawDiamond(c.x, c.y); 
           } else {
             drawGanjaCoin(c.x, c.y);
@@ -1733,11 +1809,11 @@
           if (c.x < 20+28 && c.x > 20-5 && playerY+14 > c.y-9 && playerY-10 < c.y+9) { 
             c.collected = true;
             
-            let gainedScore = c.isDiamond ? 10 : coinValue;
+            let gainedScore = c.isNitro ? 0 : (c.isDiamond ? 10 : coinValue);
             score += gainedScore; 
             
             if(score > hiScore) hiScore = score; 
-            playSound('coin'); 
+            if (c.isNitro) { startNitro(); } else { playSound('coin'); } 
             
             if (score >= 150) { 
               score = 150;      
@@ -1789,7 +1865,9 @@
       
       coins.forEach(function(c) { 
         if (!c.collected) {
-          if (c.isDiamond) {
+          if (c.isNitro) {
+            drawNitro(c.x, c.y);
+          } else if (c.isDiamond) {
             drawDiamond(c.x, c.y);
           } else {
             drawGanjaCoin(c.x, c.y);
@@ -1821,6 +1899,7 @@
     }
 
     function endGame(isClear) {
+      nitroFrames = 0; stopNitroSound();
       gameOver = true;
       lastFrameTimestamp = null;
       isSaving = true;
