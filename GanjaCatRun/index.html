@@ -256,7 +256,7 @@
 
         <div id="rewardOverlay" class="overlay" style="display: none;">
           <h1 style="color:#ffd700; font-size: 24px; margin-bottom: 5px;">🎉 CLEAR!! 🎉</h1>
-          <p style="font-size: 11px; margin-bottom: 15px; color: #fff;">150点達成！報酬を獲得しました！</p>
+          <p style="font-size: 11px; margin-bottom: 15px; color: #fff;">ボスを倒した！報酬を獲得しました！</p>
           
           <div class="input-wrapper" style="width: 85%;">
             <input type="text" id="walletInput" placeholder="0x... (Wallet Address)" style="padding: 12px 15px; border: 2px solid #ffd700;">
@@ -1094,17 +1094,19 @@
     })();
 
     function drawNitro(x, y) {
-      const r = 17 + 3 * Math.sin(frameCount * 0.2);
+      const r = 19 + 3 * Math.sin(frameCount * 0.2);
       const gr = ctx.createRadialGradient(x, y, 0, x, y, r);
       gr.addColorStop(0, 'rgba(80,255,120,0.7)'); gr.addColorStop(1, 'rgba(80,255,120,0)');
       ctx.save();
       ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#9ca3af"; ctx.fillRect(x - 2, y - 10, 4, 3);
-      ctx.fillStyle = "#6b7280"; ctx.fillRect(x - 4, y - 8, 8, 2);
-      ctx.fillStyle = "#16a34a"; ctx.fillRect(x - 6, y - 6, 12, 14);
-      ctx.fillStyle = "#4ade80"; ctx.fillRect(x - 4, y - 5, 2, 12);
-      ctx.fillStyle = "#14532d"; ctx.fillRect(x - 6, y - 1, 12, 2);
-      ctx.strokeStyle = "#052e16"; ctx.lineWidth = 1; ctx.strokeRect(x - 6.5, y - 6.5, 13, 15);
+      ctx.fillStyle = "#052e16"; ctx.fillRect(x - 9, y - 8, 18, 21);
+      ctx.fillStyle = "#16a34a"; ctx.fillRect(x - 7, y - 6, 14, 17);
+      ctx.fillStyle = "#4ade80"; ctx.fillRect(x - 5, y - 5, 4, 14);
+      ctx.fillStyle = "#14532d"; ctx.fillRect(x - 7, y + 1, 14, 3);
+      ctx.fillStyle = "#052e16"; ctx.fillRect(x - 7, y - 12, 14, 5);
+      ctx.fillStyle = "#6b7280"; ctx.fillRect(x - 5, y - 11, 10, 3);
+      ctx.fillStyle = "#052e16"; ctx.fillRect(x - 3, y - 15, 6, 4);
+      ctx.fillStyle = "#d1d5db"; ctx.fillRect(x - 1, y - 14, 2, 2);
       ctx.restore();
     }
 
@@ -1329,6 +1331,7 @@
     }
     
     function resetGame() { 
+      bossReset();
       gameOver = false;
       isPaused = false; showLeaderboard = false; 
       score = 0; currentLevel = 1; playerY = 115; obstacles = [];
@@ -1678,6 +1681,379 @@
       }
     }
 
+    // ================= 👮 ボス戦（ポリスDOG） =================
+    const CLEAR_SCORE = 100;
+    const TEST_MODE = false;
+    const BOSS_BATTLE_FRAMES = 1800; // 30秒
+    const DOG_SAY = "You made it this far. You know too much. Now you die here.";
+    const CAT_SAY = "Found me... I have no choice but to fight...";
+    const boss = { active: false };
+    function bossReset() {
+      boss.active = false; boss.phase = 0; boss.t = 0; boss.robot = false; boss.dogGone = false;
+      boss.dogX = 270; boss.bullets = []; boss.parts = []; boss.rings = []; boss.shake = 0; boss.flash = 0; boss.hitFlash = 0; boss.muzzle = 0;
+      boss.pending = false; boss.fireAt = -1; boss.nextShot = 40; boss.laserT = 0; boss.laserCd = 30; boss.battleT = 0;
+      boss.beatN = 0; boss.beatT = 0; boss.beatInt = 60; boss.pulse = 0; boss.glow = 0; boss.speed0 = 3; boss.animF = 0;
+    }
+    bossReset();
+    function startBoss() {
+      bossReset();
+      boss.active = true;
+      boss.speed0 = gameSpeed > 0 ? gameSpeed : 3;
+      obstacles.length = 0; coins.length = 0;
+      nitroFrames = 0; stopNitroSound();
+    }
+    function bossTone(type, f0, f1, dur, vol, delay) {
+      const c = ensureAudioCtx(); if (!c) return;
+      if (c.state === 'suspended') c.resume().catch(function(){});
+      const t = c.currentTime + (delay || 0), o = c.createOscillator(), g = c.createGain();
+      o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur);
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + 0.02);
+    }
+    function bossNoise(dur, vol, cutoff) {
+      const c = ensureAudioCtx(); if (!c) return;
+      const len = Math.floor(c.sampleRate * dur), buf = c.createBuffer(1, len, c.sampleRate), d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      const s = c.createBufferSource(), lp = c.createBiquadFilter(), g = c.createGain(), t = c.currentTime;
+      lp.type = 'lowpass'; lp.frequency.value = cutoff; s.buffer = buf;
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      s.connect(lp); lp.connect(g); g.connect(c.destination); s.start(t);
+    }
+    function playThud() { bossTone('sine', 110, 36, 0.24, 0.5); bossNoise(0.12, 0.25, 320); }
+    function playGunshot() { bossNoise(0.28, 0.5, 900); bossTone('sine', 150, 32, 0.34, 0.7); bossTone('square', 300, 60, 0.08, 0.12); }
+    function playLaserSfx() { bossTone('sine', 3600, 1300, 0.07, 0.16); bossTone('sine', 1500, 1100, 0.22, 0.12, 0.05); bossTone('triangle', 3000, 2000, 0.1, 0.05, 0.02); }
+    function playDokun() { bossTone('sine', 85, 36, 0.24, 0.6); bossTone('sine', 60, 28, 0.2, 0.5, 0.02); }
+    function playBark() { bossTone('sawtooth', 260, 110, 0.13, 0.2); bossNoise(0.08, 0.15, 900); }
+    function playMeow() { bossTone('sine', 700, 1150, 0.08, 0.12); bossTone('sine', 1150, 600, 0.13, 0.12, 0.08); }
+    function playCount(big) { if (big) { bossTone('square', 1320, 1320, 0.4, 0.14); bossNoise(0.3, 0.3, 2500); playKirarin(); } else bossTone('square', 660, 660, 0.12, 0.12); }
+    function playTransformBoom() {
+      bossTone('sine', 200, 30, 0.7, 0.8); bossNoise(0.5, 0.5, 1500); bossTone('sawtooth', 400, 3200, 0.5, 0.1);
+      playKirarin(); setTimeout(playKirarin, 160); setTimeout(playKyuin, 120);
+    }
+
+    // 🤖 ガンジャキャットロボ：1ドット=3pxの太いドット絵（足は地面に接地）
+    function drawRobotCat(x, feetY, fr, air) {
+      const a = ctx, U = 2, oy = feetY - 19 * U;
+      const p = function(c, gx, gy, gw, gh) { a.fillStyle = c; a.fillRect(x + gx * U, oy + gy * U, gw * U, gh * U); };
+      const O = '#1e293b';
+      p('#94a3b8', -1, 14, 1, 1); p('#94a3b8', -2, 13, 1, 1); p('#94a3b8', -3, 11, 1, 2);
+      if (air) { p((fr % 4 < 2) ? '#fb923c' : '#fde047', 2, 19, 3, 2 + (fr % 2)); p('#fff', 3, 19, 1, 1); }
+      p(O, 1, 14, 3, 5); p('#475569', 2, 15, 1, 3); p(O, 6, 14, 3, 5); p('#475569', 7, 15, 1, 3);
+      p(O, 0, 18, 5, 1); p('#e2e8f0', 1, 18, 3, 1); p(O, 5, 18, 5, 1); p('#e2e8f0', 6, 18, 3, 1);
+      p(O, 0, 8, 10, 7); p('#cbd5e1', 1, 9, 8, 5);
+      p('#2563eb', -1, 8, 3, 4); p('#2563eb', 8, 8, 3, 4); p(O, -1, 8, 3, 1); p(O, 8, 8, 3, 1);
+      p('rgba(34,211,238,' + (0.7 + 0.3 * Math.sin(fr * 0.3)) + ')', 4, 10, 2, 2); p('#fff', 4, 10, 1, 1);
+      p(O, 1, 7, 8, 1);
+      p(O, 0, 1, 10, 7); p('#e2e8f0', 1, 2, 8, 5);
+      p(O, 0, -1, 3, 3); p(O, 7, -1, 3, 3); p('#22d3ee', 1, 0, 1, 1); p('#22d3ee', 8, 0, 1, 1);
+      p('#0f172a', 1, 3, 8, 2);
+      p('#22d3ee', 2, 3, 2, 2); p('#22d3ee', 6, 3, 2, 2); p('#fff', 2, 3, 1, 1); p('#fff', 6, 3, 1, 1);
+      const gr = a.createRadialGradient(x + 5 * U, oy + 4 * U, 0, x + 5 * U, oy + 4 * U, 10 * U);
+      gr.addColorStop(0, 'rgba(34,211,238,0.35)'); gr.addColorStop(1, 'rgba(34,211,238,0)');
+      a.fillStyle = gr; a.fillRect(x - 5 * U, oy - 5 * U, 20 * U, 20 * U);
+      // 銃（右手に構える）
+      p('#475569', 8, 10, 2, 2); p(O, 9, 9, 6, 4); p('#334155', 10, 10, 4, 2); p('#22d3ee', 12, 10, 3, 1); p(O, 10, 13, 2, 2); p('#67e8f9', 15, 10, 1, 2);
+    }
+    function robotMuzzle() { return { x: 20 + 16 * 2, y: (playerY + 18) - 38 + 11 * 2 }; }
+
+    // 👮 ポリスDOG（1.5倍。足元は地面 y=133）
+    function drawPoliceDog(X, fr, walking, muzzle, mouth) {
+      const a = ctx, s = 1.5, Y = 61, step = walking ? (Math.floor(fr / 10) % 2) : 0;
+      const r = function(c, lx, ly, lw, lh) { a.fillStyle = c; a.fillRect(Math.round(X + lx * s), Math.round(Y + ly * s), Math.max(1, Math.round(lw * s)), Math.max(1, Math.round(lh * s))); };
+      r('#1e3a8a', 10, 34, 8, 10 - step * 2); r('#1e3a8a', 22, 34, 8, 10 - (1 - step) * 2);
+      r('#111', 8, 44 - step * 2, 12, 4); r('#111', 20, 44 - (1 - step) * 2, 12, 4);
+      r('#1e3a8a', 7, 17, 27, 19); r('#2748a8', 9, 18, 23, 3);
+      r('#111', 7, 31, 27, 3); r('#fbbf24', 18, 31, 5, 3);
+      r('#fbbf24', 24, 22, 5, 5); r('#fde68a', 26, 23, 1, 3);
+      r('#1e3a8a', 31, 20, 6, 12); r('#c9a26b', 31, 31, 6, 4);
+      r('#a67c52', 3, 3, 29, 17); r('#c9a26b', 3, 7, 13, 11);
+      if (mouth) { r('#5a1a1a', 3, 17, 29, 3); r('#8a6340', 3, 20, 29, 5); } else { r('#8a6340', 3, 17, 29, 5); }
+      r('#111', 2, 8, 5, 4);
+      r('#fff', 4, 14, 3, 5); r('#fff', 12, 14, 3, 5);
+      r('#3b2412', 17, 4, 9, 2);
+      const gr = a.createRadialGradient(X + 20 * s, Y + 8 * s, 0, X + 20 * s, Y + 8 * s, 8 * s);
+      gr.addColorStop(0, 'rgba(255,40,40,0.55)'); gr.addColorStop(1, 'rgba(255,40,40,0)');
+      a.fillStyle = gr; a.fillRect(X + 11 * s, Y, 18 * s, 16 * s);
+      r('#ff1a1a', 17, 6, 6, 4); r('#fff', 18, 7, 2, 1);
+      r('#6b4a2b', 28, 4, 6, 10);
+      r('#0b1f4a', 6, -4, 24, 7); r('#000', 2, 1, 22, 3); r('#fbbf24', 16, -2, 6, 4);
+      a.strokeStyle = '#1e3a8a'; a.lineWidth = 5 * s; a.beginPath(); a.moveTo(X + 10 * s, Y + 22 * s); a.lineTo(X - 2 * s, Y + 27 * s); a.stroke();
+      r('#c9a26b', -5, 25, 5, 5);
+      r('#111', -16, 24, 12, 3); r('#2a2a2a', -8, 24, 8, 5); r('#2a2a2a', -5, 28, 3, 4);
+      if (muzzle > 0) { r('#fde047', -24, 21, 8, 8); r('#fff', -22, 23, 4, 4); }
+    }
+    function dogMuzzle() { return { x: boss.dogX - 24, y: 61 + 25.5 * 1.5 }; }
+
+    function bossBurst(x, y, n, cols, spd) {
+      for (let i = 0; i < n; i++) {
+        const an = Math.random() * Math.PI * 2, v = Math.random() * spd;
+        boss.parts.push({ x: x, y: y, vx: Math.cos(an) * v, vy: Math.sin(an) * v - 1, life: 30 + Math.random() * 30, size: 2 + Math.random() * 4, color: cols[Math.floor(Math.random() * cols.length)] });
+      }
+    }
+    function bossRobotDie() {
+      const b = boss;
+      b.phase = 9; b.t = 0; b.robot = false; b.bullets.length = 0; b.laserT = 0;
+      b.flash = 1; b.shake = 18; playSound('explosion'); setTimeout(function() { bossTone('sine', 140, 28, 0.5, 0.7); bossNoise(0.4, 0.4, 1200); }, 150);
+      bossBurst(36, playerY - 10, 130, ['#fff', '#fde047', '#fb923c', '#ef4444', '#22d3ee', '#cbd5e1', '#2563eb'], 8);
+      b.rings.push({ r: 5, a: 1, w: 4, c: '255,200,80' });
+    }
+    function bossHurt() {
+      if (hitFlashFrames > 0) return false;
+      if (hellLives > 1) { hellLives--; hitFlashFrames = 30; playSound('deflect'); return false; }
+      hellLives = 0; bossRobotDie(); return true;
+    }
+    function bossTestClear() {
+      gameOver = true; isSaving = false;
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, 240, 160);
+      ctx.textAlign = 'center'; ctx.fillStyle = '#ffd700'; ctx.font = "bold 18px 'Courier New'"; ctx.fillText('TEST CLEAR!', 120, 70);
+      ctx.fillStyle = '#fff'; ctx.font = "bold 10px 'Courier New'"; ctx.fillText('A / SPACE : REPLAY', 120, 95); ctx.textAlign = 'left';
+    }
+    function bossWrap(text, maxc) {
+      const w = text.split(' '), lines = []; let cur = '';
+      w.forEach(function(x) { if ((cur + ' ' + x).trim().length > maxc) { lines.push(cur); cur = x; } else cur = (cur + ' ' + x).trim(); });
+      if (cur) lines.push(cur); return lines;
+    }
+    function bossSubtitle(name, color, text, chars) {
+      ctx.fillStyle = 'rgba(0,0,0,0.78)'; ctx.fillRect(4, 124, 232, 33);
+      ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.strokeRect(4.5, 124.5, 231, 32);
+      ctx.font = "bold 8px 'Courier New'"; ctx.fillStyle = color; ctx.fillText(name, 9, 134);
+      ctx.fillStyle = '#fff';
+      let rem = chars;
+      bossWrap(text, 36).forEach(function(l, i) { ctx.fillText(l.slice(0, Math.max(0, rem)), 9, 144 + i * 10); rem -= l.length + 1; });
+    }
+
+    // 🕹️ ファミコン風のカクカクしたドット文字（5x7）
+    const PIX_FONT = {
+      '3': ['01110','10001','00001','00110','00001','10001','01110'],
+      '2': ['01110','10001','00001','00010','00100','01000','11111'],
+      '1': ['00100','01100','00100','00100','00100','00100','01110'],
+      'S': ['01111','10000','10000','01110','00001','00001','11110'],
+      'U': ['10001','10001','10001','10001','10001','10001','01110'],
+      'R': ['11110','10001','10001','11110','10100','10010','10001'],
+      'V': ['10001','10001','10001','10001','10001','01010','00100'],
+      'I': ['01110','00100','00100','00100','00100','00100','01110'],
+      'E': ['11111','10000','10000','11110','10000','10000','11111'],
+      '!': ['00100','00100','00100','00100','00100','00000','00100']
+    };
+    function drawPixelText(text, cx, cy, px, fill, line) {
+      const x0 = Math.round(cx - (text.length * 6 * px - px) / 2), y0 = Math.round(cy - 3.5 * px);
+      [fill].forEach(function(col, pass) {
+        ctx.fillStyle = col;
+        for (let k = 0; k < text.length; k++) {
+          const g = PIX_FONT[text[k]]; if (!g) continue;
+          for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) {
+            if (g[r][c] !== '1') continue;
+            const x = x0 + k * 6 * px + c * px, y = y0 + r * px;
+            ctx.fillRect(x, y, px, px);
+          }
+        }
+      });
+    }
+
+    function bossFrame() {
+      const b = boss; b.t++;
+      if (b.robot) currentStamina = maxStamina;
+      else if (currentStamina < maxStamina) { currentStamina += staminaRecoveryRate; if (currentStamina > maxStamina) currentStamina = maxStamina; }
+      if (jumpBufferCounter > 0) jumpBufferCounter--;
+      if (hitFlashFrames > 0) hitFlashFrames--;
+      if (b.hitFlash > 0) b.hitFlash--;
+      if (b.muzzle > 0) b.muzzle--;
+      if (b.flash > 0) b.flash -= 0.05;
+      if (b.pulse > 0) b.pulse -= 0.08;
+      let walking = false, dogMouth = false, catMouth = false, sub = null, countText = null;
+      const feetY = playerY + 18;
+
+      if (b.phase === 0) {            // ① 障害物が消え、だんだん止まる
+        gameSpeed = Math.max(0, b.speed0 * (1 - b.t / 100));
+        b.animF += gameSpeed / b.speed0;
+        if (b.t >= 100) { b.phase = 1; b.t = 0; gameSpeed = 0; stopBgm(); }
+      } else if (b.phase === 1) {     // ② BGM停止→ポリスDOG登場（ドスンドスン）
+        gameSpeed = 0;
+        b.dogX = Math.max(184, 270 - 1.1 * b.t);
+        walking = b.dogX > 184;
+        if (walking && b.t % 20 === 1) { playThud(); b.shake = 5; }
+        if (b.t >= 100) { b.phase = 2; b.t = 0; }
+      } else if (b.phase === 2) {     // ③ ポリスDOGのセリフ（口パク＋ワンワン）
+        const chars = Math.min(DOG_SAY.length, Math.floor(b.t / 3)), talking = chars < DOG_SAY.length;
+        dogMouth = talking && (b.t % 12 < 6);
+        if (talking && b.t % 36 === 2) playBark();
+        sub = ['POLICE DOG', '#ff6b6b', DOG_SAY, chars];
+        if (b.t >= Math.round((DOG_SAY.length * 2 + 50) * 2.5)) { b.phase = 3; b.t = 0; }
+      } else if (b.phase === 3) {     // ④ ガンジャキャットのセリフ（口パク＋ニャンニャン）
+        const chars = Math.min(CAT_SAY.length, Math.floor(b.t / 3)), talking = chars < CAT_SAY.length;
+        catMouth = talking && (b.t % 12 < 6);
+        if (talking && b.t % 36 === 2) playMeow();
+        sub = ['GANJA CAT', '#7dd3fc', CAT_SAY, chars];
+        if (b.t >= Math.round((CAT_SAY.length * 2 + 50) * 2.5)) { b.phase = 4; b.t = 0; startBgm(); }
+      } else if (b.phase === 4) {     // ⑤ BGMを頭から再生＋派手に変身
+        b.glow = Math.min(1, b.t / 105);
+        if (b.t === 1 || b.t === 30 || b.t === 60) playKirarin();
+        if (b.t === 60) playKyuin();
+        if (b.t % 14 === 0 && b.t < 105) b.rings.push({ r: 4, a: 0.9, w: 2, c: '120,225,255' });
+        if (b.t % 2 === 0 && b.t < 105) bossBurst(34 + (Math.random() - 0.5) * 36, playerY + (Math.random() - 0.5) * 36, 1, ['#fff', '#67e8f9', '#fde047'], 1.6);
+        if (b.t === 108) {
+          b.robot = true; b.flash = 1.6; b.shake = 14; playTransformBoom();
+          bossBurst(34, playerY - 10, 110, ['#fff', '#22d3ee', '#a5f3fc', '#fde047'], 6);
+          b.rings.push({ r: 5, a: 1, w: 4, c: '255,255,255' }, { r: 2, a: 1, w: 3, c: '120,225,255' });
+        }
+        if (b.t >= 150) { b.phase = 5; b.t = 0; b.glow = 0; }
+      } else if (b.phase === 5) {     // ⑥ カウントダウン 3,2,1,SURVIVE!!!
+        const seg = Math.floor(b.t / 50);
+        if (b.t % 50 === 1 && seg < 3) playCount(false);
+        if (b.t === 151) playCount(true);
+        countText = seg < 3 ? String(3 - seg) : 'SURVIVE!!!';
+        if (b.t >= 230) { b.phase = 6; b.t = 0; b.nextShot = 40; }
+      } else if (b.phase === 6) {     // ⑦ 戦闘（30秒）
+        b.battleT++;
+        if (!b.pending && b.battleT >= b.nextShot) {
+          b.pending = true; b.fireAt = b.battleT + 14;
+          b.nextShot = b.battleT + 14 + 45 + Math.floor(Math.random() * 50);
+        }
+        if (b.pending && b.battleT >= b.fireAt) {
+          b.pending = false; b.muzzle = 4; playGunshot();
+          const m = dogMuzzle(), sp = (4 + 1.6 * (b.battleT / BOSS_BATTLE_FRAMES)) * 0.8, sl = [0, 0, 0.2, -0.2, 0.35, -0.35][Math.floor(Math.random() * 6)];
+          b.bullets.push({ x: m.x, y: m.y, vx: -sp, vy: -sp * sl });
+        }
+        if (--b.laserCd <= 0) {
+          b.laserCd = 60; b.laserT = 8; b.hitFlash = 5; playLaserSfx();
+          bossBurst(b.dogX + 30, 91, 6, ['#a5f3fc', '#fff', '#22d3ee'], 2.5);
+        }
+        if (b.laserT > 0) b.laserT--;
+        const top = feetY - 36, bottom = feetY - 2;
+        for (let i = b.bullets.length - 1; i >= 0; i--) {
+          const bl = b.bullets[i]; bl.x += bl.vx; bl.y += bl.vy;
+          if (bl.x - 10 < 38 && bl.x + 10 > 22 && bl.y + 4 > top && bl.y - 4 < bottom) {
+            b.bullets.splice(i, 1);
+            if (bossHurt()) return;
+          } else if (bl.x < -20 || bl.y < -20 || bl.y > 180) b.bullets.splice(i, 1);
+        }
+        if (b.battleT >= BOSS_BATTLE_FRAMES) { b.phase = 7; b.t = 0; b.bullets.length = 0; b.laserT = 0; b.beatT = 0; b.beatInt = 60; }
+      } else if (b.phase === 7) {     // ⑧ 赤く発光しドクン…が加速して爆散
+        b.beatT++;
+        if (b.beatT >= b.beatInt) {
+          b.beatT = 0; b.beatN++; playDokun(); b.pulse = 1; b.shake = Math.min(7, 1 + b.beatN * 0.5);
+          b.beatInt = Math.max(6, b.beatInt * 0.8);
+          if (b.beatN >= 14) {
+            b.phase = 8; b.t = 0; b.dogGone = true; b.flash = 1; b.shake = 18; playSound('explosion');
+            bossBurst(b.dogX + 30, 100, 130, ['#fff', '#fde047', '#fb923c', '#ef4444', '#7f1d1d', '#1e3a8a'], 8);
+            b.rings.push({ r: 5, a: 1, w: 4, c: '255,120,60' });
+          }
+        }
+      } else if (b.phase === 8) {     // ⑨ 余韻のあとクリア
+        if (b.t >= 100) {
+          b.active = false;
+          if (TEST_MODE) { bossTestClear(); } else { score = CLEAR_SCORE; endGame(true); }
+          return;
+        }
+      } else if (b.phase === 9) {     // ✖ ロボ爆散 → ゲームオーバー
+        if (b.t >= 90) {
+          b.active = false; gameOver = true; lastFrameTimestamp = null; isSaving = true;
+          score = CLEAR_SCORE - 1; // ボスに負けた記録を「クリア済み」と誤判定させないため、1点引いて保存
+          showGameOverUI(false);
+          return;
+        }
+      }
+
+      // ---- 描画 ----
+      ctx.fillStyle = bgColor(); ctx.fillRect(0, 0, 240, 160);
+      ctx.save();
+      if (b.shake > 0) { ctx.translate((Math.random() - 0.5) * b.shake, (Math.random() - 0.5) * b.shake); b.shake -= 0.5; }
+      drawClouds(); drawGround();
+      if (!b.dogGone) {
+        const jx = (b.phase === 7) ? (Math.random() - 0.5) * Math.min(5, b.beatN * 0.5) : 0;
+        if (b.phase === 7) {
+          const cx = b.dogX + 30, r = 50 + b.pulse * 30, al = 0.25 + 0.15 * Math.min(1, b.beatN / 14) + 0.45 * Math.max(0, b.pulse);
+          const gr = ctx.createRadialGradient(cx, 100, 0, cx, 100, r);
+          gr.addColorStop(0, 'rgba(255,40,40,' + al + ')'); gr.addColorStop(1, 'rgba(255,40,40,0)');
+          ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, 100, r, 0, Math.PI * 2); ctx.fill();
+        }
+        drawPoliceDog(b.dogX + jx, frameCount, walking, b.muzzle, dogMouth);
+        if (b.hitFlash > 0) { ctx.globalCompositeOperation = 'lighter'; drawPoliceDog(b.dogX, frameCount, false, 0, false); ctx.globalCompositeOperation = 'source-over'; }
+      }
+      // 変身の光（柱・光線・リング）
+      if (b.phase === 4 && !b.robot) {
+        const cx = 34, cy = playerY + 2, g = b.glow;
+        ctx.fillStyle = 'rgba(150,240,255,' + (0.25 * g) + ')'; ctx.fillRect(cx - 8, 0, 16, cy);
+        ctx.strokeStyle = 'rgba(255,255,255,' + (0.4 * g) + ')'; ctx.lineWidth = 2;
+        for (let i = 0; i < 12; i++) { const an = b.t * 0.05 + i * Math.PI / 6, R = 25 + g * 45; ctx.beginPath(); ctx.moveTo(cx + Math.cos(an) * 12, cy + Math.sin(an) * 12); ctx.lineTo(cx + Math.cos(an) * R, cy + Math.sin(an) * R); ctx.stroke(); }
+        const r = 10 + g * 32, gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        gr.addColorStop(0, 'rgba(255,255,255,' + (0.4 + 0.5 * g) + ')'); gr.addColorStop(0.5, 'rgba(120,225,255,' + (0.3 + 0.4 * g) + ')'); gr.addColorStop(1, 'rgba(120,225,255,0)');
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+      }
+      // プレイヤー
+      if (hitFlashFrames > 0) ctx.globalAlpha = 0.45;
+      if (b.robot) drawRobotCat(20, feetY, frameCount, playerY < 115);
+      else if (b.phase !== 9) {
+        drawGanjaCat(20, playerY, playerY < 115 ? 'jump' : 'run', Math.floor(b.animF) + 1);
+        if (catMouth) { const bst = (visualMode === 'BOOST'), hx = bst ? 25 : 36, hy = bst ? playerY - 14 : playerY - 10; ctx.fillStyle = '#4a0e0e'; ctx.fillRect(hx + 5, hy + 8, 5, 3); }
+      }
+      ctx.globalAlpha = 1;
+      // 弾丸（2倍サイズ）
+      b.bullets.forEach(function(bl) {
+        ctx.save(); ctx.translate(bl.x, bl.y); ctx.rotate(Math.atan2(bl.vy, bl.vx) + Math.PI);
+        ctx.fillStyle = '#e0b030'; ctx.fillRect(2, -4, 14, 8);
+        ctx.fillStyle = '#b87333'; ctx.fillRect(-8, -4, 10, 8); ctx.fillRect(-10, -2, 2, 4);
+        ctx.fillStyle = '#7a4a1e'; ctx.fillRect(14, -4, 2, 8);
+        ctx.fillStyle = '#fff6c4'; ctx.fillRect(3, -3, 9, 2);
+        ctx.restore();
+      });
+      // レーザー（ロボの銃口から）
+      if (b.laserT > 0 && b.phase === 6) {
+        const m = robotMuzzle();
+        ctx.save(); ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = 8; ctx.lineCap = 'butt';
+        ctx.strokeStyle = '#67e8f9'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(b.dogX + 30, 91); ctx.stroke();
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.restore();
+      }
+      // リング・パーティクル
+      for (let i = b.rings.length - 1; i >= 0; i--) {
+        const rg = b.rings[i]; rg.r += 3.5; rg.a -= 0.02;
+        if (rg.a <= 0) { b.rings.splice(i, 1); continue; }
+        const rc = (rg.c === '120,225,255' && b.phase === 4 && !b.robot) ? 34 : 34;
+        ctx.strokeStyle = 'rgba(' + rg.c + ',' + rg.a + ')'; ctx.lineWidth = rg.w;
+        ctx.beginPath(); ctx.arc(rc, (b.phase === 9 ? playerY - 10 : (b.phase >= 7 ? 100 : playerY - 4)) , rg.r, 0, Math.PI * 2); ctx.stroke();
+      }
+      for (let i = b.parts.length - 1; i >= 0; i--) {
+        const p = b.parts[i]; p.x += p.vx; p.y += p.vy; p.vy += 0.15; p.life--;
+        if (p.life <= 0) { b.parts.splice(i, 1); continue; }
+        ctx.fillStyle = p.color; ctx.fillRect(Math.round(p.x), Math.round(p.y), Math.round(p.size), Math.round(p.size));
+      }
+      ctx.restore();
+      // HUD
+      if (b.phase >= 6 && b.phase <= 8 || b.phase === 9) {
+        const hp = (b.phase === 6) ? 1 - b.battleT / BOSS_BATTLE_FRAMES : (b.phase === 9 ? 1 - Math.min(1, b.battleT / BOSS_BATTLE_FRAMES) : 0);
+        ctx.fillStyle = '#000'; ctx.font = "bold 11px 'Courier New'"; ctx.fillText('BOSS', 5, 18);
+        ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(38, 10, 110, 8);
+        ctx.fillStyle = (hp > 0.3) ? '#ef4444' : '#f97316'; ctx.fillRect(39, 11, 108 * hp, 6);
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(38.5, 10.5, 109, 7);
+        drawLives();
+      } else {
+        ctx.fillStyle = (visualMode === 'HELL') ? '#ff0000' : '#000'; ctx.font = "bold 11px 'Courier New'";
+        ctx.fillText('SCORE:' + score + ' HI:' + hiScore + ' LV:' + currentLevel, 5, 18);
+        if (b.phase <= 3 || b.phase === 4) { if (!b.robot) drawStaminaBar(); else drawLives(); } else drawLives();
+      }
+      if (b.phase === 1 && b.t < 80 && Math.floor(b.t / 8) % 2 === 0) {
+        ctx.fillStyle = '#ef4444'; ctx.font = "bold 14px 'Courier New'"; ctx.textAlign = 'center'; ctx.fillText('WARNING!!', 120, 48); ctx.textAlign = 'left';
+        ctx.fillStyle = 'rgba(239,68,68,0.18)'; ctx.fillRect(0, 0, 240, 160);
+      }
+      if (sub) bossSubtitle(sub[0], sub[1], sub[2], sub[3]);
+      if (countText) {
+        const segT = b.t % 50;
+        if (countText === 'SURVIVE!!!') drawPixelText(countText, 120, 74, 3, '#ffffff', null);
+        else drawPixelText(countText, 120, 72, segT < 6 ? 10 : 8, '#ffffff', null);
+      }
+      if (b.flash > 0) { ctx.fillStyle = 'rgba(255,255,255,' + Math.min(1, b.flash) + ')'; ctx.fillRect(0, 0, 240, 160); }
+      // 重力・着地
+      playerVelocityY += 1.0; playerY += playerVelocityY;
+      if (playerY >= 115) {
+        playerY = 115; playerVelocityY = 0; isJumping = false;
+        if (jumpBufferCounter > 0 && currentStamina >= 1) {
+          playerVelocityY = -12.3; isJumping = true; currentStamina -= 1; jumpBufferCounter = 0; playSound('jump');
+        }
+      }
+    }
+
+
     function gameLoop() {
       if (gameOver || isPaused || isReviving) return;
 
@@ -1689,7 +2065,8 @@
       lastFrameTimestamp = nowTs;
 
       frameCount++;
-      
+      if (boss.active) { bossFrame(); requestAnimationFrame(gameLoop); return; }
+
       // 先行入力カウンターの更新
       if (jumpBufferCounter > 0) {
         jumpBufferCounter--;
@@ -1815,10 +2192,11 @@
             if(score > hiScore) hiScore = score; 
             if (c.isNitro) { startNitro(); } else { playSound('coin'); } 
             
-            if (score >= 150) { 
-              score = 150;      
-              if (gameMode === 'HELL') currentLevel = 2; else currentLevel = 10;
-              endGame(true);
+            if (score >= CLEAR_SCORE) {
+              score = CLEAR_SCORE;
+              currentLevel = Math.min(10, Math.floor(score / 10) + 1);
+              startBoss();
+              requestAnimationFrame(gameLoop);
               return;
             }
           }
