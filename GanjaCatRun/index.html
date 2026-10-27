@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>GanjaCatRun</title>
+  <title>GCR ADMIN</title>
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われる名前(titleより優先される) -->
   <meta name="apple-mobile-web-app-title" content="GanjaCatRun">
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われるアイコン -->
@@ -255,8 +255,8 @@
         </div>
 
         <div id="rewardOverlay" class="overlay" style="display: none;">
-          <h1 style="color:#ffd700; font-size: 24px; margin-bottom: 5px;">🎉 CLEAR!! 🎉</h1>
-          <p style="font-size: 11px; margin-bottom: 15px; color: #fff;">ボスを倒した！報酬を獲得しました！</p>
+          <h1 style="color:#ffd700; font-size: 20px; margin-bottom: 4px;">🎉 CLEAR!! 🎉</h1>
+          <p style="font-size: 10px; margin-bottom: 8px; color: #fff;">Boss defeated! You can claim your reward!</p>
           
           <div class="input-wrapper" style="width: 85%;">
             <input type="text" id="walletInput" placeholder="0x... (Wallet Address)" style="padding: 12px 15px; border: 2px solid #ffd700;">
@@ -266,6 +266,11 @@
             <button id="btnClaim" class="start-btn" style="background: #ffd700; color: #000; box-shadow: 0 4px 0 #b8860b; font-weight: bold;">
               CLAIM REWARD & SAVE
             </button>
+          </div>
+
+          <div style="width: 85%; margin-top: 8px; font-size: 8px; line-height: 1.4; color: #fff; text-align: left;">
+            <p style="margin: 0 0 3px 0;">&bull; Please take a screenshot of this screen in case of bugs.</p>
+            <p style="margin: 0;">&bull; Your reward will arrive in a few minutes.</p>
           </div>
         </div>
 
@@ -337,7 +342,9 @@
     let hitFlashFrames = 0;
     let gameMode = 'NORMAL';
     let visualMode = 'NORMAL'; // 見た目だけ NORMAL → BOOST(LV3) → HELL(LV6) と変化
-    function bgColor() { return visualMode === 'HELL' ? "#450c0c" : visualMode === 'GOLD' ? "#a07f12" : "#8b956d"; }
+    function bgColor() { return visualMode === 'HELL' ? "#450c0c" : visualMode === 'ZOMBIE' ? "#6a5590" : visualMode === 'GOLD' ? "#a07f12" : "#8b956d"; }
+    const ADMIN_MODE = true; // 運営専用：ライフ無限（公開禁止）
+    let smokeParts = [];
     let nitroFrames = 0, nitroNodes = []; const NITRO_TOTAL = 240; // 4秒
     let powerFlash = 0, powerFlashMax = 30, powerFlashColor = '110,225,255';
     let coinValue = 1;
@@ -360,9 +367,7 @@
     for(let i=0; i<30; i++) groundDots.push({x: Math.random()*240, y: 135 + Math.random()*20, width: 1 + Math.random()*3});
     let particles = [];
     let isExploding = false;
-    
-    const ADMIN_MODE = true;
-    
+
     let isMusicOn = true;
 
     let isReviving = false;
@@ -496,6 +501,21 @@
         o.connect(gn); gn.connect(c.destination);
         o.start(t); o.stop(t + d); vib.start(t); vib.stop(t + d);
       });
+    }
+    // 🧟 ZOMBIE: 「ドロドロドロ！」と鳴る、泡立つような低い音
+    function playDoro() {
+      const c = ensureAudioCtx();
+      if (!c) return;
+      if (c.state === 'suspended') c.resume().catch(function(){});
+      const t = c.currentTime, d = 1.3;
+      const o = c.createOscillator(), g = c.createGain(), lp = c.createBiquadFilter(), lfo = c.createOscillator(), lg = c.createGain();
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(70, t); o.frequency.exponentialRampToValueAtTime(40, t + d);
+      lp.type = 'lowpass'; lp.frequency.value = 300;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35, t + 0.1); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      lfo.frequency.value = 16; lg.gain.value = 0.25; lfo.connect(lg); lg.connect(g.gain);
+      o.connect(lp); lp.connect(g); g.connect(c.destination);
+      o.start(t); o.stop(t + d); lfo.start(t); lfo.stop(t + d);
+      for (let i = 0; i < 9; i++) bossTone('sine', 260 + Math.random() * 140, 90, 0.11, 0.2, i * 0.1);
     }
     // 🔥 HELL: 「ゴゴゴゴ！！」と鳴る、地鳴りのような低い音
     function playRumble() {
@@ -895,6 +915,15 @@
     }
 
     function drawGanjaCat(x, y, state, frame) {
+      if (!isExploding && (visualMode === 'ZOMBIE' || smokeParts.length)) {
+        if (visualMode === 'ZOMBIE' && gameSpeed > 0 && frameCount % 2 === 0) smokeParts.push({ x: x + 4 + Math.random() * 4, y: y + 4 + Math.random() * 8, r: 3 + Math.random() * 2, life: 34 });
+        for (let i = smokeParts.length - 1; i >= 0; i--) {
+          const sp = smokeParts[i]; sp.x -= Math.max(0.6, gameSpeed * 0.7); sp.y -= 0.25; sp.r += 0.12; sp.life--;
+          if (sp.life <= 0) { smokeParts.splice(i, 1); continue; }
+          ctx.fillStyle = 'rgba(110,230,80,' + (0.5 * sp.life / 34) + ')';
+          ctx.beginPath(); ctx.arc(sp.x, sp.y, sp.r, 0, Math.PI * 2); ctx.fill();
+        }
+      }
       if (powerFlash > 0 && !isExploding) {
         const a = powerFlash / powerFlashMax, k = 1 - a, cx = x + 14, cy = y + 2, r = 16 + 26 * k;
         const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
@@ -916,6 +945,13 @@
         ctx.save(); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
       }
       drawGanjaCatBase(x, y, state, frame);
+      if (visualMode === 'ZOMBIE' && !isExploding && state !== 'hit') {
+        const zx = x + 5, zy = y - 14;
+        ctx.fillStyle = '#ff1a1a'; ctx.fillRect(zx + 2, zy + 2, 4, 4); ctx.fillRect(zx + 7, zy + 2, 4, 4);
+        ctx.fillStyle = '#3a0000'; ctx.fillRect(zx + 3, zy + 3, 2, 2); ctx.fillRect(zx + 8, zy + 3, 2, 2);
+        ctx.fillStyle = '#2a0a0a'; ctx.fillRect(zx + 3, zy + 7, 7, 5);
+        ctx.fillStyle = '#d0102a'; ctx.fillRect(zx + 4, zy + 8, 5, 3);
+      }
       if (nitroFrames > 0 && !isExploding) {
         const s = nitroFrames < 30 ? nitroFrames / 30 : 1, cx = x + 14, cy = y + 2, cols = ['#22c55e', '#86efac', '#bbf7d0'];
         for (let k = 0; k < 10; k++) {
@@ -942,11 +978,12 @@
       if (isExploding) return; 
       
       const isHell = (visualMode === 'HELL');
-      const isBoost = (visualMode === 'BOOST');
+      const isZombie = (visualMode === 'ZOMBIE');
+      const isBoost = (visualMode === 'BOOST' || isZombie);
 
       const isGold = (visualMode === 'GOLD');
-      const bodyColor = isHell ? "#1a1a1a" : isGold ? "#FFD700" : "#87CEEB"; 
-      const stripeColor = isHell ? "#333333" : isGold ? "#B8860B" : "#4169E1";  
+      const bodyColor = isHell ? "#1a1a1a" : isGold ? "#FFD700" : isZombie ? "#6fae3c" : "#87CEEB"; 
+      const stripeColor = isHell ? "#333333" : isGold ? "#B8860B" : isZombie ? "#3f6b22" : "#4169E1";  
       const eyeColor = isHell ? "#ff0000" : "#ffffff";
       const subEyeColor = isHell ? "#990000" : isGold ? "#fff3a0" : "#00FFFF";
 
@@ -984,7 +1021,7 @@
         ctx.fillStyle = "#9370DB"; ctx.fillRect(hx + 8, hy + 3, 1, 1); 
       }
 
-      if (state !== 'hit') {
+      if (state !== 'hit' && !isZombie) {
         if (isBoost) {
           ctx.fillStyle = isHell ? "#333" : "#ffffff"; ctx.fillRect(hx + 10, hy + 8, 6, 2); 
           ctx.fillStyle = "#ff0000"; ctx.fillRect(hx + 15, hy + 8, 1, 2); 
@@ -1101,14 +1138,11 @@
       gr.addColorStop(0, 'rgba(80,255,120,0.7)'); gr.addColorStop(1, 'rgba(80,255,120,0)');
       ctx.save();
       ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#052e16"; ctx.fillRect(x - 9, y - 8, 18, 21);
-      ctx.fillStyle = "#16a34a"; ctx.fillRect(x - 7, y - 6, 14, 17);
-      ctx.fillStyle = "#4ade80"; ctx.fillRect(x - 5, y - 5, 4, 14);
-      ctx.fillStyle = "#14532d"; ctx.fillRect(x - 7, y + 1, 14, 3);
-      ctx.fillStyle = "#052e16"; ctx.fillRect(x - 7, y - 12, 14, 5);
-      ctx.fillStyle = "#6b7280"; ctx.fillRect(x - 5, y - 11, 10, 3);
-      ctx.fillStyle = "#052e16"; ctx.fillRect(x - 3, y - 15, 6, 4);
-      ctx.fillStyle = "#d1d5db"; ctx.fillRect(x - 1, y - 14, 2, 2);
+      ctx.fillStyle = "#16a34a"; ctx.fillRect(x - 8, y - 7, 16, 19);
+      ctx.fillStyle = "#4ade80"; ctx.fillRect(x - 6, y - 6, 4, 15);
+      ctx.fillStyle = "#14532d"; ctx.fillRect(x - 8, y + 1, 16, 3);
+      ctx.fillStyle = "#6b7280"; ctx.fillRect(x - 6, y - 11, 12, 5);
+      ctx.fillStyle = "#d1d5db"; ctx.fillRect(x - 2, y - 15, 4, 4);
       ctx.restore();
     }
 
@@ -1132,7 +1166,7 @@
     }
 
     function drawClouds() {
-      ctx.fillStyle = (visualMode === 'HELL') ? "rgba(255, 100, 100, 0.15)" : (visualMode === 'GOLD') ? "rgba(255, 235, 140, 0.35)" : "rgba(255, 255, 255, 0.4)";
+      ctx.fillStyle = (visualMode === 'HELL') ? "rgba(255, 100, 100, 0.15)" : (visualMode === 'ZOMBIE') ? "rgba(225, 205, 255, 0.35)" : (visualMode === 'GOLD') ? "rgba(255, 235, 140, 0.35)" : "rgba(255, 255, 255, 0.4)";
       clouds.forEach(function(c) {
         ctx.fillRect(c.x, c.y, c.width, 10);
         ctx.fillRect(c.x + 5, c.y - 5, c.width - 10, 5);
@@ -1148,7 +1182,7 @@
     function drawGround() {
       ctx.fillStyle="#444"; ctx.fillRect(0, 133, 240, 27); 
       ctx.fillRect(0, 133, 240, 2);
-      ctx.fillStyle = (visualMode === 'HELL') ? "#111" : (visualMode === 'GOLD') ? "#3a2c00" : "#222";
+      ctx.fillStyle = (visualMode === 'HELL') ? "#111" : (visualMode === 'ZOMBIE') ? "#2a1a3a" : (visualMode === 'GOLD') ? "#3a2c00" : "#222";
       groundDots.forEach(function(d) {
         ctx.fillRect(d.x, d.y, d.width, 2);
         if (!isPaused && !gameOver && !isReviving) d.x -= gameSpeed;
@@ -1359,7 +1393,7 @@
       const rewardOverlay = document.getElementById("rewardOverlay");
       if (rewardOverlay) rewardOverlay.style.display = "none";
 
-      visualMode = 'NORMAL'; powerFlash = 0; nitroFrames = 0; stopNitroSound();
+      visualMode = 'NORMAL'; powerFlash = 0; nitroFrames = 0; stopNitroSound(); smokeParts.length = 0;
       hellLives = 3;
       hitFlashFrames = 0;
       isExploding = false;
@@ -1737,24 +1771,22 @@
     function drawRobotCat(x, feetY, fr, air) {
       const a = ctx, U = 2, oy = feetY - 19 * U;
       const p = function(c, gx, gy, gw, gh) { a.fillStyle = c; a.fillRect(x + gx * U, oy + gy * U, gw * U, gh * U); };
-      const O = '#1e293b';
       p('#94a3b8', -1, 14, 1, 1); p('#94a3b8', -2, 13, 1, 1); p('#94a3b8', -3, 11, 1, 2);
       if (air) { p((fr % 4 < 2) ? '#fb923c' : '#fde047', 2, 19, 3, 2 + (fr % 2)); p('#fff', 3, 19, 1, 1); }
-      p(O, 1, 14, 3, 5); p('#475569', 2, 15, 1, 3); p(O, 6, 14, 3, 5); p('#475569', 7, 15, 1, 3);
-      p(O, 0, 18, 5, 1); p('#e2e8f0', 1, 18, 3, 1); p(O, 5, 18, 5, 1); p('#e2e8f0', 6, 18, 3, 1);
-      p(O, 0, 8, 10, 7); p('#cbd5e1', 1, 9, 8, 5);
-      p('#2563eb', -1, 8, 3, 4); p('#2563eb', 8, 8, 3, 4); p(O, -1, 8, 3, 1); p(O, 8, 8, 3, 1);
+      p('#475569', 2, 14, 2, 4); p('#475569', 6, 14, 2, 4);
+      p('#e2e8f0', 1, 18, 4, 1); p('#e2e8f0', 6, 18, 4, 1);
+      p('#cbd5e1', 1, 9, 8, 5); p('#94a3b8', 1, 13, 8, 1);
+      p('#2563eb', -1, 9, 2, 4); p('#2563eb', 8, 9, 2, 4);
       p('rgba(34,211,238,' + (0.7 + 0.3 * Math.sin(fr * 0.3)) + ')', 4, 10, 2, 2); p('#fff', 4, 10, 1, 1);
-      p(O, 1, 7, 8, 1);
-      p(O, 0, 1, 10, 7); p('#e2e8f0', 1, 2, 8, 5);
-      p(O, 0, -1, 3, 3); p(O, 7, -1, 3, 3); p('#22d3ee', 1, 0, 1, 1); p('#22d3ee', 8, 0, 1, 1);
+      p('#64748b', 4, 7, 2, 2);
+      p('#e2e8f0', 1, 2, 8, 5); p('#94a3b8', 1, 6, 8, 1);
+      p('#64748b', 1, 0, 2, 2); p('#64748b', 7, 0, 2, 2); p('#22d3ee', 1, 1, 1, 1); p('#22d3ee', 8, 1, 1, 1);
       p('#0f172a', 1, 3, 8, 2);
       p('#22d3ee', 2, 3, 2, 2); p('#22d3ee', 6, 3, 2, 2); p('#fff', 2, 3, 1, 1); p('#fff', 6, 3, 1, 1);
       const gr = a.createRadialGradient(x + 5 * U, oy + 4 * U, 0, x + 5 * U, oy + 4 * U, 10 * U);
       gr.addColorStop(0, 'rgba(34,211,238,0.35)'); gr.addColorStop(1, 'rgba(34,211,238,0)');
       a.fillStyle = gr; a.fillRect(x - 5 * U, oy - 5 * U, 20 * U, 20 * U);
-      // 銃（右手に構える）
-      p('#475569', 8, 10, 2, 2); p(O, 9, 9, 6, 4); p('#334155', 10, 10, 4, 2); p('#22d3ee', 12, 10, 3, 1); p(O, 10, 13, 2, 2); p('#67e8f9', 15, 10, 1, 2);
+      p('#64748b', 8, 10, 2, 2); p('#334155', 9, 10, 6, 3); p('#22d3ee', 12, 10, 3, 1); p('#1e293b', 10, 13, 2, 2); p('#67e8f9', 15, 10, 1, 2);
     }
     function robotMuzzle() { return { x: 20 + 16 * 2, y: (playerY + 18) - 38 + 11 * 2 }; }
 
@@ -2092,9 +2124,11 @@
       }
 
       // ✨ LV3でBOOST、LV6でHELLの見た目に自動変化（得点・速度・ダイヤは通常のまま）
-      if (currentLevel >= 7 && visualMode !== 'GOLD') {
+      if (currentLevel >= 9 && visualMode !== 'GOLD') {
         visualMode = 'GOLD'; powerFlashColor = '255,215,0'; powerFlashMax = powerFlash = 60; playKyuin();
-      } else if (currentLevel >= 5 && visualMode !== 'HELL' && visualMode !== 'GOLD') {
+      } else if (currentLevel >= 7 && visualMode !== 'ZOMBIE' && visualMode !== 'GOLD') {
+        visualMode = 'ZOMBIE'; powerFlashColor = '120,255,80'; powerFlashMax = powerFlash = 50; playDoro();
+      } else if (currentLevel >= 5 && visualMode !== 'HELL' && visualMode !== 'ZOMBIE' && visualMode !== 'GOLD') {
         visualMode = 'HELL'; powerFlashColor = '255,30,30'; powerFlashMax = powerFlash = 50; playRumble();
       } else if (currentLevel >= 3 && visualMode === 'NORMAL') {
         visualMode = 'BOOST'; powerFlashColor = '110,225,255'; powerFlashMax = powerFlash = 30; playKirarin();
@@ -2206,7 +2240,7 @@
         if (c.x < -20) coins.splice(i, 1);
       }
 
-      ctx.fillStyle = (visualMode === 'HELL') ? "#ff0000" : "#000"; 
+      ctx.fillStyle = (visualMode === 'HELL') ? "#ff0000" : (visualMode === 'ZOMBIE') ? "#ffffff" : "#000"; 
       ctx.font = "bold 11px 'Courier New'"; 
       let lvText = (gameMode === 'HELL') ? `H-LV:${currentLevel}` : `LV:${currentLevel}`;
       ctx.fillText(`SCORE:${score} HI:${hiScore} ${lvText}`, 5, 18);
