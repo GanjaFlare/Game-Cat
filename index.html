@@ -233,6 +233,7 @@
           <p style="font-size: 11px; margin-bottom: 18px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; letter-spacing: 1px; color: #a7f3d0;">SELECT GAME</p>
           <div class="mode-buttons">
             <button id="btnGCR" class="start-btn normal-btn">GANJA CAT RUN</button>
+            <button id="btnBeam" class="start-btn boost-btn">BEAM STRUGGLE</button>
           </div>
         </div>
 
@@ -271,6 +272,8 @@
     function goGCR(e) { e.preventDefault(); window.location.href = "GanjaCatRun/"; }
     const b = document.getElementById("btnGCR");
     b.addEventListener("click", goGCR);
+    function goBeam(e) { e.preventDefault(); window.location.href = "BeamStruggle/"; }
+    document.getElementById("btnBeam").addEventListener("click", goBeam);
   </script>
 </body>
 </html>
