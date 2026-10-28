@@ -145,6 +145,15 @@
       transform: translateY(1px) scale(0.98);
     }
 
+    /* 🎮 ゲーム選択：カートリッジ画像を2列×2段に並べる */
+    .cart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; width: 88%; }
+    .cart { position: relative; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform 0.12s, filter 0.12s; }
+    .cart img { width: 100%; height: auto; display: block; pointer-events: none; filter: drop-shadow(0 6px 8px rgba(0,0,0,0.55)); }
+    .cart:active { transform: translateY(2px) scale(0.98); filter: brightness(1.15); }
+    .cart.soon { cursor: default; aspect-ratio: 462 / 527; border-radius: 10px 10px 16px 10px; background: linear-gradient(160deg, #9ca3af, #6b7280); box-shadow: inset -3px -3px 0 #4b5563, inset 3px 3px 0 #d1d5db, 0 6px 8px rgba(0,0,0,0.55); display: flex; justify-content: center; align-items: center; opacity: 0.9; }
+    .cart.soon::before { content: ''; position: absolute; left: 12%; right: 12%; top: 26%; bottom: 20%; background: #1f2937; border-radius: 4px; }
+    .cart.soon:active { transform: none; filter: none; }
+    .cart.soon span { position: relative; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: 3px; color: #34d399; text-shadow: 0 0 10px rgba(52, 211, 153, 0.6); }
     #statusMessage { position: absolute; color: #333; font-size: 11px; bottom: 20px; font-weight: bold; width: 80%; text-align: center; z-index: 200; pointer-events: none;}
 
     .share-btn {
@@ -231,9 +240,11 @@
         <div id="setupOverlay" class="overlay">
           <h1 class="title-glow" style="font-size: 30px; margin-bottom: 6px;">GAME CAT</h1>
           <p style="font-size: 11px; margin-bottom: 18px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; letter-spacing: 1px; color: #a7f3d0;">SELECT GAME</p>
-          <div class="mode-buttons">
-            <button id="btnGCR" class="start-btn normal-btn">GANJA CAT RUN</button>
-            <button id="btnBeam" class="start-btn boost-btn">BEAM STRUGGLE</button>
+          <div class="cart-grid">
+            <div class="cart" data-href="GanjaCatRun/" role="button" aria-label="GANJA CAT RUN 2"><img src="GCR2_title.webp" alt="GANJA CAT RUN 2"></div>
+            <div class="cart" data-href="BeamStruggle/" role="button" aria-label="BEAM STRUGGLE"><img src="BeamStruggle_title.webp" alt="BEAM STRUGGLE"></div>
+            <div class="cart soon"><span>SOON</span></div>
+            <div class="cart soon"><span>SOON</span></div>
           </div>
         </div>
 
@@ -269,11 +280,9 @@
     if (cv) { const c2 = cv.getContext("2d"); c2.fillStyle = "#8b956d"; c2.fillRect(0, 0, 240, 160); }
     const sb = document.getElementById("shareButton");
     if (sb) sb.style.display = "none";
-    function goGCR(e) { e.preventDefault(); window.location.href = "GanjaCatRun/"; }
-    const b = document.getElementById("btnGCR");
-    b.addEventListener("click", goGCR);
-    function goBeam(e) { e.preventDefault(); window.location.href = "BeamStruggle/"; }
-    document.getElementById("btnBeam").addEventListener("click", goBeam);
+    document.querySelectorAll(".cart[data-href]").forEach(function(el) {
+      el.addEventListener("click", function() { window.location.href = el.getAttribute("data-href"); });
+    });
   </script>
 </body>
 </html>
