@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>GanjaCatRun</title>
+  <title>GANJA CAT RUN 2</title>
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われる名前(titleより優先される) -->
   <meta name="apple-mobile-web-app-title" content="GanjaCatRun">
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われるアイコン -->
@@ -201,7 +201,7 @@
           </button>
         </div>
         
-        <div class="gb-title">Ganja Cat Run</div>
+        <div class="gb-title">Ganja Cat Run 2</div>
 
         <div id="statusMessage"></div>
         
@@ -232,7 +232,7 @@
 
         <div id="setupOverlay" class="overlay">
           <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:0;">
-            <h1 class="title-glow" style="font-size: 28px; margin-bottom: 5px;">GanjaCatRun</h1>
+            <h1 class="title-glow" style="font-size: 26px; margin-bottom: 5px;">GANJA CAT RUN 2</h1>
           </div>
           <canvas id="titleWalkCanvas" width="200" height="50" style="image-rendering: pixelated; margin: 2px 0 8px;"></canvas>
           <p style="font-size: 11px; margin-bottom: 15px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; letter-spacing: 0.3px; color: #a7f3d0;">Enter X (Twitter) ID to Start</p>
@@ -381,28 +381,44 @@
     let jumpBufferCounter = 0;
     const JUMP_BUFFER_TIME = 10; // 先行入力を受け付けるフレーム数（約0.16秒）
 
-    // 🎵 BGM: Web Audio APIで隙間なくループ再生（<audio loop>だと継ぎ目に空白ができるため）
+    // 🎵 BGM: Web Audio APIで隙間なくループ再生（スマホ対応・ページを離れるときに確実に止める）
     const BGM_URL = "../iwashiro_tebasakioroshi.mp3";
     let bgmBuffer = null, bgmSource = null, bgmGain = null, bgmLoading = false;
+    let leaving = false, unlockArmed = false;
     function ensureAudioCtx() {
       if (!audioCtx) {
         const C = window.AudioContext || window.webkitAudioContext;
-        if (C) audioCtx = new C();
+        if (C) {
+          audioCtx = new C();
+          // 途中で音が止められたら（電話・他アプリなど）、次の操作で再開できるよう待ち受けを作り直す
+          audioCtx.onstatechange = function() {
+            if (audioCtx && audioCtx.state !== 'running' && !leaving && isMusicOn && !document.hidden) armBgmUnlock();
+          };
+        }
       }
       return audioCtx;
     }
-    function startBgm() {
-      if (!isMusicOn) return;
+    // iPhone対策：指を離した瞬間の操作の中で、1サンプルの無音を鳴らして音の許可を取る
+    function unlockAudio() {
       const c = ensureAudioCtx();
       if (!c) return;
-      if (c.state === 'suspended') c.resume().catch(function(){});
+      if (c.state !== 'running') {
+        try { const b = c.createBuffer(1, 1, 22050), s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(0); } catch (e) {}
+        c.resume().catch(function(){});
+      }
+    }
+    function startBgm() {
+      if (!isMusicOn || leaving) return;
+      const c = ensureAudioCtx();
+      if (!c) return;
+      if (c.state !== 'running') c.resume().catch(function(){});
       if (bgmSource) return;
       if (!bgmBuffer) {
         if (bgmLoading) return;
         bgmLoading = true;
         fetch(BGM_URL).then(function(r){ return r.arrayBuffer(); })
           .then(function(ab){ return new Promise(function(res, rej){ c.decodeAudioData(ab, res, rej); }); })
-          .then(function(buf){ bgmBuffer = buf; bgmLoading = false; startBgm(); })
+          .then(function(buf){ bgmBuffer = buf; bgmLoading = false; if (!leaving) startBgm(); })
           .catch(function(){ bgmLoading = false; });
         return;
       }
@@ -421,18 +437,44 @@
         bgmSource = null;
       }
     }
+    // ページを離れるとき：BGMを止めて、音の装置ごと閉じる（スマホの一時保存で鳴りっぱなしになるのを防ぐ）
+    function stopBgmAndClose() {
+      leaving = true;
+      stopBgm();
+      bgmLoading = false;
+      const c = audioCtx; audioCtx = null;
+      if (c) { try { c.onstatechange = null; const pr = c.close(); if (pr && pr.catch) pr.catch(function(){}); } catch (e) {} }
+    }
     function tryPlayBGM() { startBgm(); }
-    // 最初のタップ/キー操作でBGMを開始する（ブラウザの自動再生制限のため、操作が必要）
+    // スマホは「指を離した瞬間」の操作でしか音を許可しないため、BGMが実際に鳴るまで、毎回の操作で再開を試みる
     function armBgmUnlock() {
-      const evs = ['pointerdown', 'touchend', 'click', 'keydown'];
+      if (unlockArmed || leaving) return;
+      unlockArmed = true;
+      const evs = ['touchend', 'pointerup', 'click', 'keydown'];
       const h = function() {
+        if (leaving) return;
+        unlockAudio();
         startBgm();
-        if (audioCtx && audioCtx.state === 'running' && bgmSource) {
+        const c = audioCtx;
+        if (c && c.state === 'running' && (bgmSource || !isMusicOn)) {
           evs.forEach(function(ev){ window.removeEventListener(ev, h, true); });
+          unlockArmed = false;
         }
       };
       evs.forEach(function(ev){ window.addEventListener(ev, h, true); });
     }
+    window.addEventListener('pagehide', function() { stopBgmAndClose(); });
+    window.addEventListener('pageshow', function(e) {
+      if (e.persisted) { leaving = false; unlockArmed = false; armBgmUnlock(); startBgm(); }
+    });
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) {
+        if (audioCtx && audioCtx.state === 'running') audioCtx.suspend().catch(function(){});
+      } else if (!leaving) {
+        if (audioCtx && audioCtx.state !== 'running') audioCtx.resume().catch(function(){});
+        armBgmUnlock();
+      }
+    });
     // ✨ BOOST: 「キラリン！」と鳴る、きらめく上昇音
     function playKirarin() {
       const c = ensureAudioCtx();
@@ -583,7 +625,7 @@
       attachStartBtn("btnNormal", "NORMAL");
       const btnBack = document.getElementById("btnBackSelect");
       if (btnBack) {
-        const goBack = function(e) { e.preventDefault(); window.location.href = "../"; };
+        const goBack = function(e) { e.preventDefault(); stopBgmAndClose(); window.location.href = "../"; };
         btnBack.addEventListener("click", goBack);
         btnBack.addEventListener("touchstart", goBack, {passive: false});
       }
@@ -691,7 +733,8 @@
       if (tInput) tInput.value = '';
     }
 
-    function initAudioAndStart(mode) { 
+    function initAudioAndStart(mode) {
+      startBgm(); 
       gameMode = mode;
       if (mode === 'BOOST') { 
         coinValue = 2; 
@@ -882,7 +925,7 @@
     function shareOnX(e) {
       e.stopPropagation(); 
       const lines = [
-        "Played Ganja Cat Run and earned points! 🔥🐈",
+        "Played Ganja Cat Run 2 and earned points! 🔥🐈",
         "",
         "Let's aim for victory together! 🏆",
         "https://ganjaflare.github.io/Game-Cat/",
