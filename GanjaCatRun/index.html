@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>GCR ADMIN</title>
+  <title>GanjaCatRun</title>
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われる名前(titleより優先される) -->
   <meta name="apple-mobile-web-app-title" content="GanjaCatRun">
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われるアイコン -->
@@ -343,7 +343,6 @@
     let gameMode = 'NORMAL';
     let visualMode = 'NORMAL'; // 見た目だけ NORMAL → BOOST(LV3) → HELL(LV6) と変化
     function bgColor() { return visualMode === 'HELL' ? "#450c0c" : visualMode === 'ZOMBIE' ? "#6a5590" : visualMode === 'GOLD' ? "#a07f12" : "#8b956d"; }
-    const ADMIN_MODE = true; // 運営専用：ライフ無限（公開禁止）
     let smokeParts = [];
     let nitroFrames = 0, nitroNodes = []; const NITRO_TOTAL = 240; // 4秒
     let powerFlash = 0, powerFlashMax = 30, powerFlashColor = '110,225,255';
@@ -1833,7 +1832,7 @@
     }
     function bossHurt() {
       if (hitFlashFrames > 0) return false;
-      if (hellLives > 1 || ADMIN_MODE) { if (!ADMIN_MODE) hellLives--; hitFlashFrames = 30; playSound('deflect'); return false; }
+      if (hellLives > 1) { hellLives--; hitFlashFrames = 30; playSound('deflect'); return false; }
       hellLives = 0; bossRobotDie(); return true;
     }
     function bossTestClear() {
@@ -2194,8 +2193,8 @@
         
         if (o.x < 20+22 && o.x+o.width > 20+2 && playerY+14 > o.y && playerY < o.y+o.height) { 
           if (hitFlashFrames > 0 || nitroFrames > 0) {
-          } else if (hellLives > 1 || ADMIN_MODE) {
-            if (!ADMIN_MODE) hellLives--;
+          } else if (hellLives > 1) {
+            hellLives--;
             hitFlashFrames = 30; // 被弾後0.5秒の無敵 
             playSound('deflect');
           } else {
