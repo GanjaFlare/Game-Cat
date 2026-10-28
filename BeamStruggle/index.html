@@ -221,7 +221,8 @@
         <button id="btnMusicToggle" class="music-btn is-on">🎵 ON</button>
 
         <div id="setupOverlay" class="overlay">
-          <h1 class="title-glow" style="font-size: 25px; margin-bottom: 6px;">BEAM STRUGGLE</h1>
+          <h1 class="title-glow" style="font-size: 25px; margin-bottom: 4px;">BEAM STRUGGLE</h1>
+          <canvas id="titleCanvas" width="206" height="50" style="width:206px;height:50px;image-rendering:pixelated;margin-bottom:12px;"></canvas>
           <p style="font-size: 11px; margin-bottom: 8px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; letter-spacing: 1px; color: #a7f3d0;">OUT-TAP THE MONSTERS!</p>
           <p style="font-size: 10px; margin-bottom: 18px; font-family: 'Plus Jakarta Sans', sans-serif; color: #94a3b8;">A button / SPACE / TAP = MASH IT!</p>
           <div class="mode-buttons">
@@ -235,8 +236,8 @@
   </div>
 <script>
 (()=>{
-const W=240,H=160,GY=124,CX=28,DX=212,BY=GY-8,HL=CX+10,HR=DX-10;
-const cv=document.getElementById('gameCanvas'),g=cv.getContext('2d');
+const W=240,H=160,GY=124,CX=28,DX=212,BY=GY-13,HL=CX+10,HR=DX-13;
+const cv=document.getElementById('gameCanvas');let g=cv.getContext('2d');
 g.imageSmoothingEnabled=false;
 const R=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(Math.floor(x),Math.floor(y),w,h)};
 const disc=(c,cx,cy,r,col)=>{c.fillStyle=col;for(let dy=-r;dy<=r;dy++){const w=Math.floor(Math.sqrt(r*r-dy*dy+r));c.fillRect(cx-w,cy+dy,w*2+1,1)}};
@@ -518,7 +519,7 @@ const bg=document.createElement('canvas');bg.width=W;bg.height=H;
   ['#2a1b5c','#4a2a7a','#7a3a8a','#b84a8a','#e8668a','#ff9a6a','#ffc27a'].forEach((col,i)=>r(0,i*16,W,16,col));
   [[20,8],[60,18],[110,6],[150,14],[200,10],[230,24],[40,34],[180,30]].forEach(p=>r(p[0],p[1],1,1,'#fff'));
   disc(c,120,104,24,'#ffd98a');disc(c,120,104,18,'#fff0b8');
-  r(30,40,26,4,'#f0a0b0');r(36,36,14,4,'#f0a0b0');r(170,54,30,4,'#f0a0b0');r(178,50,16,4,'#f0a0b0');
+  
   [[[30,34,1],[85,26,1.3],[160,38,1],[215,28,1.2]],'#5a3a8a',[[0,22,1.5],[60,18,1.4],[130,24,1.3],[190,16,1.6],[240,24,1.4]],'#2f1d52'].forEach((v,i,a)=>{
     if(i%2)return;
     for(let x=0;x<W;x++){let h=0;v.forEach(p=>{h=Math.max(h,p[1]-Math.abs(x-p[0])*p[2])});if(h>0)r(x,112-h,1,h,a[i+1])}
@@ -535,6 +536,7 @@ try{best=+localStorage.getItem('gcBeamStruggleBest')||0}catch(e){}
 const go=s=>{st=s;if(s==='WIN'||s==='LOSE'||s==='CLEAR')lock=performance.now()+1200};
 function start(n){rd=n;PAL[1]=E[n-1].b;if(n===1){peak=0;tw=[]}cp=0;P=[];ip=0;stun=0;rock=null;taps=[];win=null;boomed=0;flash=0;st='INTRO'}
 
+const clouds=[];for(let i=0;i<4;i++)clouds.push({x:Math.random()*W,y:15+Math.random()*30,s:.2+Math.random()*.4,w:20+Math.random()*20});
 const COL=['#fff','#7efff5','#ff9a3c','#ffee55','#ff4a4a'];
 function spark(x,y,n){for(let i=0;i<n;i++){const a=Math.random()*6.28,s=.8+Math.random()*2.5;
   P.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,g:0,c:COL[Math.random()*5|0],s:Math.random()>.4?2:1,l:6+Math.random()*8|0})}}
@@ -564,7 +566,7 @@ function press(e){
   }
 }
 const $=id=>document.getElementById(id),ov=$('setupOverlay');
-function showMenu(){st='TITLE';P=[];ov.style.display='flex'}
+function showMenu(){st='TITLE';P=[];stun=0;rock=null;cp=0;ov.style.display='flex'}
 function begin(){au();ov.style.display='none';start(1)}
 $('btnBeamStart').addEventListener('click',begin);
 $('btnBackSelect').addEventListener('click',e=>{e.preventDefault();location.href='../'});
@@ -591,10 +593,21 @@ $('btnMusicToggle').addEventListener('click',function(){
   if(isMusicOn)startBgm();else stopBgm();this.blur();
 });
 
+/* ---------- タイトル画面の演出（ネコ vs ゾンビの接戦ループ） ---------- */
+const TW=206,TH=50,tg=$('titleCanvas').getContext('2d'),ZR=E.findIndex(e=>e.n==='ZOMBIE')+1;
+tg.imageSmoothingEnabled=false;
+function drawTitle(){
+  const sg=g,sr=rd,sc=cp;
+  g=tg;tg.clearRect(0,0,TW,TH);tg.save();tg.translate(-20,TH-4-GY);
+  rd=ZR;PAL[1]=E[rd-1].b;cp=34*Math.sin(af*.05)+12*Math.sin(af*.17);
+  cat();dog();beams();
+  tg.restore();g=sg;rd=sr;cp=sc;
+}
+
 /* ---------- 更新（60回/秒固定） ---------- */
 function fin(w){win=w;st='FIN';fx=120+cp;boomed=0;playSound('teleport')}
 function upd(){
-  af++;if(flash>0)flash--;
+  af++;clouds.forEach(c=>{c.x-=c.s;if(c.x+c.w<0){c.x=W+Math.random()*50;c.y=15+Math.random()*30}});if(flash>0)flash--;
   if(st==='INTRO'){ip+=.04;if(ip>=1){ip=1;st='COUNT';cs=0;cf=0;playSound('coin')}}
   else if(st==='COUNT'){cf++;
     if(cs===0&&cf>=45){cs=1;cf=0;playCount(true)}else if(cs===1&&cf>=35)st='BATTLE'}
@@ -618,30 +631,33 @@ function upd(){
 }
 
 /* ---------- キャラ描画 ---------- */
-function cat(){
-  const sk=stun>0?((af>>1)%3)-1:0,x=CX+sk,y=GY,B='#6c8dbe',L='#a1b8de',S='#485c80',K='#243248';
-  R(x-11,y-8,3,2,S);R(x-12,y-15,2,8,B);R(x-11,y-17,2,3,S);                       // しっぽ
-  R(x-7,y-11,10,10,B);R(x-3,y-9,5,7,L);R(x-7,y-9,2,1,S);R(x-7,y-6,2,1,S);R(x-7,y-3,2,1,S); // 胴体
-  R(x-6,y-2,3,2,K);R(x,y-2,3,2,K);                                               // 脚
-  R(x-8,y-22,13,10,B);R(x-6,y-22,7,1,S);R(x-8,y-19,1,2,S);R(x+4,y-19,1,2,S);     // 頭
-  R(x-8,y-25,4,3,B);R(x+1,y-25,4,3,B);R(x-7,y-24,2,2,S);R(x+2,y-24,2,2,S);       // 耳
-  R(x-7,y-19,12,5,'#1a1d24');                                                     // バイザー
-  R(x-6,y-18,3,3,'#ff527b');R(x-5,y-17,1,1,'#49d18a');R(x,y-18,3,3,'#ff527b');R(x+1,y-17,1,1,'#49d18a');
-  R(x-4,y-13,8,2,L);R(x-1,y-14,2,1,K);                                           // 口・鼻
-  R(x+3,y-12,6,1,'#e8d5b7');R(x+9,y-12,1,1,af%20<10?'#ff5500':'#ffb040');        // シガレット
-  const s=Math.round(Math.sin(af*.05)*1.5);
-  R(x+10+s,y-15,1,1,'rgba(220,240,255,.6)');R(x+11-s,y-18,2,2,'rgba(220,240,255,.45)');R(x+10+s,y-22,2,2,'rgba(220,240,255,.3)');
-  R(x+3,y-9,6,2,B);R(x+8,y-11,3,6,L);                                            // 腕
-  if(stun>0){const a=af*.2;R(x-2+Math.cos(a)*8,y-29+Math.sin(a)*2,2,2,'#ffee00');R(x-2-Math.cos(a)*8,y-29-Math.sin(a)*2,2,2,'#ffee00');T('CHEATER!',CX,GY-42,'#ff3030')}
+function cat(){ // GCRのLv3（ブースト）の見た目をそのまま移植
+  const sk=stun>0?((af>>1)%3)-1:0,x=16+sk,y=GY-20,hx=x+5,hy=y-14,B='#87CEEB',S='#4169E1',hit=stun>0;
+  R(x+7,y-2,10,16,B);R(x+7,y+2,10,3,S);R(x+7,y+9,10,3,S);
+  R(hx,hy,12,12,B);R(hx+4,hy,2,4,S);R(hx+2,hy-3,3,3,B);R(hx+9,hy-3,3,3,B);
+  if(hit){
+    [3,8].forEach(o=>{R(hx+o,hy+3,2,1,'#fff');R(hx+o+1,hy+4,1,1,'#fff');R(hx+o,hy+5,2,1,'#fff')});
+    R(hx+5,hy+8,4,3,'#fff');R(hx+6,hy+9,2,1,S);
+    R(x+3,y+17,5,3,B);R(x+15,y+17,5,3,B);
+  }else{
+    [2,7].forEach(o=>{R(hx+o,hy+2,4,4,'#fff');R(hx+o,hy+2,2,1,'#FF69B4');R(hx+o,hy+3,1,2,'#FF69B4');
+      R(hx+o+2,hy+2,2,1,'#FFD700');R(hx+o+3,hy+3,1,2,'#FFD700');R(hx+o+1,hy+4,2,1,'#00FFFF');R(hx+o+2,hy+5,1,1,'#00FFFF');R(hx+o+1,hy+3,1,1,'#9370DB')});
+    R(hx+10,hy+8,6,2,'#fff');R(hx+15,hy+8,1,2,'#ff0000');
+    R(x+7,y+14,3,6,B);R(x+14,y+14,3,6,B);
+  }
+  R(x+17,y+6,5,2,B);R(x+21,y+4,3,6,'#e6f6ff'); // ビームを撃つ腕
+  if(stun>0){const a=af*.2;R(x+10+Math.cos(a)*9,y-24+Math.sin(a)*2,2,2,'#ffee00');R(x+10-Math.cos(a)*9,y-24-Math.sin(a)*2,2,2,'#ffee00');T('CHEATER!',CX,GY-52,'#ff3030')}
 }
+const K=1.3;
 function dog(){
   const e=E[rd-1];
-  g.save();if(e.al)g.globalAlpha=e.al;g.translate(DX,GY);g.scale(-1,1);
-  R(-7,-11,10,10,e.m);R(-3,-8,5,6,'rgba(255,255,255,.2)');R(-6,-2,3,2,e.d);R(0,-2,3,2,e.d);
-  R(-8,-22,13,10,e.h);
-  e.x.forEach(a=>R(a[0],a[1],a[2],a[3],a[4]));
-  const c=e.e||'#111';R(-5,-19,2,2,c);R(-1,-19,2,2,c);
-  R(2,-9,6,2,e.m);R(8,-11,3,6,e.h);
+  const Q=(x,y,w,h,c)=>{const x0=Math.round(DX-(x+w)*K),x1=Math.round(DX-x*K),y0=Math.round(GY+y*K),y1=Math.round(GY+(y+h)*K);g.fillStyle=c;g.fillRect(x0,y0,Math.max(1,x1-x0),Math.max(1,y1-y0))};
+  g.save();if(e.al)g.globalAlpha=e.al;
+  Q(-7,-11,10,10,e.m);Q(-3,-8,5,6,'rgba(255,255,255,.2)');Q(-6,-2,3,2,e.d);Q(0,-2,3,2,e.d);
+  Q(-8,-22,13,10,e.h);
+  e.x.forEach(a=>Q(a[0],a[1],a[2],a[3],a[4]));
+  const c=e.e||'#111';Q(-5,-19,2,2,c);Q(-1,-19,2,2,c);
+  Q(2,-11,6,2,e.m);Q(8,-13,3,6,e.h);
   g.restore();
 }
 
@@ -708,6 +724,7 @@ function overlay(){
 }
 function draw(){
   g.drawImage(bg,0,0);
+  clouds.forEach(c=>{const w=Math.round(c.w),k='rgba(255,225,235,.45)';R(c.x,c.y,w,10,k);R(c.x+5,c.y-5,w-10,5,k);R(c.x+10,c.y-10,w-20,5,k)});
   if(st!=='TITLE')hud();
   const fe=(st==='FIN'&&boomed)||st==='WIN'||st==='LOSE'||st==='CLEAR';
   if(!(fe&&win==='E'))cat();
@@ -720,7 +737,7 @@ function draw(){
 }
 
 let last=performance.now(),acc=0;
-function loop(t){acc+=Math.min(100,t-last);last=t;while(acc>=1000/60){upd();acc-=1000/60}draw();requestAnimationFrame(loop)}
+function loop(t){acc+=Math.min(100,t-last);last=t;while(acc>=1000/60){upd();acc-=1000/60}draw();if(ov.style.display!=='none')drawTitle();requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 })();
 </script>
