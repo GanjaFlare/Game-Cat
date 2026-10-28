@@ -442,9 +442,9 @@ function playClick(){const c=ensureAudioCtx();if(!c)return;const t=c.currentTime
 
 /* ---------- BGM：GCRと同じ方式（Web Audioで隙間なくループ） ---------- */
 const BGM_URL="../iwashiro_pareidolia.mp3";
-let isMusicOn=true,bgmBuffer=null,bgmSource=null,bgmGain=null,bgmLoading=false,leaving=false,unlockArmed=false;
+let isMusicOn=true,bgmBuffer=null,bgmSource=null,bgmGain=null,bgmLoading=false,leaving=false,unlockArmed=false,inGame=false;
 function startBgm(){
-  if(!isMusicOn||leaving)return;
+  if(!isMusicOn||leaving||!inGame)return;
   const c=ensureAudioCtx();if(!c)return;
   if(!c.__w){c.__w=1;c.onstatechange=function(){if(c.state!=='running'&&isMusicOn&&!leaving)armBgmUnlock()}}
   if(c.state!=='running')c.resume().catch(function(){});
@@ -479,7 +479,7 @@ function armBgmUnlock(){
   if(unlockArmed)return;unlockArmed=true;
   const evs=['touchend','pointerup','click','keydown'];
   const h=function(){
-    if(leaving)return;
+    if(leaving||!inGame)return;
     unlockAudio();
     if(audioCtx&&audioCtx.state==='running'&&bgmSource){evs.forEach(function(ev){window.removeEventListener(ev,h,true)});unlockArmed=false}
   };
@@ -492,10 +492,10 @@ function hardStopAudio(){
   audioCtx=null;
 }
 window.addEventListener('pagehide',hardStopAudio);
-window.addEventListener('pageshow',function(e){if(e.persisted){leaving=false;if(isMusicOn){armBgmUnlock();startBgm()}}});
+window.addEventListener('pageshow',function(e){if(e.persisted)leaving=false;});
 document.addEventListener('visibilitychange',function(){
   if(document.hidden){if(audioCtx&&audioCtx.state==='running')audioCtx.suspend().catch(function(){})}
-  else if(isMusicOn&&!leaving){armBgmUnlock();startBgm()}
+  else if(isMusicOn&&!leaving&&inGame){armBgmUnlock();startBgm()}
 });
 
 const au=()=>{const c=ensureAudioCtx();if(c&&c.state==='suspended')c.resume().catch(function(){})};
@@ -590,8 +590,8 @@ function press(e){
   }
 }
 const $=id=>document.getElementById(id),ov=$('setupOverlay');
-function showMenu(){st='TITLE';P=[];stun=0;rock=null;cp=0;ov.style.display='flex'}
-function begin(){au();startBgm();ov.style.display='none';start(1)}
+function showMenu(){inGame=false;stopBgm();st='TITLE';P=[];stun=0;rock=null;cp=0;ov.style.display='flex'}
+function begin(){inGame=true;au();startBgm();armBgmUnlock();ov.style.display='none';start(1)}
 $('btnBeamStart').addEventListener('click',begin);
 $('btnBackSelect').addEventListener('click',e=>{e.preventDefault();hardStopAudio();location.href='../'});
 $('btnSelect').addEventListener('click',()=>{if(ov.style.display==='none')showMenu()});
@@ -605,7 +605,6 @@ addEventListener('keydown',e=>{
 });
 function resizeGame(){const w=$('gameWrapper');w.style.transform='translate(-50%,-50%) scale('+Math.min(innerWidth/340,innerHeight/680)+')'}
 addEventListener('resize',resizeGame);resizeGame();
-armBgmUnlock();startBgm();
 // iPhoneの連打でズームしないようにする（ダブルタップ拡大・ピンチを無効化）
 document.addEventListener('gesturestart',e=>e.preventDefault());
 document.addEventListener('dblclick',e=>e.preventDefault());
@@ -722,7 +721,7 @@ function hud(){
   const m=20+((Math.max(-70,Math.min(70,cp))+70)/140*200|0);
   R(19,10,202,6,'#000');R(20,11,200,4,e.b[1]);R(20,11,m-20,4,'#2f8bff');R(m-1,9,3,8,'#fff');
 }
-function rank(v){const t=[[3,'WEAKLING','#888'],[5,'BEGINNER','#aaa'],[7,'AVERAGE JOE','#fff'],[9,'FAST FINGERS','#7efff5'],[11,'MASTER','#6bff7a'],[13,'LEGEND','#ffd700'],[15,'SUPERHUMAN','#ff9a3c']];for(const r of t)if(v<r[0])return r;return[0,'GOD','#ff4a8a']}
+function rank(v){const t=[[4,'WEAKLING','#888'],[6,'BEGINNER','#aaa'],[8,'AVERAGE JOE','#fff'],[10,'FAST FINGERS','#7efff5'],[12,'MASTER','#6bff7a'],[14,'LEGEND','#ffd700'],[17,'SUPERHUMAN','#ff9a3c']];for(const r of t)if(v<r[0])return r;return[0,'GOD','#ff4a8a']}
 function overlay(){
   const k=performance.now()<lock,pr=k?'WAIT...':'TAP / SPACE TO CONTINUE',pc=k?'#888':'#fff';
   if(st==='TITLE'){
@@ -739,11 +738,11 @@ function overlay(){
     const cl=st==='CLEAR',rk=rank(peak);
     g.globalAlpha=.88;R(0,0,W,H,'#000');g.globalAlpha=1;
     T(cl?'ALL CLEAR!':'GAME OVER',120,10,cl?'#ffd700':'#ff3a1a',3);
-    T('REACHED ROUND '+(cl?MAXR:rd),120,34,'#fff');
-    T('BEST TAPS IN 1 SEC',120,50,'#aaa');
-    T(peak,120,60,'#ffe14a',5);
-    T(rk[1],120,98,rk[2],2);
-    T(pr,120,126,pc);
+    T('ROUND REACHED',62,40,'#aaa');T(cl?MAXR:rd,62,52,'#fff',5);
+    R(119,40,1,38,'#555');
+    T('TAPS IN 1 SEC',178,40,'#aaa');T(peak,178,52,'#ffe14a',5);
+    T('LEVEL: '+rk[1],120,92,rk[2],2);
+    T(pr,120,124,pc);
   }
 }
 function draw(){
