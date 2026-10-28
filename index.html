@@ -159,8 +159,6 @@
       45% { transform: translateY(-6px) scale(1.1); filter: brightness(1.7) drop-shadow(0 0 20px rgba(110, 255, 200, 0.95)); }
       100% { transform: translateY(-4px) scale(1.05); filter: brightness(1.2) drop-shadow(0 0 14px rgba(52, 211, 153, 0.8)); }
     }
-    #setupOverlay.reveal > * { animation: fadeUp 0.5s ease-out both; }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
     /* 🎬 オープニング：GAME CAT が1文字ずつ現れる */
     #introOverlay { z-index: 500; background: #0f172a; transition: opacity 0.6s ease; }
@@ -342,7 +340,6 @@
       }
       function remove() {
         if (ov.parentNode) ov.parentNode.removeChild(ov);
-        if (sel) sel.classList.add("reveal");
         try { sessionStorage.setItem("gcIntroDone", "1"); } catch (e) {}
         if (ac) { try { ac.close(); } catch (e) {} }
       }
