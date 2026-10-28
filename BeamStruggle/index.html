@@ -442,11 +442,12 @@ function playClick(){const c=ensureAudioCtx();if(!c)return;const t=c.currentTime
 
 /* ---------- BGM：GCRと同じ方式（Web Audioで隙間なくループ） ---------- */
 const BGM_URL="../iwashiro_pareidolia.mp3";
-let isMusicOn=true,bgmBuffer=null,bgmSource=null,bgmGain=null,bgmLoading=false;
+let isMusicOn=true,bgmBuffer=null,bgmSource=null,bgmGain=null,bgmLoading=false,leaving=false,unlockArmed=false;
 function startBgm(){
-  if(!isMusicOn)return;
+  if(!isMusicOn||leaving)return;
   const c=ensureAudioCtx();if(!c)return;
-  if(c.state==='suspended')c.resume().catch(function(){});
+  if(!c.__w){c.__w=1;c.onstatechange=function(){if(c.state!=='running'&&isMusicOn&&!leaving)armBgmUnlock()}}
+  if(c.state!=='running')c.resume().catch(function(){});
   if(bgmSource)return;
   if(!bgmBuffer){
     if(bgmLoading)return;
@@ -464,15 +465,38 @@ function startBgm(){
 function stopBgm(){
   if(bgmSource){try{bgmSource.stop()}catch(e){}try{bgmSource.disconnect()}catch(e){}bgmSource=null}
 }
-// 最初のタップ/キー操作でBGMを開始する（ブラウザの自動再生制限のため）
+// スマホ対策：タップのたびにオーディオを起こす（iOSは「指を離した瞬間」が許可のタイミング）
+function unlockAudio(){
+  const c=ensureAudioCtx();if(!c)return;
+  if(c.state!=='running'){
+    c.resume().catch(function(){});
+    try{const b=c.createBuffer(1,1,22050),s=c.createBufferSource();s.buffer=b;s.connect(c.destination);s.start(0)}catch(e){}
+  }
+  startBgm();
+}
+// BGMが鳴り始めるまで、最初のタップ/キー操作を待ち続ける（ブラウザの自動再生制限のため）
 function armBgmUnlock(){
-  const evs=['pointerdown','touchend','click','keydown'];
+  if(unlockArmed)return;unlockArmed=true;
+  const evs=['touchend','pointerup','click','keydown'];
   const h=function(){
-    startBgm();
-    if(audioCtx&&audioCtx.state==='running'&&bgmSource)evs.forEach(function(ev){window.removeEventListener(ev,h,true)});
+    if(leaving)return;
+    unlockAudio();
+    if(audioCtx&&audioCtx.state==='running'&&bgmSource){evs.forEach(function(ev){window.removeEventListener(ev,h,true)});unlockArmed=false}
   };
   evs.forEach(function(ev){window.addEventListener(ev,h,true)});
 }
+// ページを離れる/隠れるときは確実に止める（鳴りっぱなし・BGM重複の防止）
+function hardStopAudio(){
+  leaving=true;stopBgm();bgmLoading=false;
+  try{if(audioCtx&&audioCtx.state!=='closed')audioCtx.close()}catch(e){}
+  audioCtx=null;
+}
+window.addEventListener('pagehide',hardStopAudio);
+window.addEventListener('pageshow',function(e){if(e.persisted){leaving=false;if(isMusicOn){armBgmUnlock();startBgm()}}});
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden){if(audioCtx&&audioCtx.state==='running')audioCtx.suspend().catch(function(){})}
+  else if(isMusicOn&&!leaving){armBgmUnlock();startBgm()}
+});
 
 const au=()=>{const c=ensureAudioCtx();if(c&&c.state==='suspended')c.resume().catch(function(){})};
 
@@ -567,9 +591,9 @@ function press(e){
 }
 const $=id=>document.getElementById(id),ov=$('setupOverlay');
 function showMenu(){st='TITLE';P=[];stun=0;rock=null;cp=0;ov.style.display='flex'}
-function begin(){au();ov.style.display='none';start(1)}
+function begin(){au();startBgm();ov.style.display='none';start(1)}
 $('btnBeamStart').addEventListener('click',begin);
-$('btnBackSelect').addEventListener('click',e=>{e.preventDefault();location.href='../'});
+$('btnBackSelect').addEventListener('click',e=>{e.preventDefault();hardStopAudio();location.href='../'});
 $('btnSelect').addEventListener('click',()=>{if(ov.style.display==='none')showMenu()});
 $('btnStart').addEventListener('click',()=>{if(ov.style.display!=='none')begin()});
 ['gameCanvas','btnArea'].forEach(id=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();press(e)}));
