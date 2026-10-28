@@ -91,6 +91,13 @@
       text-shadow: 0 0 10px rgba(248, 113, 113, 0.8);
     }
 
+    .start-btn.pressed { animation: startPress 0.38s ease-out both; box-shadow: 0 0 30px rgba(96, 165, 250, 0.95), inset 0 0 20px rgba(255, 255, 255, 0.35); }
+    @keyframes startPress {
+      0% { transform: none; filter: brightness(1); }
+      20% { transform: translateY(5px) scale(0.94, 0.9); filter: brightness(1.5); }
+      55% { transform: translateY(-4px) scale(1.06, 1.08); filter: brightness(1.7); }
+      100% { transform: translateY(0) scale(1.02); filter: brightness(1.3); }
+    }
     .dpad { position: absolute; left: 35px; bottom: 180px; width: 80px; height: 80px; cursor: pointer; z-index: 5; }
     .dpad-axis { position: absolute; background: #2b2b2b; border-radius: 3px; box-shadow: 0 4px 0 #111; }
     .dpad-h { top: 27px; left: 0; width: 80px; height: 26px; }
@@ -385,6 +392,8 @@
     const BGM_URL = "../iwashiro_tebasakioroshi.mp3";
     let bgmBuffer = null, bgmSource = null, bgmGain = null, bgmLoading = false;
     let leaving = false, unlockArmed = false;
+    let bgmWanted = false;   // タイトル画面では false。STARTを押すと true、タイトルに戻ると false
+    let startPressed = false;
     function ensureAudioCtx() {
       if (!audioCtx) {
         const C = window.AudioContext || window.webkitAudioContext;
@@ -392,7 +401,7 @@
           audioCtx = new C();
           // 途中で音が止められたら（電話・他アプリなど）、次の操作で再開できるよう待ち受けを作り直す
           audioCtx.onstatechange = function() {
-            if (audioCtx && audioCtx.state !== 'running' && !leaving && isMusicOn && !document.hidden) armBgmUnlock();
+            if (audioCtx && audioCtx.state !== 'running' && !leaving && isMusicOn && bgmWanted && !document.hidden) armBgmUnlock();
           };
         }
       }
@@ -408,20 +417,12 @@
       }
     }
     function startBgm() {
-      if (!isMusicOn || leaving) return;
+      if (!isMusicOn || leaving || !bgmWanted) return;
       const c = ensureAudioCtx();
       if (!c) return;
       if (c.state !== 'running') c.resume().catch(function(){});
       if (bgmSource) return;
-      if (!bgmBuffer) {
-        if (bgmLoading) return;
-        bgmLoading = true;
-        fetch(BGM_URL).then(function(r){ return r.arrayBuffer(); })
-          .then(function(ab){ return new Promise(function(res, rej){ c.decodeAudioData(ab, res, rej); }); })
-          .then(function(buf){ bgmBuffer = buf; bgmLoading = false; if (!leaving) startBgm(); })
-          .catch(function(){ bgmLoading = false; });
-        return;
-      }
+      if (!bgmBuffer) { preloadBgm(); return; }
       bgmSource = c.createBufferSource();
       bgmSource.buffer = bgmBuffer;
       bgmSource.loop = true;
@@ -446,6 +447,37 @@
       if (c) { try { c.onstatechange = null; const pr = c.close(); if (pr && pr.catch) pr.catch(function(){}); } catch (e) {} }
     }
     function tryPlayBGM() { startBgm(); }
+    // 音楽ファイルを先に読み込んでおく（鳴らさない）。STARTを押した瞬間にすぐ鳴らせる
+    function preloadBgm() {
+      if (bgmBuffer || bgmLoading || leaving) return;
+      const c = ensureAudioCtx();
+      if (!c) return;
+      bgmLoading = true;
+      fetch(BGM_URL).then(function(r){ return r.arrayBuffer(); })
+        .then(function(ab){ return new Promise(function(res, rej){ c.decodeAudioData(ab, res, rej); }); })
+        .then(function(buf){ bgmBuffer = buf; bgmLoading = false; startBgm(); })
+        .catch(function(){ bgmLoading = false; });
+    }
+    // BGMのオン／オフ：STARTでオン、タイトル画面に戻るとオフ
+    function bgmOn() { bgmWanted = true; startBgm(); if (!bgmSource || !audioCtx || audioCtx.state !== 'running') armBgmUnlock(); }
+    function bgmOff() { bgmWanted = false; stopBgm(); }
+    // 🕹️ 「ぴょいん！」：跳ね上がって、もう一度弾む効果音
+    function playBoing() {
+      const c = ensureAudioCtx();
+      if (!c) return;
+      if (c.state !== 'running') c.resume().catch(function(){});
+      const t = c.currentTime, o = c.createOscillator(), gn = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(260, t);
+      o.frequency.exponentialRampToValueAtTime(1100, t + 0.09);
+      o.frequency.exponentialRampToValueAtTime(700, t + 0.16);
+      o.frequency.exponentialRampToValueAtTime(980, t + 0.26);
+      o.frequency.exponentialRampToValueAtTime(520, t + 0.42);
+      lfo.frequency.value = 28; lg.gain.value = 40; lfo.connect(lg); lg.connect(o.frequency);
+      gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.22, t + 0.01); gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+      o.connect(gn); gn.connect(c.destination);
+      o.start(t); o.stop(t + 0.47); lfo.start(t); lfo.stop(t + 0.47);
+    }
     // スマホは「指を離した瞬間」の操作でしか音を許可しないため、BGMが実際に鳴るまで、毎回の操作で再開を試みる
     function armBgmUnlock() {
       if (unlockArmed || leaving) return;
@@ -456,7 +488,7 @@
         unlockAudio();
         startBgm();
         const c = audioCtx;
-        if (c && c.state === 'running' && (bgmSource || !isMusicOn)) {
+        if (c && c.state === 'running' && (bgmSource || !isMusicOn || !bgmWanted)) {
           evs.forEach(function(ev){ window.removeEventListener(ev, h, true); });
           unlockArmed = false;
         }
@@ -465,14 +497,14 @@
     }
     window.addEventListener('pagehide', function() { stopBgmAndClose(); });
     window.addEventListener('pageshow', function(e) {
-      if (e.persisted) { leaving = false; unlockArmed = false; armBgmUnlock(); startBgm(); }
+      if (e.persisted) { leaving = false; unlockArmed = false; if (bgmWanted) { armBgmUnlock(); startBgm(); } }
     });
     document.addEventListener('visibilitychange', function() {
       if (document.hidden) {
         if (audioCtx && audioCtx.state === 'running') audioCtx.suspend().catch(function(){});
       } else if (!leaving) {
         if (audioCtx && audioCtx.state !== 'running') audioCtx.resume().catch(function(){});
-        armBgmUnlock();
+        if (bgmWanted) armBgmUnlock();
       }
     });
     // ✨ BOOST: 「キラリン！」と鳴る、きらめく上昇音
@@ -612,14 +644,17 @@
       function attachStartBtn(btnId, modeStr) {
         const btn = document.getElementById(btnId);
         if(!btn) return;
-        btn.addEventListener("click", function(e) {
+        const press = function(e) {
           e.preventDefault();
-          initAudioAndStart(modeStr);
-        });
-        btn.addEventListener("touchstart", function(e) {
-          e.preventDefault();
-          initAudioAndStart(modeStr);
-        }, {passive: false});
+          if (startPressed) return;
+          startPressed = true;
+          btn.classList.remove("pressed"); void btn.offsetWidth; btn.classList.add("pressed");  // ボタンが押された演出
+          playBoing();   // 「ぴょいん！」
+          bgmOn();       // BGMはSTARTを押した瞬間から開始（指を離した瞬間の操作の中で音の許可を取る）
+          setTimeout(function() { initAudioAndStart(modeStr); }, 380);
+        };
+        btn.addEventListener("click", press);
+        btn.addEventListener("touchend", press, {passive: false});
       }
 
       attachStartBtn("btnNormal", "NORMAL");
@@ -629,8 +664,7 @@
         btnBack.addEventListener("click", goBack);
         btnBack.addEventListener("touchstart", goBack, {passive: false});
       }
-      armBgmUnlock();
-      startBgm(); // タイトル画面に入った瞬間からBGM開始（ブラウザに止められた場合は最初の操作で開始）
+      preloadBgm(); // タイトル画面は無音。音楽ファイルだけ先に読み込んでおく
 
       const btnClearId = document.getElementById("btnClearId");
       if (btnClearId) {
@@ -734,7 +768,7 @@
     }
 
     function initAudioAndStart(mode) {
-      startBgm(); 
+      bgmOn();
       gameMode = mode;
       if (mode === 'BOOST') { 
         coinValue = 2; 
@@ -1396,6 +1430,8 @@
     }
     
     function returnToTitle() {
+      bgmOff(); startPressed = false;   // タイトル画面に戻ったらBGMを消し、STARTボタンの状態も戻す
+      const sbtn = document.getElementById("btnNormal"); if (sbtn) sbtn.classList.remove("pressed");
       const overlay = document.getElementById("setupOverlay");
       if (overlay) overlay.style.display = "flex";
       const rewardOverlay = document.getElementById("rewardOverlay");
