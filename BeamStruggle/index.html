@@ -181,7 +181,14 @@
       -webkit-text-fill-color: transparent;
       text-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
     }
-      * { touch-action: manipulation; -webkit-touch-callout: none; }
+          .start-btn.pressed { animation: startPress 0.38s ease-out both; box-shadow: 0 0 30px rgba(248, 113, 113, 0.95), inset 0 0 20px rgba(255, 255, 255, 0.35); }
+    @keyframes startPress {
+      0% { transform: none; filter: brightness(1); }
+      20% { transform: translateY(5px) scale(0.94, 0.9); filter: brightness(1.5); }
+      55% { transform: translateY(-4px) scale(1.06, 1.08); filter: brightness(1.7); }
+      100% { transform: translateY(0) scale(1.02); filter: brightness(1.3); }
+    }
+    * { touch-action: manipulation; -webkit-touch-callout: none; }
     #gameCanvas, #btnArea { touch-action: none; }
   </style>
 </head>
@@ -256,13 +263,6 @@ function T(s,x,y,c,k=1,al='c',sh='#000'){
 
 /* ---------- サウンド：GCRと同じ効果音（GCRのコードをそのまま移植） ---------- */
 let audioCtx=null;
-function ensureAudioCtx() {
-      if (!audioCtx) {
-        const C = window.AudioContext || window.webkitAudioContext;
-        if (C) audioCtx = new C();
-      }
-      return audioCtx;
-    }
 function playKirarin() {
       const c = ensureAudioCtx();
       if (!c) return;
@@ -441,61 +441,117 @@ function playClick(){const c=ensureAudioCtx();if(!c)return;const t=c.currentTime
   o.connect(n);n.connect(c.destination);o.start(t);o.stop(t+.08)}
 
 /* ---------- BGM：GCRと同じ方式（Web Audioで隙間なくループ） ---------- */
+let isMusicOn=true;
 const BGM_URL="../iwashiro_pareidolia.mp3";
-let isMusicOn=true,bgmBuffer=null,bgmSource=null,bgmGain=null,bgmLoading=false,leaving=false,unlockArmed=false,inGame=false;
+let bgmBuffer=null,bgmSource=null,bgmGain=null,bgmLoading=false;
+let leaving=false,unlockArmed=false;
+let bgmWanted=false;   // タイトル画面では false。STARTで true、タイトルに戻ると false
+let startPressed=false;
+function ensureAudioCtx(){
+  if(!audioCtx){
+    const C=window.AudioContext||window.webkitAudioContext;
+    if(C){
+      audioCtx=new C();
+      audioCtx.onstatechange=function(){
+        if(audioCtx&&audioCtx.state!=='running'&&!leaving&&isMusicOn&&bgmWanted&&!document.hidden)armBgmUnlock();
+      };
+    }
+  }
+  return audioCtx;
+}
+function unlockAudio(){
+  const c=ensureAudioCtx();
+  if(!c)return;
+  if(c.state!=='running'){
+    try{const b=c.createBuffer(1,1,22050),s=c.createBufferSource();s.buffer=b;s.connect(c.destination);s.start(0)}catch(e){}
+    c.resume().catch(function(){});
+  }
+}
 function startBgm(){
-  if(!isMusicOn||leaving||!inGame)return;
-  const c=ensureAudioCtx();if(!c)return;
-  if(!c.__w){c.__w=1;c.onstatechange=function(){if(c.state!=='running'&&isMusicOn&&!leaving)armBgmUnlock()}}
+  if(!isMusicOn||leaving||!bgmWanted)return;
+  const c=ensureAudioCtx();
+  if(!c)return;
   if(c.state!=='running')c.resume().catch(function(){});
   if(bgmSource)return;
-  if(!bgmBuffer){
-    if(bgmLoading)return;
-    bgmLoading=true;
-    fetch(BGM_URL).then(function(r){return r.arrayBuffer()})
-      .then(function(ab){return new Promise(function(res,rej){c.decodeAudioData(ab,res,rej)})})
-      .then(function(buf){bgmBuffer=buf;bgmLoading=false;startBgm()})
-      .catch(function(){bgmLoading=false});
-    return;
-  }
-  bgmSource=c.createBufferSource();bgmSource.buffer=bgmBuffer;bgmSource.loop=true;
-  bgmGain=c.createGain();bgmGain.gain.value=0.2;
-  bgmSource.connect(bgmGain);bgmGain.connect(c.destination);bgmSource.start(0);
+  if(!bgmBuffer){preloadBgm();return}
+  bgmSource=c.createBufferSource();
+  bgmSource.buffer=bgmBuffer;
+  bgmSource.loop=true;
+  bgmGain=c.createGain();
+  bgmGain.gain.value=0.2;
+  bgmSource.connect(bgmGain);bgmGain.connect(c.destination);
+  bgmSource.start(0);
 }
 function stopBgm(){
-  if(bgmSource){try{bgmSource.stop()}catch(e){}try{bgmSource.disconnect()}catch(e){}bgmSource=null}
-}
-// スマホ対策：タップのたびにオーディオを起こす（iOSは「指を離した瞬間」が許可のタイミング）
-function unlockAudio(){
-  const c=ensureAudioCtx();if(!c)return;
-  if(c.state!=='running'){
-    c.resume().catch(function(){});
-    try{const b=c.createBuffer(1,1,22050),s=c.createBufferSource();s.buffer=b;s.connect(c.destination);s.start(0)}catch(e){}
+  if(bgmSource){
+    try{bgmSource.stop()}catch(e){}
+    try{bgmSource.disconnect()}catch(e){}
+    bgmSource=null;
   }
-  startBgm();
 }
-// BGMが鳴り始めるまで、最初のタップ/キー操作を待ち続ける（ブラウザの自動再生制限のため）
+function stopBgmAndClose(){
+  leaving=true;
+  stopBgm();
+  bgmLoading=false;
+  const c=audioCtx;audioCtx=null;
+  if(c){try{c.onstatechange=null;const pr=c.close();if(pr&&pr.catch)pr.catch(function(){})}catch(e){}}
+}
+function preloadBgm(){
+  if(bgmBuffer||bgmLoading||leaving)return;
+  const c=ensureAudioCtx();
+  if(!c)return;
+  bgmLoading=true;
+  fetch(BGM_URL).then(function(r){return r.arrayBuffer()})
+    .then(function(ab){return new Promise(function(res,rej){c.decodeAudioData(ab,res,rej)})})
+    .then(function(buf){bgmBuffer=buf;bgmLoading=false;startBgm()})
+    .catch(function(){bgmLoading=false});
+}
+function bgmOn(){bgmWanted=true;startBgm();if(!bgmSource||!audioCtx||audioCtx.state!=='running')armBgmUnlock()}
+function bgmOff(){bgmWanted=false;stopBgm()}
+// 「ぴょいん！」
+function playBoing(){
+  const c=ensureAudioCtx();
+  if(!c)return;
+  if(c.state!=='running')c.resume().catch(function(){});
+  const t=c.currentTime,o=c.createOscillator(),gn=c.createGain(),lfo=c.createOscillator(),lg=c.createGain();
+  o.type='sine';
+  o.frequency.setValueAtTime(260,t);
+  o.frequency.exponentialRampToValueAtTime(1100,t+0.09);
+  o.frequency.exponentialRampToValueAtTime(700,t+0.16);
+  o.frequency.exponentialRampToValueAtTime(980,t+0.26);
+  o.frequency.exponentialRampToValueAtTime(520,t+0.42);
+  lfo.frequency.value=28;lg.gain.value=40;lfo.connect(lg);lg.connect(o.frequency);
+  gn.gain.setValueAtTime(0.0001,t);gn.gain.exponentialRampToValueAtTime(0.22,t+0.01);gn.gain.exponentialRampToValueAtTime(0.0001,t+0.45);
+  o.connect(gn);gn.connect(c.destination);
+  o.start(t);o.stop(t+0.47);lfo.start(t);lfo.stop(t+0.47);
+}
 function armBgmUnlock(){
-  if(unlockArmed)return;unlockArmed=true;
+  if(unlockArmed||leaving)return;
+  unlockArmed=true;
   const evs=['touchend','pointerup','click','keydown'];
   const h=function(){
-    if(leaving||!inGame)return;
+    if(leaving)return;
     unlockAudio();
-    if(audioCtx&&audioCtx.state==='running'&&bgmSource){evs.forEach(function(ev){window.removeEventListener(ev,h,true)});unlockArmed=false}
+    startBgm();
+    const c=audioCtx;
+    if(c&&c.state==='running'&&(bgmSource||!isMusicOn||!bgmWanted)){
+      evs.forEach(function(ev){window.removeEventListener(ev,h,true)});
+      unlockArmed=false;
+    }
   };
   evs.forEach(function(ev){window.addEventListener(ev,h,true)});
 }
-// ページを離れる/隠れるときは確実に止める（鳴りっぱなし・BGM重複の防止）
-function hardStopAudio(){
-  leaving=true;stopBgm();bgmLoading=false;
-  try{if(audioCtx&&audioCtx.state!=='closed')audioCtx.close()}catch(e){}
-  audioCtx=null;
-}
-window.addEventListener('pagehide',hardStopAudio);
-window.addEventListener('pageshow',function(e){if(e.persisted)leaving=false;});
+window.addEventListener('pagehide',function(){stopBgmAndClose()});
+window.addEventListener('pageshow',function(e){
+  if(e.persisted){leaving=false;unlockArmed=false;if(bgmWanted){armBgmUnlock();startBgm()}}
+});
 document.addEventListener('visibilitychange',function(){
-  if(document.hidden){if(audioCtx&&audioCtx.state==='running')audioCtx.suspend().catch(function(){})}
-  else if(isMusicOn&&!leaving&&inGame){armBgmUnlock();startBgm()}
+  if(document.hidden){
+    if(audioCtx&&audioCtx.state==='running')audioCtx.suspend().catch(function(){});
+  }else if(!leaving){
+    if(audioCtx&&audioCtx.state!=='running')audioCtx.resume().catch(function(){});
+    if(bgmWanted)armBgmUnlock();
+  }
 });
 
 const au=()=>{const c=ensureAudioCtx();if(c&&c.state==='suspended')c.resume().catch(function(){})};
@@ -590,21 +646,30 @@ function press(e){
   }
 }
 const $=id=>document.getElementById(id),ov=$('setupOverlay');
-function showMenu(){inGame=false;stopBgm();st='TITLE';P=[];stun=0;rock=null;cp=0;ov.style.display='flex'}
-function begin(){inGame=true;au();startBgm();armBgmUnlock();ov.style.display='none';start(1)}
-$('btnBeamStart').addEventListener('click',begin);
-$('btnBackSelect').addEventListener('click',e=>{e.preventDefault();hardStopAudio();location.href='../'});
+function showMenu(){bgmOff();startPressed=false;$('btnBeamStart').classList.remove('pressed');st='TITLE';P=[];stun=0;rock=null;cp=0;ov.style.display='flex'}
+function startGame(){
+  if(startPressed)return;
+  startPressed=true;
+  const b=$('btnBeamStart');b.classList.remove('pressed');void b.offsetWidth;b.classList.add('pressed');
+  playBoing();au();bgmOn();
+  setTimeout(function(){bgmOn();ov.style.display='none';start(1)},380);
+}
+{const press=function(e){e.preventDefault();startGame()};
+$('btnBeamStart').addEventListener('click',press);
+$('btnBeamStart').addEventListener('touchend',press,{passive:false})}
+$('btnBackSelect').addEventListener('click',e=>{e.preventDefault();stopBgmAndClose();location.href='../'});
 $('btnSelect').addEventListener('click',()=>{if(ov.style.display==='none')showMenu()});
-$('btnStart').addEventListener('click',()=>{if(ov.style.display!=='none')begin()});
+$('btnStart').addEventListener('click',()=>{if(ov.style.display!=='none')startGame()});
 ['gameCanvas','btnArea'].forEach(id=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();press(e)}));
 addEventListener('keydown',e=>{
   if(DEV&&(e.code==='KeyN'||e.code==='KeyP')&&st!=='TITLE'&&ov.style.display==='none'){e.preventDefault();start(Math.max(1,Math.min(MAXR,rd+(e.code==='KeyN'?1:-1))));return}
   if(e.code!=='Space'&&e.code!=='Enter')return;
   e.preventDefault();if(e.repeat)return;
-  if(ov.style.display!=='none')begin();else press(e);
+  if(ov.style.display!=='none')startGame();else press(e);
 });
 function resizeGame(){const w=$('gameWrapper');w.style.transform='translate(-50%,-50%) scale('+Math.min(innerWidth/340,innerHeight/680)+')'}
 addEventListener('resize',resizeGame);resizeGame();
+preloadBgm(); // タイトル画面は無音。音楽ファイルだけ先に読み込んでおく
 // iPhoneの連打でズームしないようにする（ダブルタップ拡大・ピンチを無効化）
 document.addEventListener('gesturestart',e=>e.preventDefault());
 document.addEventListener('dblclick',e=>e.preventDefault());
