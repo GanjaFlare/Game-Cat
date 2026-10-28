@@ -181,7 +181,8 @@
       -webkit-text-fill-color: transparent;
       text-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
     }
-      #gameCanvas, #btnArea { touch-action: none; }
+      * { touch-action: manipulation; -webkit-touch-callout: none; }
+    #gameCanvas, #btnArea { touch-action: none; }
   </style>
 </head>
 <body>
@@ -222,7 +223,7 @@
         <div id="setupOverlay" class="overlay">
           <h1 class="title-glow" style="font-size: 25px; margin-bottom: 6px;">BEAM STRUGGLE</h1>
           <p style="font-size: 11px; margin-bottom: 8px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; letter-spacing: 1px; color: #a7f3d0;">OUT-TAP THE MONSTERS!</p>
-          <p style="font-size: 10px; margin-bottom: 18px; font-family: 'Plus Jakarta Sans', sans-serif; color: #94a3b8;">A button / SPACE / TAP = 連打!</p>
+          <p style="font-size: 10px; margin-bottom: 18px; font-family: 'Plus Jakarta Sans', sans-serif; color: #94a3b8;">A button / SPACE / TAP = MASH IT!</p>
           <div class="mode-buttons">
             <button id="btnBeamStart" class="start-btn boost-btn">START</button>
             <button id="btnBackSelect" class="start-btn" style="background:#334155;color:#e2e8f0;box-shadow:0 4px 0 #1e293b;font-size:12px;">&lt; BACK TO GAME SELECT</button>
@@ -579,6 +580,12 @@ addEventListener('keydown',e=>{
 function resizeGame(){const w=$('gameWrapper');w.style.transform='translate(-50%,-50%) scale('+Math.min(innerWidth/340,innerHeight/680)+')'}
 addEventListener('resize',resizeGame);resizeGame();
 armBgmUnlock();startBgm();
+// iPhoneの連打でズームしないようにする（ダブルタップ拡大・ピンチを無効化）
+document.addEventListener('gesturestart',e=>e.preventDefault());
+document.addEventListener('dblclick',e=>e.preventDefault());
+let lastTouch=0;
+document.addEventListener('touchend',e=>{const n=Date.now();if(n-lastTouch<350)e.preventDefault();lastTouch=n},{passive:false});
+document.addEventListener('touchstart',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
 $('btnMusicToggle').addEventListener('click',function(){
   isMusicOn=!isMusicOn;this.innerText=isMusicOn?'🎵 ON':'🎵 OFF';this.classList.toggle('is-on',isMusicOn);
   if(isMusicOn)startBgm();else stopBgm();this.blur();
