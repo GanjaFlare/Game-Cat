@@ -150,10 +150,30 @@
     .cart { position: relative; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform 0.12s, filter 0.12s; }
     .cart img { width: 100%; height: auto; display: block; pointer-events: none; filter: drop-shadow(0 6px 8px rgba(0,0,0,0.55)); }
     .cart:active { transform: translateY(2px) scale(0.98); filter: brightness(1.15); }
-    .cart.soon { cursor: default; aspect-ratio: 462 / 527; border-radius: 10px 10px 16px 10px; background: linear-gradient(160deg, #9ca3af, #6b7280); box-shadow: inset -3px -3px 0 #4b5563, inset 3px 3px 0 #d1d5db, 0 6px 8px rgba(0,0,0,0.55); display: flex; justify-content: center; align-items: center; opacity: 0.9; }
-    .cart.soon::before { content: ''; position: absolute; left: 12%; right: 12%; top: 26%; bottom: 20%; background: #1f2937; border-radius: 4px; }
-    .cart.soon:active { transform: none; filter: none; }
-    .cart.soon span { position: relative; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 20px; letter-spacing: 3px; color: #34d399; text-shadow: 0 0 10px rgba(52, 211, 153, 0.6); }
+    @media (hover: hover) {
+      .cart:hover { transform: translateY(-6px) scale(1.05); filter: brightness(1.12) drop-shadow(0 0 14px rgba(52, 211, 153, 0.8)); }
+    }
+    .cart.picked { animation: pickFlash 0.32s ease-out both; }
+    @keyframes pickFlash {
+      0% { transform: scale(1); filter: brightness(1); }
+      45% { transform: translateY(-6px) scale(1.1); filter: brightness(1.7) drop-shadow(0 0 20px rgba(110, 255, 200, 0.95)); }
+      100% { transform: translateY(-4px) scale(1.05); filter: brightness(1.2) drop-shadow(0 0 14px rgba(52, 211, 153, 0.8)); }
+    }
+    #setupOverlay.reveal > * { animation: fadeUp 0.5s ease-out both; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    /* 🎬 オープニング：GAME CAT が1文字ずつ現れる */
+    #introOverlay { z-index: 500; background: #0f172a; transition: opacity 0.6s ease; }
+    .intro-title { position: relative; display: flex; align-items: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 46px; color: #fff; letter-spacing: 2px; text-shadow: 0 0 18px rgba(52, 211, 153, 0.55), 0 0 40px rgba(52, 211, 153, 0.3); transition: opacity 0.8s ease, text-shadow 0.4s; }
+    .intro-letter { display: inline-block; opacity: 0; transform: translateY(-16px) scale(1.3); }
+    .intro-letter.on { opacity: 1; transform: none; transition: opacity 0.18s ease-out, transform 0.24s cubic-bezier(0.2, 1.4, 0.4, 1); }
+    .intro-gap { display: inline-block; width: 18px; }
+    .intro-title.glint { text-shadow: 0 0 10px #fff, 0 0 26px rgba(110, 255, 200, 0.95), 0 0 56px rgba(52, 211, 153, 0.7); }
+    #introStar { position: absolute; right: -14px; top: -16px; font-size: 40px; line-height: 1; color: #fff; opacity: 0; text-shadow: 0 0 14px #fff, 0 0 30px rgba(110, 255, 200, 1); pointer-events: none; }
+    #introStar.go { animation: starGlint 0.9s ease-out both; }
+    @keyframes starGlint { 0% { opacity: 0; transform: scale(0) rotate(-40deg); } 35% { opacity: 1; transform: scale(1.7) rotate(0deg); } 100% { opacity: 0; transform: scale(0.6) rotate(40deg); } }
+    #introFooter { position: absolute; bottom: 48px; left: 0; width: 100%; text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 1.5px; color: #a7f3d0; transition: opacity 0.8s ease; }
+    .intro-title.fade-out, #introFooter.fade-out { opacity: 0; }
     #statusMessage { position: absolute; color: #333; font-size: 11px; bottom: 20px; font-weight: bold; width: 80%; text-align: center; z-index: 200; pointer-events: none;}
 
     .share-btn {
@@ -238,14 +258,19 @@
         </div>
 
         <div id="setupOverlay" class="overlay">
-          <h1 class="title-glow" style="font-size: 30px; margin-bottom: 6px;">GAME CAT</h1>
-          <p style="font-size: 11px; margin-bottom: 18px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; letter-spacing: 1px; color: #a7f3d0;">SELECT GAME</p>
+          <h1 class="title-glow" style="font-size: 30px; margin-bottom: 20px;">SELECT GAME</h1>
           <div class="cart-grid">
             <div class="cart" data-href="GanjaCatRun/" role="button" aria-label="GANJA CAT RUN 2"><img src="GCR2_title.webp" alt="GANJA CAT RUN 2"></div>
             <div class="cart" data-href="BeamStruggle/" role="button" aria-label="BEAM STRUGGLE"><img src="BeamStruggle_title.webp" alt="BEAM STRUGGLE"></div>
-            <div class="cart soon"><span>SOON</span></div>
-            <div class="cart soon"><span>SOON</span></div>
           </div>
+        </div>
+
+        <div id="introOverlay" class="overlay">
+          <div id="introTitle" class="intro-title">
+            <span class="intro-letter">G</span><span class="intro-letter">A</span><span class="intro-letter">M</span><span class="intro-letter">E</span><span class="intro-gap"></span><span class="intro-letter">C</span><span class="intro-letter">A</span><span class="intro-letter">T</span>
+            <span id="introStar">&#10022;</span>
+          </div>
+          <div id="introFooter">GanjaFlare &copy;</div>
         </div>
 
         <div id="rewardOverlay" class="overlay" style="display: none;">
@@ -281,8 +306,60 @@
     const sb = document.getElementById("shareButton");
     if (sb) sb.style.display = "none";
     document.querySelectorAll(".cart[data-href]").forEach(function(el) {
-      el.addEventListener("click", function() { window.location.href = el.getAttribute("data-href"); });
+      el.addEventListener("click", function() {
+        if (el.dataset.busy) return;
+        el.dataset.busy = "1";
+        el.classList.add("picked");
+        setTimeout(function() { window.location.href = el.getAttribute("data-href"); }, 320);
+      });
     });
+
+    // 🎬 オープニング（同じタブでは最初の1回だけ。?intro を付けると毎回見られる。タップ／キーでスキップ）
+    (function() {
+      const ov = document.getElementById("introOverlay");
+      if (!ov) return;
+      let seen = false;
+      try { seen = sessionStorage.getItem("gcIntroDone") === "1" && !/[?&]intro/.test(location.search); } catch (e) {}
+      if (seen) { ov.parentNode.removeChild(ov); return; }
+      const letters = [].slice.call(ov.querySelectorAll(".intro-letter")), title = document.getElementById("introTitle"),
+            footer = document.getElementById("introFooter"), star = document.getElementById("introStar"), sel = document.getElementById("setupOverlay");
+      let done = false, ac = null; const timers = [];
+      const later = function(fn, ms) { timers.push(setTimeout(fn, ms)); };
+      try { const C = window.AudioContext || window.webkitAudioContext; if (C) { ac = new C(); ac.resume().catch(function(){}); } } catch (e) {}
+      function glintSound() {   // 「キラーン」
+        if (!ac || ac.state !== "running") return;
+        const t = ac.currentTime;
+        [[2093, 0], [3136, 0.05], [4186, 0.1], [5274, 0.16], [6272, 0.22]].forEach(function(v) {
+          const o = ac.createOscillator(), g = ac.createGain();
+          o.type = "sine"; o.frequency.value = v[0];
+          g.gain.setValueAtTime(0.0001, t + v[1]); g.gain.exponentialRampToValueAtTime(0.14, t + v[1] + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + v[1] + 0.9);
+          o.connect(g); g.connect(ac.destination); o.start(t + v[1]); o.stop(t + v[1] + 1);
+        });
+        const z = ac.createOscillator(), zg = ac.createGain();
+        z.type = "sine"; z.frequency.setValueAtTime(1200, t); z.frequency.exponentialRampToValueAtTime(7000, t + 0.2);
+        zg.gain.setValueAtTime(0.0001, t); zg.gain.exponentialRampToValueAtTime(0.1, t + 0.02); zg.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+        z.connect(zg); zg.connect(ac.destination); z.start(t); z.stop(t + 0.35);
+      }
+      function remove() {
+        if (ov.parentNode) ov.parentNode.removeChild(ov);
+        if (sel) sel.classList.add("reveal");
+        try { sessionStorage.setItem("gcIntroDone", "1"); } catch (e) {}
+        if (ac) { try { ac.close(); } catch (e) {} }
+      }
+      function skip() {
+        if (done) return; done = true;
+        timers.forEach(clearTimeout);
+        window.removeEventListener("pointerup", skip, true); window.removeEventListener("keydown", skip, true);
+        ov.style.transition = "opacity 0.25s ease"; ov.style.opacity = "0";
+        setTimeout(remove, 260);
+      }
+      window.addEventListener("pointerup", skip, true); window.addEventListener("keydown", skip, true);
+      letters.forEach(function(el, i) { later(function() { el.classList.add("on"); }, 400 + i * 220); });          // G→A→M→E→C→A→T
+      later(function() { title.classList.add("glint"); star.classList.add("go"); glintSound(); }, 2150);          // キラーン
+      later(function() { title.classList.add("fade-out"); footer.classList.add("fade-out"); }, 3400);              // 全ての文字がフェードアウト
+      later(function() { ov.style.opacity = "0"; }, 4300);
+      later(function() { done = true; remove(); }, 4950);
+    })();
   </script>
 </body>
 </html>
