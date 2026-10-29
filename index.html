@@ -161,6 +161,18 @@
     }
 
     /* 🎬 オープニング：GAME CAT が1文字ずつ現れる */
+    /* 🔊 音声の案内画面（最初に1回だけ。STARTを押して音の許可を取ってからオープニングへ） */
+    #gateOverlay { z-index: 600; background: #0f172a; transition: opacity 0.4s ease; }
+    .gate-bubble { position: relative; background: #fff; color: #0f172a; border-radius: 14px; padding: 12px 18px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 14px; line-height: 1.35; max-width: 230px; box-shadow: 0 4px 0 #94a3b8; margin-bottom: 18px; }
+    .gate-bubble::after { content: ''; position: absolute; left: 66%; bottom: -10px; border: 10px solid transparent; border-top-color: #fff; border-bottom: 0; }
+    #gateCat { width: 192px; height: 144px; image-rendering: pixelated; margin-bottom: 18px; }
+    .start-btn.pressed { animation: startPress 0.38s ease-out both; box-shadow: 0 0 30px rgba(96, 165, 250, 0.95), inset 0 0 20px rgba(255, 255, 255, 0.35); }
+    @keyframes startPress {
+      0% { transform: none; filter: brightness(1); }
+      20% { transform: translateY(5px) scale(0.94, 0.9); filter: brightness(1.5); }
+      55% { transform: translateY(-4px) scale(1.06, 1.08); filter: brightness(1.7); }
+      100% { transform: translateY(0) scale(1.02); filter: brightness(1.3); }
+    }
     #introOverlay { z-index: 500; background: #0f172a; transition: opacity 0.66s ease; touch-action: none; cursor: default; }
     .intro-title { position: relative; display: flex; align-items: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 46px; color: #fff; letter-spacing: 2px; text-shadow: 0 0 18px rgba(52, 211, 153, 0.55), 0 0 40px rgba(52, 211, 153, 0.3); transition: opacity 0.88s ease, text-shadow 0.44s; }
     .intro-letter { display: inline-block; opacity: 0; transform: translateY(-16px) scale(1.3); }
@@ -263,6 +275,14 @@
           </div>
         </div>
 
+        <div id="gateOverlay" class="overlay">
+          <div class="gate-bubble">This game plays sound.</div>
+          <canvas id="gateCat" width="48" height="36"></canvas>
+          <div class="mode-buttons" style="width: 60%;">
+            <button id="gateStart" class="start-btn normal-btn">START</button>
+          </div>
+        </div>
+
         <div id="introOverlay" class="overlay">
           <div id="introTitle" class="intro-title">
             <span class="intro-letter">G</span><span class="intro-letter">A</span><span class="intro-letter">M</span><span class="intro-letter">E</span><span class="intro-gap"></span><span class="intro-letter">C</span><span class="intro-letter">A</span><span class="intro-letter">T</span>
@@ -292,13 +312,13 @@
 
   <script>
     // ===== オープニング中は操作を完全に無効にする（画面のどこを押しても、キーを押しても、何も起きない） =====
-    let introActive = false;
+    let introActive = false; let gateActive = false;
     const BLOCK_EVENTS = ["pointerdown", "pointerup", "mousedown", "mouseup", "click", "dblclick", "contextmenu", "touchstart", "touchend", "touchmove", "keydown", "keyup", "wheel"];
-    function blockInput(e) { if (introActive) { e.preventDefault(); e.stopImmediatePropagation(); } }
+    function blockInput(e) { if (introActive && !gateActive) { e.preventDefault(); e.stopImmediatePropagation(); } }
     (function() {
       let seen = false;
       try { seen = sessionStorage.getItem("gcIntroDone") === "1" && !/[?&]intro/.test(location.search); } catch (e) {}
-      if (!seen) { introActive = true; BLOCK_EVENTS.forEach(function(ev) { window.addEventListener(ev, blockInput, { capture: true, passive: false }); }); }
+      if (!seen) { introActive = true; gateActive = true; BLOCK_EVENTS.forEach(function(ev) { window.addEventListener(ev, blockInput, { capture: true, passive: false }); }); }
     })();
 
     function resizeGame() {
@@ -407,7 +427,7 @@
     (function() {
       const ov = document.getElementById("introOverlay");
       if (!ov) return;
-      if (!introActive) { ov.parentNode.removeChild(ov); selBegin(); return; }
+      if (!introActive) { ov.parentNode.removeChild(ov); const gt0 = document.getElementById("gateOverlay"); if (gt0 && gt0.parentNode) gt0.parentNode.removeChild(gt0); selBegin(); return; }
       const letters = [].slice.call(ov.querySelectorAll(".intro-letter")), title = document.getElementById("introTitle"),
             footer = document.getElementById("introFooter"), star = document.getElementById("introStar");
       const later = function(fn, ms) { setTimeout(fn, ms); };
@@ -433,11 +453,66 @@
         BLOCK_EVENTS.forEach(function(ev) { window.removeEventListener(ev, blockInput, { capture: true }); });
         selBegin();   // ここでゲーム選択画面のBGM開始（オープニング中は鳴らさない）
       }
-      letters.forEach(function(el, i) { later(function() { el.classList.add("on"); }, 440 + i * 242); });          // G→A→M→E→C→A→T
-      later(function() { title.classList.add("glint"); star.classList.add("go"); glintSound(); }, 2365);          // キラーン
-      later(function() { title.classList.add("fade-out"); footer.classList.add("fade-out"); }, 3740);              // 全ての文字がフェードアウト
-      later(function() { ov.style.opacity = "0"; }, 4730);
-      later(finish, 5445);
+      function runIntro() {
+        letters.forEach(function(el, i) { later(function() { el.classList.add("on"); }, 440 + i * 242); });          // G→A→M→E→C→A→T
+        later(function() { title.classList.add("glint"); star.classList.add("go"); glintSound(); }, 2365);          // キラーン
+        later(function() { title.classList.add("fade-out"); footer.classList.add("fade-out"); }, 3740);              // 全ての文字がフェードアウト
+        later(function() { ov.style.opacity = "0"; }, 4730);
+        later(finish, 5445);
+      }
+
+      // 🔊 音声の案内画面：STARTを押した操作で音の許可を取り、そのあとオープニング（キラーン）を始める
+      const gate = document.getElementById("gateOverlay"), gBtn = document.getElementById("gateStart"), gCv = document.getElementById("gateCat");
+      if (!gate || !gBtn || !gCv) { gateActive = false; runIntro(); return; }
+      const gx = gCv.getContext("2d");
+      function drawGateCat(fr) {   // GCRの初期の四足歩行ガンジャキャット
+        const x = 4, y = 16 + ((fr % 8 < 4) ? 0 : -1), hx = x + 16, hy = y - 10, body = "#87CEEB", stripe = "#4169E1";
+        gx.clearRect(0, 0, 48, 36);
+        gx.fillStyle = body; gx.fillRect(x, y, 22, 14);
+        gx.fillStyle = stripe; gx.fillRect(x + 4, y, 3, 14); gx.fillRect(x + 11, y, 3, 14);
+        gx.fillStyle = body; gx.fillRect(hx, hy, 12, 12);
+        gx.fillStyle = stripe; gx.fillRect(hx + 4, hy, 2, 4);
+        gx.fillStyle = body; gx.fillRect(hx + 2, hy - 3, 3, 3); gx.fillRect(hx + 9, hy - 3, 3, 3);
+        [2, 7].forEach(function(ox) {
+          gx.fillStyle = "#ffffff"; gx.fillRect(hx + ox, hy + 2, 4, 4);
+          gx.fillStyle = "#FF69B4"; gx.fillRect(hx + ox, hy + 2, 2, 1); gx.fillRect(hx + ox, hy + 3, 1, 2);
+          gx.fillStyle = "#FFD700"; gx.fillRect(hx + ox + 2, hy + 2, 2, 1); gx.fillRect(hx + ox + 3, hy + 3, 1, 2);
+          gx.fillStyle = "#00FFFF"; gx.fillRect(hx + ox + 1, hy + 4, 2, 1); gx.fillRect(hx + ox + 2, hy + 5, 1, 1);
+          gx.fillStyle = "#9370DB"; gx.fillRect(hx + ox + 1, hy + 3, 1, 1);
+        });
+        gx.fillStyle = "#ffffff"; gx.fillRect(x + 28, y - 2, 6, 2);
+        gx.fillStyle = "#ff0000"; gx.fillRect(x + 33, y - 2, 1, 2);
+        gx.fillStyle = body;
+        if (Math.floor(fr / 2) % 2 === 0) { gx.fillRect(x + 1, y + 14, 4, 4); gx.fillRect(x + 12, y + 14, 4, 4); }
+        else { gx.fillRect(x + 5, y + 14, 4, 4); gx.fillRect(x + 17, y + 14, 4, 4); }
+      }
+      function playBoingSel() {   // 「ぴょいん！」
+        const c = gcCtx();
+        if (!c) return;
+        const t = c.currentTime, o = c.createOscillator(), gn = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
+        o.type = "sine";
+        o.frequency.setValueAtTime(260, t); o.frequency.exponentialRampToValueAtTime(1100, t + 0.09); o.frequency.exponentialRampToValueAtTime(700, t + 0.16);
+        o.frequency.exponentialRampToValueAtTime(980, t + 0.26); o.frequency.exponentialRampToValueAtTime(520, t + 0.42);
+        lfo.frequency.value = 28; lg.gain.value = 40; lfo.connect(lg); lg.connect(o.frequency);
+        gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.22, t + 0.01); gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+        o.connect(gn); gn.connect(c.destination);
+        o.start(t); o.stop(t + 0.47); lfo.start(t); lfo.stop(t + 0.47);
+      }
+      let gf = 0; drawGateCat(0);
+      const gTimer = setInterval(function() { gf++; drawGateCat(gf); }, 110);
+      let gPressed = false;
+      function gatePress(e) {
+        e.preventDefault();
+        if (gPressed) return;
+        gPressed = true; gateActive = false;      // 以降の操作は、オープニングが終わるまで無効
+        unlockAudio();                              // 指を離した瞬間の操作の中で、音の許可を取る
+        playBoingSel();
+        gBtn.classList.add("pressed");
+        setTimeout(function() { gate.style.opacity = "0"; }, 380);
+        setTimeout(function() { clearInterval(gTimer); if (gate.parentNode) gate.parentNode.removeChild(gate); runIntro(); }, 900);
+      }
+      gBtn.addEventListener("click", gatePress);
+      gBtn.addEventListener("touchend", gatePress, { passive: false });
     })();
   </script>
 </body>
