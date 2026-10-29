@@ -161,16 +161,16 @@
     }
 
     /* 🎬 オープニング：GAME CAT が1文字ずつ現れる */
-    #introOverlay { z-index: 500; background: #0f172a; transition: opacity 0.6s ease; }
-    .intro-title { position: relative; display: flex; align-items: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 46px; color: #fff; letter-spacing: 2px; text-shadow: 0 0 18px rgba(52, 211, 153, 0.55), 0 0 40px rgba(52, 211, 153, 0.3); transition: opacity 0.8s ease, text-shadow 0.4s; }
+    #introOverlay { z-index: 500; background: #0f172a; transition: opacity 0.66s ease; touch-action: none; cursor: default; }
+    .intro-title { position: relative; display: flex; align-items: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 46px; color: #fff; letter-spacing: 2px; text-shadow: 0 0 18px rgba(52, 211, 153, 0.55), 0 0 40px rgba(52, 211, 153, 0.3); transition: opacity 0.88s ease, text-shadow 0.44s; }
     .intro-letter { display: inline-block; opacity: 0; transform: translateY(-16px) scale(1.3); }
-    .intro-letter.on { opacity: 1; transform: none; transition: opacity 0.18s ease-out, transform 0.24s cubic-bezier(0.2, 1.4, 0.4, 1); }
+    .intro-letter.on { opacity: 1; transform: none; transition: opacity 0.2s ease-out, transform 0.26s cubic-bezier(0.2, 1.4, 0.4, 1); }
     .intro-gap { display: inline-block; width: 18px; }
     .intro-title.glint { text-shadow: 0 0 10px #fff, 0 0 26px rgba(110, 255, 200, 0.95), 0 0 56px rgba(52, 211, 153, 0.7); }
     #introStar { position: absolute; right: -14px; top: -16px; font-size: 40px; line-height: 1; color: #fff; opacity: 0; text-shadow: 0 0 14px #fff, 0 0 30px rgba(110, 255, 200, 1); pointer-events: none; }
-    #introStar.go { animation: starGlint 0.9s ease-out both; }
+    #introStar.go { animation: starGlint 0.99s ease-out both; }
     @keyframes starGlint { 0% { opacity: 0; transform: scale(0) rotate(-40deg); } 35% { opacity: 1; transform: scale(1.7) rotate(0deg); } 100% { opacity: 0; transform: scale(0.6) rotate(40deg); } }
-    #introFooter { position: absolute; bottom: 48px; left: 0; width: 100%; text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 1.5px; color: #a7f3d0; transition: opacity 0.8s ease; }
+    #introFooter { position: absolute; bottom: 48px; left: 0; width: 100%; text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 1.5px; color: #a7f3d0; transition: opacity 0.88s ease; }
     .intro-title.fade-out, #introFooter.fade-out { opacity: 0; }
     #statusMessage { position: absolute; color: #333; font-size: 11px; bottom: 20px; font-weight: bold; width: 80%; text-align: center; z-index: 200; pointer-events: none;}
 
@@ -291,6 +291,16 @@
   </div>
 
   <script>
+    // ===== オープニング中は操作を完全に無効にする（画面のどこを押しても、キーを押しても、何も起きない） =====
+    let introActive = false;
+    const BLOCK_EVENTS = ["pointerdown", "pointerup", "mousedown", "mouseup", "click", "dblclick", "contextmenu", "touchstart", "touchend", "touchmove", "keydown", "keyup", "wheel"];
+    function blockInput(e) { if (introActive) { e.preventDefault(); e.stopImmediatePropagation(); } }
+    (function() {
+      let seen = false;
+      try { seen = sessionStorage.getItem("gcIntroDone") === "1" && !/[?&]intro/.test(location.search); } catch (e) {}
+      if (!seen) { introActive = true; BLOCK_EVENTS.forEach(function(ev) { window.addEventListener(ev, blockInput, { capture: true, passive: false }); }); }
+    })();
+
     function resizeGame() {
       const wrapper = document.getElementById("gameWrapper");
       if (!wrapper) return;
@@ -303,27 +313,105 @@
     if (cv) { const c2 = cv.getContext("2d"); c2.fillStyle = "#8b956d"; c2.fillRect(0, 0, 240, 160); }
     const sb = document.getElementById("shareButton");
     if (sb) sb.style.display = "none";
+
+    // ===== 🎵 ゲーム選択画面のBGM（オープニング中は鳴らさず、終わってから開始） =====
+    const SEL_BGM_URL = "iwashiro_tuto_and_rial.mp3";
+    let gcAudio = null, selBuf = null, selSrc = null, selGain = null, selLoading = false;
+    let selWanted = false, selLeaving = false, selArmed = false;
+    function gcCtx() {
+      if (!gcAudio) {
+        const C = window.AudioContext || window.webkitAudioContext;
+        if (C) {
+          gcAudio = new C();
+          gcAudio.onstatechange = function() { if (selWanted && !selLeaving && gcAudio && gcAudio.state !== "running" && !document.hidden) selArm(); };
+        }
+      }
+      return gcAudio;
+    }
+    function unlockAudio() {   // iPhone対策：指を離した瞬間に無音を1回鳴らして許可を取る
+      const c = gcCtx();
+      if (!c) return;
+      if (c.state !== "running") {
+        try { const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); } catch (e) {}
+        c.resume().catch(function() {});
+      }
+    }
+    function selPreload() {    // 音楽ファイルを先に読み込む（鳴らさない）
+      if (selBuf || selLoading || selLeaving) return;
+      const c = gcCtx();
+      if (!c) return;
+      selLoading = true;
+      fetch(SEL_BGM_URL).then(function(r) { return r.arrayBuffer(); })
+        .then(function(ab) { return new Promise(function(res, rej) { c.decodeAudioData(ab, res, rej); }); })
+        .then(function(buf) { selBuf = buf; selLoading = false; selStart(); })
+        .catch(function() { selLoading = false; });
+    }
+    function selStart() {
+      if (!selWanted || selLeaving) return;
+      const c = gcCtx();
+      if (!c) return;
+      if (c.state !== "running") c.resume().catch(function() {});
+      if (selSrc) return;
+      if (!selBuf) { selPreload(); return; }
+      selSrc = c.createBufferSource(); selSrc.buffer = selBuf; selSrc.loop = true;
+      selGain = c.createGain(); selGain.gain.setValueAtTime(0.0001, c.currentTime); selGain.gain.linearRampToValueAtTime(0.25, c.currentTime + 0.8);
+      selSrc.connect(selGain); selGain.connect(c.destination);
+      selSrc.start(0);
+    }
+    function selFadeOut(sec) {
+      if (selGain && gcAudio) {
+        const t = gcAudio.currentTime;
+        selGain.gain.cancelScheduledValues(t); selGain.gain.setValueAtTime(selGain.gain.value, t); selGain.gain.linearRampToValueAtTime(0.0001, t + sec);
+      }
+    }
+    function selStopAndClose() {   // ページを離れるとき：止めて、音の装置ごと閉じる
+      selLeaving = true;
+      if (selSrc) { try { selSrc.stop(); } catch (e) {} try { selSrc.disconnect(); } catch (e) {} selSrc = null; }
+      const c = gcAudio; gcAudio = null; selGain = null; selLoading = false;
+      if (c) { try { c.onstatechange = null; const pr = c.close(); if (pr && pr.catch) pr.catch(function() {}); } catch (e) {} }
+    }
+    function selArm() {   // 鳴り始めるまで、指を離した瞬間などの操作のたびに再開を試みる
+      if (selArmed || selLeaving) return;
+      selArmed = true;
+      const evs = ["touchend", "pointerup", "click", "keydown"];
+      const h = function() {
+        if (selLeaving || introActive) return;
+        unlockAudio(); selStart();
+        if (gcAudio && gcAudio.state === "running" && selSrc) { evs.forEach(function(ev) { window.removeEventListener(ev, h, true); }); selArmed = false; }
+      };
+      evs.forEach(function(ev) { window.addEventListener(ev, h, true); });
+    }
+    function selBegin() { selWanted = true; selStart(); selArm(); }   // オープニング終了後（または2回目以降の表示）に呼ぶ
+    window.addEventListener("pagehide", selStopAndClose);
+    window.addEventListener("pageshow", function(e) {
+      if (e.persisted) { selLeaving = false; selArmed = false; selSrc = null; if (selWanted) selBegin(); }
+    });
+    document.addEventListener("visibilitychange", function() {
+      if (document.hidden) { if (gcAudio && gcAudio.state === "running") gcAudio.suspend().catch(function() {}); }
+      else if (!selLeaving && selWanted) { if (gcAudio && gcAudio.state !== "running") gcAudio.resume().catch(function() {}); selArm(); }
+    });
+    selPreload();
+
+    // ===== ゲームを選ぶ（タップ／クリックの演出 → BGMをフェードアウト → 移動） =====
     document.querySelectorAll(".cart[data-href]").forEach(function(el) {
       el.addEventListener("click", function() {
         if (el.dataset.busy) return;
         el.dataset.busy = "1";
         el.classList.add("picked");
-        setTimeout(function() { window.location.href = el.getAttribute("data-href"); }, 320);
+        selFadeOut(0.3);
+        setTimeout(function() { selStopAndClose(); window.location.href = el.getAttribute("data-href"); }, 330);
       });
     });
 
-    // 🎬 オープニング（同じタブでは最初の1回だけ。?intro を付けると毎回見られる。タップ／キーでスキップ）
+    // ===== 🎬 オープニング（同じタブでは最初の1回だけ。?intro を付けると毎回見られる）。再生中は操作不能 =====
     (function() {
       const ov = document.getElementById("introOverlay");
       if (!ov) return;
-      let seen = false;
-      try { seen = sessionStorage.getItem("gcIntroDone") === "1" && !/[?&]intro/.test(location.search); } catch (e) {}
-      if (seen) { ov.parentNode.removeChild(ov); return; }
+      if (!introActive) { ov.parentNode.removeChild(ov); selBegin(); return; }
       const letters = [].slice.call(ov.querySelectorAll(".intro-letter")), title = document.getElementById("introTitle"),
-            footer = document.getElementById("introFooter"), star = document.getElementById("introStar"), sel = document.getElementById("setupOverlay");
-      let done = false, ac = null; const timers = [];
-      const later = function(fn, ms) { timers.push(setTimeout(fn, ms)); };
-      try { const C = window.AudioContext || window.webkitAudioContext; if (C) { ac = new C(); ac.resume().catch(function(){}); } } catch (e) {}
+            footer = document.getElementById("introFooter"), star = document.getElementById("introStar");
+      const later = function(fn, ms) { setTimeout(fn, ms); };
+      const ac = gcCtx(); if (ac) ac.resume().catch(function() {});
       function glintSound() {   // 「キラーン」
         if (!ac || ac.state !== "running") return;
         const t = ac.currentTime;
@@ -338,24 +426,18 @@
         zg.gain.setValueAtTime(0.0001, t); zg.gain.exponentialRampToValueAtTime(0.1, t + 0.02); zg.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
         z.connect(zg); zg.connect(ac.destination); z.start(t); z.stop(t + 0.35);
       }
-      function remove() {
+      function finish() {
         if (ov.parentNode) ov.parentNode.removeChild(ov);
         try { sessionStorage.setItem("gcIntroDone", "1"); } catch (e) {}
-        if (ac) { try { ac.close(); } catch (e) {} }
+        introActive = false;
+        BLOCK_EVENTS.forEach(function(ev) { window.removeEventListener(ev, blockInput, { capture: true }); });
+        selBegin();   // ここでゲーム選択画面のBGM開始（オープニング中は鳴らさない）
       }
-      function skip() {
-        if (done) return; done = true;
-        timers.forEach(clearTimeout);
-        window.removeEventListener("pointerup", skip, true); window.removeEventListener("keydown", skip, true);
-        ov.style.transition = "opacity 0.25s ease"; ov.style.opacity = "0";
-        setTimeout(remove, 260);
-      }
-      window.addEventListener("pointerup", skip, true); window.addEventListener("keydown", skip, true);
-      letters.forEach(function(el, i) { later(function() { el.classList.add("on"); }, 400 + i * 220); });          // G→A→M→E→C→A→T
-      later(function() { title.classList.add("glint"); star.classList.add("go"); glintSound(); }, 2150);          // キラーン
-      later(function() { title.classList.add("fade-out"); footer.classList.add("fade-out"); }, 3400);              // 全ての文字がフェードアウト
-      later(function() { ov.style.opacity = "0"; }, 4300);
-      later(function() { done = true; remove(); }, 4950);
+      letters.forEach(function(el, i) { later(function() { el.classList.add("on"); }, 440 + i * 242); });          // G→A→M→E→C→A→T
+      later(function() { title.classList.add("glint"); star.classList.add("go"); glintSound(); }, 2365);          // キラーン
+      later(function() { title.classList.add("fade-out"); footer.classList.add("fade-out"); }, 3740);              // 全ての文字がフェードアウト
+      later(function() { ov.style.opacity = "0"; }, 4730);
+      later(finish, 5445);
     })();
   </script>
 </body>
