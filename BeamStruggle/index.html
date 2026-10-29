@@ -611,7 +611,7 @@ const bg=document.createElement('canvas');bg.width=W;bg.height=H;
 
 /* ---------- ゲーム状態 ---------- */
 const DEV=false,MAXR=30;
-let peak=0,tw=[],st='TITLE',rd=1,cp=0,cs=0,cf=0,ip=0,af=0,P=[],win=null,fx=0,lock=0,taps=[],stun=0,rock=null,flash=0,boomed=0,best=0;
+let pExt=0,pe=0,peak=0,tw=[],st='TITLE',rd=1,cp=0,cs=0,cf=0,ip=0,af=0,P=[],win=null,fx=0,lock=0,taps=[],stun=0,rock=null,flash=0,boomed=0,best=0;
 try{best=+localStorage.getItem('gcBeamStruggleBest')||0}catch(e){}
 const go=s=>{st=s;if(s==='WIN'||s==='LOSE'||s==='CLEAR')lock=performance.now()+1200};
 function start(n){rd=n;PAL[1]=E[n-1].b;if(n===1){peak=0;tw=[]}cp=0;P=[];ip=0;stun=0;rock=null;taps=[];win=null;boomed=0;flash=0;st='INTRO'}
@@ -695,7 +695,9 @@ function drawTitle(){
 /* ---------- 更新（60回/秒固定） ---------- */
 function fin(w){win=w;st='FIN';fx=120+cp;boomed=0;playSound('teleport')}
 function upd(){
-  af++;clouds.forEach(c=>{c.x-=c.s;if(c.x+c.w<0){c.x=W+Math.random()*50;c.y=15+Math.random()*30}});if(flash>0)flash--;
+  af++;
+  while(tw.length&&tw[0]<performance.now()-1000)tw.shift();
+  pe+=(Math.min(1,tw.length/20)*6-pe)*.12;pExt=Math.round(pe);clouds.forEach(c=>{c.x-=c.s;if(c.x+c.w<0){c.x=W+Math.random()*50;c.y=15+Math.random()*30}});if(flash>0)flash--;
   if(st==='INTRO'){ip+=.04;if(ip>=1){ip=1;st='COUNT';cs=0;cf=0;playSound('coin')}}
   else if(st==='COUNT'){cf++;
     if(cs===0&&cf>=45){cs=1;cf=0;playCount(true)}else if(cs===1&&cf>=35)st='BATTLE'}
@@ -751,19 +753,21 @@ function dog(){
 
 /* ---------- ビーム ---------- */
 const PAL=[['#2468ff','#27a8ff','#8ef6ff'],['#c42a2a','#ff6a2a','#ffc25a']];
+const exOf=t=>t?Math.round((rd-1)/29*5):pExt; // ビームの太さ追加量（自分=連打の速さ、敵=ラウンド）
 function bar(x1,x2,t){
   x1=Math.floor(x1);x2=Math.floor(x2);const w=x2-x1;if(w<=0)return;
-  const p=PAL[t],o=(af>>2)&1,s=t?E[rd-1].s:'s';
-  if(s==='s'){R(x1,BY-5+o,w,11-o*2,p[0]);R(x1,BY-4,w,9,p[1]);R(x1,BY-2,w,5,p[2]);R(x1,BY-1,w,3,'#fff');return}
-  if(s==='t'){R(x1,BY-2,w,5,p[0]);R(x1,BY-1,w,3,p[1]);R(x1,BY,w,1,'#fff');return}
-  if(s==='p'){['#ff4a4a','#ffa040','#ffee55','#6aff6a','#4ac8ff','#a06aff'].forEach((c,i)=>R(x1,BY-6+i*2,w,2,c));R(x1,BY-1,w,2,'#fff');return}
-  if(s==='d'){g.globalAlpha=.45;R(x1,BY-4,w,8,p[0]);g.globalAlpha=1;R(x1,BY-1,w,2,p[1]);
-    for(let x=x2-((af*3)%12);x>x1+2;x-=12){disc(g,x,BY,3,p[1]);R(x-1,BY-1,2,2,p[2])}return}
+  const p=PAL[t],o=(af>>2)&1,s=t?E[rd-1].s:'s',ex=exOf(t),hx=ex>>1;
+  const L=(hh,c)=>R(x1,BY-hh,w,2*hh+1,c);
+  if(s==='s'){L(5+ex-o,p[0]);L(4+ex,p[1]);L(2+hx,p[2]);L(1+(hx>>1),'#fff');return}
+  if(s==='t'){L(2+hx,p[0]);L(1+hx,p[1]);L(hx>>1,'#fff');return}
+  if(s==='p'){const sh=2+(ex>>2);['#ff4a4a','#ffa040','#ffee55','#6aff6a','#4ac8ff','#a06aff'].forEach((c,i)=>R(x1,BY-3*sh+i*sh,w,sh,c));R(x1,BY-1,w,sh,'#fff');return}
+  if(s==='d'){g.globalAlpha=.45;L(4+ex,p[0]);g.globalAlpha=1;L(1+hx,p[1]);
+    for(let x=x2-((af*3)%12);x>x1+2;x-=12){disc(g,x,BY,3+hx,p[1]);R(x-1,BY-1,2,2,p[2])}return}
   for(let x=x1;x<x2;x+=4){const sw=Math.min(4,x2-x),k=s==='g'&&(((x>>3)+(af>>2))&1);
     const q=s==='z'?((x*7+(af>>1)*13)%7)-3:Math.round(Math.sin(x*.15+af*.25)*3);
-    R(x,BY-5+q,sw,11,k?p[2]:p[0]);R(x,BY-3+q,sw,7,k?p[0]:p[1]);R(x,BY-1+q,sw,3,p[2])}
+    R(x,BY-5-ex+q,sw,11+2*ex,k?p[2]:p[0]);R(x,BY-3-ex+q,sw,7+2*ex,k?p[0]:p[1]);R(x,BY-1-hx+q,sw,3+2*hx,p[2])}
 }
-function orb(x,t){const p=PAL[t];disc(g,x,BY,7,p[0]);disc(g,x,BY,5,p[1]);disc(g,x,BY,3,'#fff')}
+function orb(x,t){const p=PAL[t],r=7+(exOf(t)>>1);disc(g,x,BY,r,p[0]);disc(g,x,BY,r-2,p[1]);disc(g,x,BY,r-4,'#fff')}
 function clash(x){
   const w=Math.round(Math.sin(af*.3)*1.5),o=(af>>2)&1;
   disc(g,Math.floor(x),BY,6+w,'#fff');disc(g,Math.floor(x),BY,4,'#ffe9a8');
@@ -786,7 +790,12 @@ function hud(){
   const m=20+((Math.max(-70,Math.min(70,cp))+70)/140*200|0);
   R(19,10,202,6,'#000');R(20,11,200,4,e.b[1]);R(20,11,m-20,4,'#2f8bff');R(m-1,9,3,8,'#fff');
 }
-function rank(v){const t=[[4,'WEAKLING','#888'],[6,'BEGINNER','#aaa'],[8,'AVERAGE JOE','#fff'],[10,'FAST FINGERS','#7efff5'],[12,'MASTER','#6bff7a'],[14,'LEGEND','#ffd700'],[17,'SUPERHUMAN','#ff9a3c']];for(const r of t)if(v<r[0])return r;return[0,'GOD','#ff4a8a']}
+function rank(pk,c){ // pk=1秒間の最大連打数 c=クリアしたラウンド数。総合点=速度点×ラウンド点（0〜100）
+  const S=100*Math.min(1,pk/24)*Math.pow(Math.min(1,c/25),1.5);
+  const t=[[5,'WEAKLING','#888'],[10,'BEGINNER','#aaa'],[20,'AVERAGE JOE','#fff'],[32,'FAST FINGERS','#7efff5'],[45,'MASTER','#6bff7a'],[65,'LEGEND','#ffd700'],[95,'SUPERHUMAN','#ff9a3c']];
+  for(const r of t)if(S<r[0])return r;
+  return c>=25?[0,'GOD','#ff4a8a']:[0,'SUPERHUMAN','#ff9a3c'];
+}
 function overlay(){
   const k=performance.now()<lock,pr=k?'WAIT...':'TAP / SPACE TO CONTINUE',pc=k?'#888':'#fff';
   if(st==='TITLE'){
@@ -800,13 +809,13 @@ function overlay(){
   }else if(st==='WIN'){
     R(0,44,W,64,'rgba(0,0,0,.75)');T('STAGE CLEAR!',120,56,'#6bff7a',3);T(pr,120,92,pc);
   }else if(st==='LOSE'||st==='CLEAR'){
-    const cl=st==='CLEAR',rk=rank(peak);
+    const cl=st==='CLEAR',rk=rank(peak,cl?MAXR:rd-1);
     g.globalAlpha=.88;R(0,0,W,H,'#000');g.globalAlpha=1;
     T(cl?'ALL CLEAR!':'GAME OVER',120,10,cl?'#ffd700':'#ff3a1a',3);
     T('ROUND REACHED',62,40,'#aaa');T(cl?MAXR:rd,62,52,'#fff',5);
     R(119,40,1,38,'#555');
     T('TAPS IN 1 SEC',178,40,'#aaa');T(peak,178,52,'#ffe14a',5);
-    T('LEVEL: '+rk[1],120,92,rk[2],2);
+    T('OVERALL: '+rk[1],120,92,rk[2],2);
     T(pr,120,124,pc);
   }
 }
