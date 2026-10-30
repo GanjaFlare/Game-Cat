@@ -163,8 +163,7 @@
     /* 🎬 オープニング：GAME CAT が1文字ずつ現れる */
     /* 🔊 音声の案内画面（最初に1回だけ。STARTを押して音の許可を取ってからオープニングへ） */
     #gateOverlay { z-index: 600; background: #0f172a; transition: opacity 0.4s ease; }
-    .gate-bubble { position: relative; background: #fff; color: #0f172a; border-radius: 14px; padding: 12px 18px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 14px; line-height: 1.35; max-width: 230px; box-shadow: 0 4px 0 #94a3b8; margin-bottom: 18px; }
-    .gate-bubble::after { content: ''; position: absolute; left: 66%; bottom: -10px; border: 10px solid transparent; border-top-color: #fff; border-bottom: 0; }
+    #gateBubble { display: block; image-rendering: pixelated; margin-bottom: 8px; }
     #gateCat { width: 192px; height: 144px; image-rendering: pixelated; margin-bottom: 18px; }
     .start-btn.pressed { animation: startPress 0.38s ease-out both; box-shadow: 0 0 30px rgba(96, 165, 250, 0.95), inset 0 0 20px rgba(255, 255, 255, 0.35); }
     @keyframes startPress {
@@ -276,7 +275,7 @@
         </div>
 
         <div id="gateOverlay" class="overlay">
-          <div class="gate-bubble">This game plays sound.</div>
+          <canvas id="gateBubble"></canvas>
           <canvas id="gateCat" width="48" height="36"></canvas>
           <div class="mode-buttons" style="width: 60%;">
             <button id="gateStart" class="start-btn normal-btn">START</button>
@@ -356,6 +355,19 @@
         c.resume().catch(function() {});
       }
     }
+    function playBoingSel() {   // 「ぴょいん！」
+      const c = gcCtx();
+      if (!c) return;
+      if (c.state !== "running") c.resume().catch(function() {});
+      const t = c.currentTime, o = c.createOscillator(), gn = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(260, t); o.frequency.exponentialRampToValueAtTime(1100, t + 0.09); o.frequency.exponentialRampToValueAtTime(700, t + 0.16);
+      o.frequency.exponentialRampToValueAtTime(980, t + 0.26); o.frequency.exponentialRampToValueAtTime(520, t + 0.42);
+      lfo.frequency.value = 28; lg.gain.value = 40; lfo.connect(lg); lg.connect(o.frequency);
+      gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.22, t + 0.01); gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+      o.connect(gn); gn.connect(c.destination);
+      o.start(t); o.stop(t + 0.47); lfo.start(t); lfo.stop(t + 0.47);
+    }
     function selPreload() {    // 音楽ファイルを先に読み込む（鳴らさない）
       if (selBuf || selLoading || selLeaving) return;
       const c = gcCtx();
@@ -418,8 +430,10 @@
         if (el.dataset.busy) return;
         el.dataset.busy = "1";
         el.classList.add("picked");
+        unlockAudio();
+        playBoingSel();   // 選んだときも「ぴょいん！」
         selFadeOut(0.3);
-        setTimeout(function() { selStopAndClose(); window.location.href = el.getAttribute("data-href"); }, 330);
+        setTimeout(function() { selStopAndClose(); window.location.href = el.getAttribute("data-href"); }, 480);
       });
     });
 
@@ -486,18 +500,35 @@
         if (Math.floor(fr / 2) % 2 === 0) { gx.fillRect(x + 1, y + 14, 4, 4); gx.fillRect(x + 12, y + 14, 4, 4); }
         else { gx.fillRect(x + 5, y + 14, 4, 4); gx.fillRect(x + 17, y + 14, 4, 4); }
       }
-      function playBoingSel() {   // 「ぴょいん！」
-        const c = gcCtx();
-        if (!c) return;
-        const t = c.currentTime, o = c.createOscillator(), gn = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
-        o.type = "sine";
-        o.frequency.setValueAtTime(260, t); o.frequency.exponentialRampToValueAtTime(1100, t + 0.09); o.frequency.exponentialRampToValueAtTime(700, t + 0.16);
-        o.frequency.exponentialRampToValueAtTime(980, t + 0.26); o.frequency.exponentialRampToValueAtTime(520, t + 0.42);
-        lfo.frequency.value = 28; lg.gain.value = 40; lfo.connect(lg); lg.connect(o.frequency);
-        gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.22, t + 0.01); gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
-        o.connect(gn); gn.connect(c.destination);
-        o.start(t); o.stop(t + 0.47); lfo.start(t); lfo.stop(t + 0.47);
+      const PF = {
+        "T": ["11111","00100","00100","00100","00100","00100","00100"], "h": ["10000","10000","10110","11001","10001","10001","10001"],
+        "i": ["00100","00000","01100","00100","00100","00100","01110"], "s": ["00000","00000","01110","10000","01110","00001","11110"],
+        "g": ["00000","01111","10001","10001","01111","00001","01110"], "a": ["00000","00000","01110","00001","01111","10001","01111"],
+        "m": ["00000","00000","11010","10101","10101","10001","10001"], "e": ["00000","00000","01110","10001","11111","10000","01110"],
+        "p": ["00000","11110","10001","10001","11110","10000","10000"], "l": ["01100","00100","00100","00100","00100","00100","01110"],
+        "y": ["00000","10001","10001","10001","01111","00001","01110"], "o": ["00000","00000","01110","10001","10001","10001","01110"],
+        "u": ["00000","00000","10001","10001","10001","10011","01101"], "n": ["00000","00000","10110","11001","10001","10001","10001"],
+        "d": ["00001","00001","01101","10011","10001","10011","01101"], ".": ["00000","00000","00000","00000","00000","01100","01100"],
+        " ": ["00000","00000","00000","00000","00000","00000","00000"]
+      };
+      function drawPixelBubble(cv, lines, sc) {   // ドット絵の吹き出し：白いフチ、中は透明、白いドット文字
+        const lw = lines.map(function(l) { return l.length * 6 - 1; }), tw = Math.max.apply(null, lw), padX = 6, padY = 5, gap = 3;
+        const W = tw + padX * 2 + 2, Hb = lines.length * 7 + (lines.length - 1) * gap + padY * 2 + 2, H = Hb + 4, tx = Math.round(W * 0.49);
+        cv.width = W; cv.height = H; cv.style.width = (W * sc) + "px"; cv.style.height = (H * sc) + "px";
+        const c = cv.getContext("2d"); c.clearRect(0, 0, W, H); c.fillStyle = "#ffffff";
+        c.fillRect(2, 0, W - 4, 1); c.fillRect(0, 2, 1, Hb - 4); c.fillRect(W - 1, 2, 1, Hb - 4);
+        c.fillRect(1, 1, 1, 1); c.fillRect(W - 2, 1, 1, 1); c.fillRect(1, Hb - 2, 1, 1); c.fillRect(W - 2, Hb - 2, 1, 1);
+        c.fillRect(2, Hb - 1, tx - 2, 1); c.fillRect(tx + 8, Hb - 1, W - 2 - (tx + 8), 1);
+        for (let i = 0; i < 4; i++) { c.fillRect(tx + i, Hb + i, 1, 1); c.fillRect(tx + 7 - i, Hb + i, 1, 1); }
+        lines.forEach(function(l, li) {
+          const x0 = 1 + padX + Math.floor((tw - lw[li]) / 2), y0 = 1 + padY + li * (7 + gap);
+          for (let k = 0; k < l.length; k++) {
+            const g = PF[l[k]]; if (!g) continue;
+            for (let r = 0; r < 7; r++) for (let q = 0; q < 5; q++) if (g[r][q] === "1") c.fillRect(x0 + k * 6 + q, y0 + r, 1, 1);
+          }
+        });
       }
+      drawPixelBubble(document.getElementById("gateBubble"), ["This game", "plays sound."], 3);
       let gf = 0; drawGateCat(0);
       const gTimer = setInterval(function() { gf++; drawGateCat(gf); }, 110);
       let gPressed = false;
