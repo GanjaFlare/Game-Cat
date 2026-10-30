@@ -718,7 +718,8 @@ function upd(){
     if(rock){rock.y+=rock.v;if(rock.y>=GY){rock.y=GY;if(!rock.done){rock.done=1;playSound('hit');spark(10,GY-3,10)}}}
     cp=Math.max(-70,Math.min(70,cp));
     if(af%2===0){motes(CX,'#bff',1+Math.round(pe/2));motes(DX,E[rd-1].b[2],1+Math.round((rd-1)/10))}
-    if(--chg<=0)fin(cp>0?'P':'E'); // 0になった時点でゲージが中央より右なら勝ち
+    if(cp>=70)fin('P');else if(cp<=-70)fin('E'); // 白い棒が端に着いたら、カウント0を待たず即決着
+    else if(--chg<=0)fin(cp>0?'P':'E'); // 0になった時点でゲージが中央より右なら勝ち
   }else if(st==='FIN'){
     const w=win==='P',e=E[rd-1];
     if(fp<24)fp++;else fx+=w?9:-9;
