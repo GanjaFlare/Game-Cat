@@ -611,15 +611,26 @@ const bg=document.createElement('canvas');bg.width=W;bg.height=H;
 
 /* ---------- ゲーム状態 ---------- */
 const DEV=false,MAXR=30;
-let pExt=0,pe=0,peak=0,tw=[],st='TITLE',rd=1,cp=0,cs=0,cf=0,ip=0,af=0,P=[],win=null,fx=0,lock=0,taps=[],stun=0,rock=null,flash=0,boomed=0,best=0;
+let fp=0,chg=0,fExt=0,pExt=0,pe=0,peak=0,tw=[],st='TITLE',rd=1,cp=0,cs=0,cf=0,ip=0,af=0,P=[],win=null,fx=0,lock=0,taps=[],stun=0,rock=null,flash=0,boomed=0,best=0;
 try{best=+localStorage.getItem('gcBeamStruggleBest')||0}catch(e){}
 const go=s=>{st=s;if(s==='WIN'||s==='LOSE'||s==='CLEAR')lock=performance.now()+1200};
-function start(n){rd=n;PAL[1]=E[n-1].b;if(n===1){peak=0;tw=[]}cp=0;P=[];ip=0;stun=0;rock=null;taps=[];win=null;boomed=0;flash=0;st='INTRO'}
+function start(n){rd=n;fp=0;chg=0;PAL[1]=E[n-1].b;if(n===1){peak=0;tw=[]}cp=0;P=[];ip=0;stun=0;rock=null;taps=[];win=null;boomed=0;flash=0;st='INTRO'}
 
 const clouds=[];for(let i=0;i<4;i++)clouds.push({x:Math.random()*W,y:15+Math.random()*30,s:.2+Math.random()*.4,w:20+Math.random()*20});
 const COL=['#fff','#7efff5','#ff9a3c','#ffee55','#ff4a4a'];
 function spark(x,y,n){for(let i=0;i<n;i++){const a=Math.random()*6.28,s=.8+Math.random()*2.5;
   P.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,g:0,c:COL[Math.random()*5|0],s:Math.random()>.4?2:1,l:6+Math.random()*8|0})}}
+function motes(cx,col,n){for(let i=0;i<n;i++)P.push({x:cx+Math.random()*30-15,y:GY-4-Math.random()*30,vx:0,vy:-(.6+Math.random()*.9),g:0,c:col,s:Math.random()>.5?2:1,l:18+Math.random()*14|0})}
+function aura(cx,c1,c2,pw){ // 気のオーラ（pw=強さ0〜1）
+  const n=9,w=34,top=34+Math.round(26*pw);
+  for(let i=0;i<n;i++){
+    const x=Math.round(cx-w/2+i*w/n),d=1-Math.abs(i-(n-1)/2)/((n-1)/2)*.55;
+    const hh=Math.round(top*d*(.6+.4*Math.abs(Math.sin(af*.25+i*1.9))));
+    g.globalAlpha=.45;R(x,GY-hh,5,hh,c1);
+    g.globalAlpha=.8;const h2=Math.round(hh*.65);R(x+1,GY-h2,3,h2,c2);
+  }
+  g.globalAlpha=1;
+}
 function burst(x,y,cols){for(let i=0;i<70;i++){const a=Math.random()*6.28,s=.8+Math.random()*4;
   P.push({x:x+Math.random()*10-5,y:y+Math.random()*10-5,vx:Math.cos(a)*s,vy:Math.sin(a)*s-1,g:.08,c:cols[Math.random()*cols.length|0],s:(Math.random()*3+1)|0,l:25+Math.random()*30|0})}}
 
@@ -633,7 +644,7 @@ function tap(){
     const m=iv.reduce((a,b)=>a+b)/iv.length,sd=Math.sqrt(iv.reduce((a,b)=>a+(b-m)**2,0)/iv.length);
     if(sd<3.5&&m<120){stun=180;rock={y:-12,v:6};taps=[];return}
   }
-  cp+=3.5;playClick();spark(120+cp,BY,4);
+  cp+=3.5;playClick();spark(CX+6,GY-24,3);
 }
 function press(e){
   if(e&&e.repeat)return; // キー長押しは無視
@@ -693,23 +704,24 @@ function drawTitle(){
 }
 
 /* ---------- 更新（60回/秒固定） ---------- */
-function fin(w){win=w;st='FIN';fx=120+cp;boomed=0;playSound('teleport')}
+function fin(w){win=w;st='FIN';fx=120;fp=0;fExt=pExt;boomed=0;playSound('teleport')}
 function upd(){
   af++;
   while(tw.length&&tw[0]<performance.now()-1000)tw.shift();
   pe+=(Math.min(1,tw.length/20)*6-pe)*.12;pExt=Math.round(pe);clouds.forEach(c=>{c.x-=c.s;if(c.x+c.w<0){c.x=W+Math.random()*50;c.y=15+Math.random()*30}});if(flash>0)flash--;
   if(st==='INTRO'){ip+=.04;if(ip>=1){ip=1;st='COUNT';cs=0;cf=0;playSound('coin')}}
   else if(st==='COUNT'){cf++;
-    if(cs===0&&cf>=45){cs=1;cf=0;playCount(true)}else if(cs===1&&cf>=35)st='BATTLE'}
+    if(cs===0&&cf>=45){cs=1;cf=0;playCount(true)}else if(cs===1&&cf>=35){st='BATTLE';chg=300}}
   else if(st==='BATTLE'){
     cp-=DEV?.06:.16+(rd-1)*.04;
     if(stun>0){stun--;cp-=.6}
     if(rock){rock.y+=rock.v;if(rock.y>=GY){rock.y=GY;if(!rock.done){rock.done=1;playSound('hit');spark(10,GY-3,10)}}}
-    if(af%3===0)spark(120+cp,BY,1);
-    if(cp>=70)fin('P');else if(cp<=-70)fin('E');
+    cp=Math.max(-70,Math.min(70,cp));
+    if(af%2===0){motes(CX,'#bff',1+Math.round(pe/2));motes(DX,E[rd-1].b[2],1+Math.round((rd-1)/10))}
+    if(--chg<=0)fin(cp>0?'P':'E'); // 0になった時点でゲージが中央より右なら勝ち
   }else if(st==='FIN'){
     const w=win==='P',e=E[rd-1];
-    fx+=w?9:-9;
+    if(fp<24)fp++;else fx+=w?9:-9;
     if(!boomed&&(w?fx>=DX:fx<=CX)){boomed=1;playSound('explosion');setTimeout(function(){bossTone('sine',140,28,.5,.7);bossNoise(.4,.4,1200)},150);flash=6;
       burst(w?DX:CX,GY-12,w?[e.h,e.m,'#ffd700','#ff7a2a','#fff']:['#6c8dbe','#a1b8de','#ff527b','#fff','#243248'])}
     if(boomed&&(w?fx>W+30:fx<-30)&&!P.length){
@@ -753,7 +765,7 @@ function dog(){
 
 /* ---------- ビーム ---------- */
 const PAL=[['#2468ff','#27a8ff','#8ef6ff'],['#c42a2a','#ff6a2a','#ffc25a']];
-const exOf=t=>t?Math.round((rd-1)/29*5):pExt; // ビームの太さ追加量（自分=連打の速さ、敵=ラウンド）
+const exOf=t=>t?Math.round((rd-1)/29*5):(st==='FIN'||st==='WIN'||st==='LOSE'||st==='CLEAR'?fExt:pExt); // ビームの太さ追加量（自分=連打の速さ、敵=ラウンド）
 function bar(x1,x2,t){
   x1=Math.floor(x1);x2=Math.floor(x2);const w=x2-x1;if(w<=0)return;
   const p=PAL[t],o=(af>>2)&1,s=t?E[rd-1].s:'s',ex=exOf(t),hx=ex>>1;
@@ -775,11 +787,14 @@ function clash(x){
     for(let r=8;r<l;r+=2)R(x+Math.cos(a)*r-1,BY+Math.sin(a)*r-1,2,2,i%2?'#ff9a9a':'#7efff5')}
 }
 function beams(){
-  if(st==='WIN'||st==='LOSE'||st==='CLEAR'){const w=win==='P';bar(w?HL:0,w?W:HR,w?0:1);orb(w?HL:HR,w?0:1);return}
-  if(st==='FIN'){const w=win==='P';bar(w?HL:fx,w?fx:HR,w?0:1);orb(w?HL:HR,w?0:1);clash(fx);return}
-  const pe=st==='INTRO'?HL+(120-HL)*ip:120+cp,ee=st==='INTRO'?HR-(HR-120)*ip:120+cp;
-  bar(HL,pe,0);bar(ee,HR,1);orb(HL,0);orb(HR,1);
-  if(st!=='INTRO'||ip>.8)clash((pe+ee)/2);
+  const w=win==='P';
+  if(st==='WIN'||st==='LOSE'||st==='CLEAR'){bar(w?HL:0,w?W:HR,w?0:1);orb(w?HL:HR,w?0:1);return}
+  if(st==='FIN'){
+    if(fp<24){const k=Math.min(1,fp/12);bar(HL,HL+(120-HL)*k,0);bar(HR-(HR-120)*k,HR,1);orb(HL,0);orb(HR,1);if(k>=1)clash(120);return}
+    if(!boomed){bar(HL,fx,0);bar(fx,HR,1);orb(HL,0);orb(HR,1);clash(fx);return}
+    bar(w?HL:fx,w?fx:HR,w?0:1);orb(w?HL:HR,w?0:1);return
+  }
+  const m=120+cp;bar(HL,m,0);bar(m,HR,1);orb(HL,0);orb(HR,1);clash(m); // タイトル画面の演出用
 }
 
 /* ---------- 画面 ---------- */
@@ -806,6 +821,8 @@ function overlay(){
     if(best)T('BEST: ROUND '+best,120,138,'#aaa');
   }else if(st==='COUNT'){
     if(cs===0){const e=E[rd-1];T('ROUND '+rd,120,34,'#ffd700',4);T(e.n,120,64,e.b[1],2);T(e.a,120,82,'#fff')}else T('FIGHT!',120,48,'#ff3a1a',4);
+  }else if(st==='BATTLE'){
+    const s=Math.ceil(chg/60);T(s,120,36,s<=2?'#ff6a3c':'#fff',6);if((af>>3)&1)T('MASH THE BUTTON!',120,76,'#ffe14a');
   }else if(st==='WIN'){
     R(0,44,W,64,'rgba(0,0,0,.75)');T('STAGE CLEAR!',120,56,'#6bff7a',3);T(pr,120,92,pc);
   }else if(st==='LOSE'||st==='CLEAR'){
@@ -824,10 +841,11 @@ function draw(){
   clouds.forEach(c=>{const w=Math.round(c.w),k='rgba(255,225,235,.45)';R(c.x,c.y,w,10,k);R(c.x+5,c.y-5,w-10,5,k);R(c.x+10,c.y-10,w-20,5,k)});
   if(st!=='TITLE')hud();
   const fe=(st==='FIN'&&boomed)||st==='WIN'||st==='LOSE'||st==='CLEAR';
+  if(st==='BATTLE'||(st==='FIN'&&fp<24)){const e=E[rd-1];aura(CX,'#7efff5','#fff',Math.max(.25,pe/6));aura(DX,e.b[1],e.b[2],.35+.65*(rd-1)/29)}
   if(!(fe&&win==='E'))cat();
   if(!(fe&&win==='P'))dog();
   if(rock){R(5,rock.y-7,9,7,'#57606f');R(7,rock.y-6,5,4,'#2f3542');R(5,rock.y-7,9,1,'#8a93a3')}
-  if(st!=='TITLE')beams();
+  if(st==='FIN'||st==='WIN'||st==='LOSE'||st==='CLEAR')beams();
   P.forEach(p=>R(p.x,p.y,p.s,p.s,p.c));
   if(flash>0){g.globalAlpha=flash/6*.8;R(0,0,W,H,'#fff');g.globalAlpha=1}
   overlay();
