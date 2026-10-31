@@ -1,1 +1,555 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>GameCat</title>
+  <!-- 📱 iPhoneの「ホーム画面に追加」で使われる名前(titleより優先される) -->
+  <meta name="apple-mobile-web-app-title" content="GameCat">
+  <!-- 📱 iPhoneの「ホーム画面に追加」で使われるアイコン -->
+  <link rel="apple-touch-icon" href="icon.png">
+  <!-- 🌐 ブラウザのタブに表示されるアイコン -->
+  <link rel="icon" type="image/png" href="icon.png">
+  <!-- 📱 Brave・Android Chrome等が参照するWebアプリマニフェスト -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#0f172a">
+  <style>
+    body { 
+      margin: 0; 
+      padding: 0; 
+      background-color: #0f172a;
+      
+      font-family: 'Courier New', Courier, monospace; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      height: 100vh; 
+      height: 100dvh; 
+      user-select: none; 
+      -webkit-user-select: none; 
+      overflow: hidden;
+    }
+    
+    .game-container { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; }
+    .game-wrapper { width: 340px; height: 680px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(1); transform-origin: center center; flex-shrink: 0; }
+    
+    .gameboy-body { width: 100%; height: 100%; background: #cfcfc4; border-radius: 10px 10px 40px 10px; box-shadow: inset -5px -5px 0px #999, inset 5px 5px 0px #fff, 0 20px 40px rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; padding: 25px 15px; box-sizing: border-box; position: relative; }
+    
+    .gb-screen-border { width: 92%; height: 230px; background: #777773; border-radius: 5px 5px 25px 5px; border: 3px solid #555; display: flex; justify-content: center; align-items: center; position: relative; margin-top: 10px; }
+    #gameCanvas { background: #8b956d; border: 4px solid #555; image-rendering: pixelated; }
+    
+    .gb-title { width: 92%; text-align: left; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 21px; font-weight: bold; color: #232323; margin-top: 10px; margin-bottom: 5px; padding-left: 6px; box-sizing: border-box; letter-spacing: -0.3px; }
 
+    .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.98); z-index: 100; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #fff; text-align: center; border-radius: 10px 10px 40px 10px;}
+    
+    .input-wrapper { position: relative; width: 80%; margin-bottom: 8px; display: flex; align-items: center; }
+    .input-at { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #34d399; font-size: 16px; font-weight: bold; pointer-events: none; z-index: 10; }
+    input[type="text"] {
+      width: 100%; padding: 12px 35px; border-radius: 8px; border: 2px solid #10b981;
+      background: #0f172a; color: #fff; font-size: 16px; text-align: left; box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700;
+      box-shadow: 0 0 14px rgba(52, 211, 153, 0.25);
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    input[type="text"]:focus { outline: none; border-color: #34d399; box-shadow: 0 0 22px rgba(52, 211, 153, 0.45); }
+    .clear-btn { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #ef4444; font-size: 20px; font-weight: bold; cursor: pointer; z-index: 10; }
+
+    .remember-wrapper { width: 80%; text-align: left; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; letter-spacing: 0.2px; color: #d1fae5; }
+    .remember-wrapper label { cursor: pointer; }
+    .remember-wrapper input[type="checkbox"] { accent-color: #34d399; }
+
+    .mode-buttons { display: flex; gap: 10px; width: 80%; flex-direction: column; }
+    .start-btn {
+      border: 2px solid transparent; padding: 14px 20px; font-size: 14px; cursor: pointer;
+      border-radius: 10px; width: 100%; touch-action: manipulation;
+      font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; letter-spacing: 0.4px;
+      background-color: #0f172a;
+      color: #ffffff;
+      transition: transform 0.12s, box-shadow 0.12s, filter 0.12s;
+    }
+    .start-btn:active { transform: translateY(2px) scale(0.99); filter: brightness(1.15); }
+
+    .normal-btn {
+      border-color: #3b82f6;
+      background: linear-gradient(135deg, rgba(59,130,246,0.22) 0%, #0f172a 70%);
+      box-shadow: 0 0 18px rgba(59, 130, 246, 0.35), inset 0 0 16px rgba(59, 130, 246, 0.08);
+      text-shadow: 0 0 10px rgba(96, 165, 250, 0.8);
+    }
+    .boost-btn {
+      border-color: #ef4444;
+      background: linear-gradient(135deg, rgba(239,68,68,0.22) 0%, #0f172a 70%);
+      box-shadow: 0 0 18px rgba(239, 68, 68, 0.35), inset 0 0 16px rgba(239, 68, 68, 0.08);
+      text-shadow: 0 0 10px rgba(248, 113, 113, 0.8);
+    }
+    .hell-btn {
+      border-color: #b91c1c;
+      background: linear-gradient(135deg, rgba(185,28,28,0.28) 0%, #0f172a 70%);
+      box-shadow: 0 0 18px rgba(185, 28, 28, 0.45), inset 0 0 16px rgba(185, 28, 28, 0.12);
+      text-shadow: 0 0 10px rgba(248, 113, 113, 0.8);
+    }
+
+    .dpad { position: absolute; left: 35px; bottom: 180px; width: 80px; height: 80px; cursor: pointer; z-index: 5; }
+    .dpad-axis { position: absolute; background: #2b2b2b; border-radius: 3px; box-shadow: 0 4px 0 #111; }
+    .dpad-h { top: 27px; left: 0; width: 80px; height: 26px; }
+    .dpad-v { top: 0; left: 27px; width: 26px; height: 80px; }
+    
+    /* 🎯 押し損ね防止用：A/Bボタン周辺の親タップエリア */
+    .gb-buttons-area { 
+      position: absolute; 
+      right: 15px; 
+      bottom: 155px; 
+      width: 140px; 
+      height: 120px; 
+      z-index: 5; 
+      cursor: pointer;
+    }
+    .gb-buttons { position: absolute; right: 20px; bottom: 40px; display: flex; gap: 15px; transform: rotate(-25deg); pointer-events: none; }
+    .gb-btn { width: 44px; height: 44px; background: #a32249; border-radius: 50%; box-shadow: 0 4px 0 #5c1126, inset -2px -2px 3px rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; color: rgba(255,255,255,0.7); font-size: 14px; font-weight: bold; pointer-events: auto; }
+    .gb-btn:active, .gb-btn.active { transform: translateY(4px); box-shadow: 0 0px 0 #5c1126; }
+
+    .gb-menu { position: absolute; bottom: 110px; left: 50%; transform: translateX(-50%); display: flex; gap: 25px; z-index: 5; }
+    .gb-menu-btn { width: 45px; height: 10px; background: #7b7b77; border-radius: 5px; box-shadow: 0 2px 0 #444; position: relative; cursor: pointer; }
+    .gb-menu-label { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); font-size: 9px; color: #555; font-weight: bold; font-family: 'Courier New', monospace; }
+
+    .gb-speaker { position: absolute; right: 30px; bottom: 45px; width: 50px; height: 45px; display: flex; gap: 6px; transform: rotate(-28deg); }
+    .gb-speaker-line { width: 4px; height: 100%; background: #9a9a91; border-radius: 2px; box-shadow: inset 1px 1px 0px rgba(0,0,0,0.2); }
+
+    .music-btn {
+      position: absolute;
+      bottom: 25px;
+      left: 25px;
+      background: #0f172a;
+      color: #64748b;
+      border: 2px solid #334155;
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      z-index: 300;
+      box-shadow: none;
+      outline: none;
+      transition: color 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+    }
+    .music-btn.is-on {
+      color: #6ee7b7;
+      border-color: #34d399;
+      box-shadow: 0 0 14px rgba(52, 211, 153, 0.4), inset 0 0 10px rgba(52, 211, 153, 0.1);
+    }
+    .music-btn:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    /* 🎮 ゲーム選択：カートリッジ画像を2列×2段に並べる */
+    .cart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; width: 88%; }
+    .cart { position: relative; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform 0.12s, filter 0.12s; }
+    .cart img { width: 100%; height: auto; display: block; pointer-events: none; filter: drop-shadow(0 6px 8px rgba(0,0,0,0.55)); }
+    .cart:active { transform: translateY(2px) scale(0.98); filter: brightness(1.15); }
+    /* 次のゲーム用の空き枠：SELECT GAMEと同じ色の細い四角いフレーム（塗りなし）＋控えめなSOON */
+    .cart-soon { aspect-ratio: 462 / 527; box-sizing: border-box; border: 2px solid; border-image: linear-gradient(135deg, #ffffff 0%, #34d399 100%) 1; display: flex; justify-content: center; align-items: center; }
+    .cart-soon span { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 13px; letter-spacing: 3px; background: linear-gradient(135deg, #ffffff 0%, #34d399 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; opacity: 0.8; }
+    @media (hover: hover) {
+      .cart:hover { transform: translateY(-6px) scale(1.05); filter: brightness(1.12) drop-shadow(0 0 14px rgba(52, 211, 153, 0.8)); }
+    }
+    .cart.picked { animation: pickFlash 0.32s ease-out both; }
+    @keyframes pickFlash {
+      0% { transform: scale(1); filter: brightness(1); }
+      45% { transform: translateY(-6px) scale(1.1); filter: brightness(1.7) drop-shadow(0 0 20px rgba(110, 255, 200, 0.95)); }
+      100% { transform: translateY(-4px) scale(1.05); filter: brightness(1.2) drop-shadow(0 0 14px rgba(52, 211, 153, 0.8)); }
+    }
+
+    /* 🎬 オープニング：GAME CAT が1文字ずつ現れる */
+    /* 🔊 音声の案内画面（最初に1回だけ。STARTを押して音の許可を取ってからオープニングへ） */
+    #gateOverlay { z-index: 600; background: #0f172a; transition: opacity 0.4s ease; }
+    #gateBubble { display: block; image-rendering: pixelated; margin-bottom: 8px; }
+    #gateCat { width: 192px; height: 144px; image-rendering: pixelated; margin-bottom: 18px; }
+    .start-btn.pressed { animation: startPress 0.38s ease-out both; box-shadow: 0 0 30px rgba(96, 165, 250, 0.95), inset 0 0 20px rgba(255, 255, 255, 0.35); }
+    @keyframes startPress {
+      0% { transform: none; filter: brightness(1); }
+      20% { transform: translateY(5px) scale(0.94, 0.9); filter: brightness(1.5); }
+      55% { transform: translateY(-4px) scale(1.06, 1.08); filter: brightness(1.7); }
+      100% { transform: translateY(0) scale(1.02); filter: brightness(1.3); }
+    }
+    #introOverlay { z-index: 500; background: #0f172a; transition: opacity 0.66s ease; touch-action: none; cursor: default; }
+    .intro-title { position: relative; display: flex; align-items: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 46px; color: #fff; letter-spacing: 2px; text-shadow: 0 0 18px rgba(52, 211, 153, 0.55), 0 0 40px rgba(52, 211, 153, 0.3); transition: opacity 0.88s ease, text-shadow 0.44s; }
+    .intro-letter { display: inline-block; opacity: 0; transform: translateY(-16px) scale(1.3); }
+    .intro-letter.on { opacity: 1; transform: none; transition: opacity 0.2s ease-out, transform 0.26s cubic-bezier(0.2, 1.4, 0.4, 1); }
+    .intro-gap { display: inline-block; width: 18px; }
+    .intro-title.glint { text-shadow: 0 0 10px #fff, 0 0 26px rgba(110, 255, 200, 0.95), 0 0 56px rgba(52, 211, 153, 0.7); }
+    #introStar { position: absolute; right: -14px; top: -16px; font-size: 40px; line-height: 1; color: #fff; opacity: 0; text-shadow: 0 0 14px #fff, 0 0 30px rgba(110, 255, 200, 1); pointer-events: none; }
+    #introStar.go { animation: starGlint 0.99s ease-out both; }
+    @keyframes starGlint { 0% { opacity: 0; transform: scale(0) rotate(-40deg); } 35% { opacity: 1; transform: scale(1.7) rotate(0deg); } 100% { opacity: 0; transform: scale(0.6) rotate(40deg); } }
+    #introFooter { position: absolute; bottom: 48px; left: 0; width: 100%; text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 1.5px; color: #a7f3d0; transition: opacity 0.88s ease; }
+    .intro-title.fade-out, #introFooter.fade-out { opacity: 0; }
+    #statusMessage { position: absolute; color: #333; font-size: 11px; bottom: 20px; font-weight: bold; width: 80%; text-align: center; z-index: 200; pointer-events: none;}
+
+    .share-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      padding: 6px;
+      font-size: 0;
+      cursor: pointer;
+      z-index: 120;
+      border-radius: 4px;
+      display: none;
+      box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+      line-height: 0;
+      transition: background 0.2s;
+    }
+    .share-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0px 0px 0px rgba(0,0,0,0);
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    /* 🌿 タイトル文字：白→エメラルドグリーンのグラデーション + ネオン風の光彩 */
+    .title-glow {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-weight: 800;
+      margin: 0;
+      background: linear-gradient(135deg, #ffffff 0%, #34d399 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
+    }
+  </style>
+</head>
+<body>
+<div class="game-container">
+    <div id="gameWrapper" class="game-wrapper">
+      <div class="gameboy-body">
+        
+        <div class="gb-screen-border">
+          <canvas id="gameCanvas" width="240" height="160"></canvas>
+          <button id="shareButton" class="share-btn" title="Share">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+              <polyline points="16 6 12 2 8 6"></polyline>
+              <line x1="12" y1="2" x2="12" y2="15"></line>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="gb-title">Game Cat</div>
+
+        <div id="statusMessage"></div>
+        
+        <div id="dpadControl" class="dpad">
+          <div class="dpad-axis dpad-h"></div>
+          <div class="dpad-axis dpad-v"></div>
+        </div>
+        
+        <!-- 🎯 タップ判定エリアを拡張したボタンエリア構造 -->
+        <div id="btnArea" class="gb-buttons-area">
+          <div class="gb-buttons">
+            <div id="btnB" class="gb-btn">B</div>
+            <div id="btnA" class="gb-btn">A</div>
+          </div>
+        </div>
+        
+        <div class="gb-menu">
+          <div id="btnSelect" class="gb-menu-btn"><span class="gb-menu-label">SELECT</span></div>
+          <div id="btnStart" class="gb-menu-btn"><span class="gb-menu-label">START</span></div>
+        </div>
+        
+        <div class="gb-speaker">
+          <div class="gb-speaker-line"></div>
+          <div class="gb-speaker-line"></div>
+          <div class="gb-speaker-line"></div>
+          <div class="gb-speaker-line"></div>
+        </div>
+
+        <div id="setupOverlay" class="overlay">
+          <h1 class="title-glow" style="font-size: 30px; margin-bottom: 20px;">SELECT GAME</h1>
+          <div class="cart-grid">
+            <div class="cart" data-href="GanjaCatRun/" role="button" aria-label="GANJA CAT RUN 2"><img src="GCR2_title.webp" alt="GANJA CAT RUN 2"></div>
+            <div class="cart" data-href="BeamStruggle/" role="button" aria-label="BEAM STRUGGLE"><img src="BeamStruggle_title.webp" alt="BEAM STRUGGLE"></div>
+            <div class="cart" data-href="PoliceDog/" role="button" aria-label="POLICE DOG"><img src="PoliceDog_title.webp" alt="POLICE DOG"></div>
+            <div class="cart-soon" aria-hidden="true"><span>SOON</span></div>
+          </div>
+        </div>
+
+        <div id="gateOverlay" class="overlay">
+          <canvas id="gateBubble"></canvas>
+          <canvas id="gateCat" width="48" height="36"></canvas>
+          <div class="mode-buttons" style="width: 60%;">
+            <button id="gateStart" class="start-btn normal-btn">START</button>
+          </div>
+        </div>
+
+        <div id="introOverlay" class="overlay">
+          <div id="introTitle" class="intro-title">
+            <span class="intro-letter">G</span><span class="intro-letter">A</span><span class="intro-letter">M</span><span class="intro-letter">E</span><span class="intro-gap"></span><span class="intro-letter">C</span><span class="intro-letter">A</span><span class="intro-letter">T</span>
+            <span id="introStar">&#10022;</span>
+          </div>
+          <div id="introFooter">GanjaFlare &copy;</div>
+        </div>
+
+        <div id="rewardOverlay" class="overlay" style="display: none;">
+          <h1 style="color:#ffd700; font-size: 24px; margin-bottom: 5px;">🎉 CLEAR!! 🎉</h1>
+          <p style="font-size: 11px; margin-bottom: 15px; color: #fff;">150点達成！報酬を獲得しました！</p>
+          
+          <div class="input-wrapper" style="width: 85%;">
+            <input type="text" id="walletInput" placeholder="0x... (Wallet Address)" style="padding: 12px 15px; border: 2px solid #ffd700;">
+          </div>
+          
+          <div class="mode-buttons" style="width: 85%;">
+            <button id="btnClaim" class="start-btn" style="background: #ffd700; color: #000; box-shadow: 0 4px 0 #b8860b; font-weight: bold;">
+              CLAIM REWARD & SAVE
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== オープニング中は操作を完全に無効にする（画面のどこを押しても、キーを押しても、何も起きない） =====
+    let introActive = false; let gateActive = false;
+    const BLOCK_EVENTS = ["pointerdown", "pointerup", "mousedown", "mouseup", "click", "dblclick", "contextmenu", "touchstart", "touchend", "touchmove", "keydown", "keyup", "wheel"];
+    function blockInput(e) { if (introActive && !gateActive) { e.preventDefault(); e.stopImmediatePropagation(); } }
+    (function() {
+      let seen = false;
+      try { seen = sessionStorage.getItem("gcIntroDone") === "1" && !/[?&]intro/.test(location.search); } catch (e) {}
+      if (!seen) { introActive = true; gateActive = true; BLOCK_EVENTS.forEach(function(ev) { window.addEventListener(ev, blockInput, { capture: true, passive: false }); }); }
+    })();
+
+    function resizeGame() {
+      const wrapper = document.getElementById("gameWrapper");
+      if (!wrapper) return;
+      const scale = Math.min(window.innerWidth / 340, window.innerHeight / 680);
+      wrapper.style.transform = `translate(-50%, -50%) scale(${scale})`;
+    }
+    window.addEventListener("resize", resizeGame);
+    resizeGame();
+    const cv = document.getElementById("gameCanvas");
+    if (cv) { const c2 = cv.getContext("2d"); c2.fillStyle = "#8b956d"; c2.fillRect(0, 0, 240, 160); }
+    const sb = document.getElementById("shareButton");
+    if (sb) sb.style.display = "none";
+
+    // ===== 🎵 ゲーム選択画面のBGM（オープニング中は鳴らさず、終わってから開始） =====
+    const SEL_BGM_URL = "iwashiro_tuto_and_rial.mp3";
+    let gcAudio = null, selBuf = null, selSrc = null, selGain = null, selLoading = false;
+    let selWanted = false, selLeaving = false, selArmed = false;
+    function gcCtx() {
+      if (!gcAudio) {
+        const C = window.AudioContext || window.webkitAudioContext;
+        if (C) {
+          gcAudio = new C();
+          gcAudio.onstatechange = function() { if (selWanted && !selLeaving && gcAudio && gcAudio.state !== "running" && !document.hidden) selArm(); };
+        }
+      }
+      return gcAudio;
+    }
+    function unlockAudio() {   // iPhone対策：指を離した瞬間に無音を1回鳴らして許可を取る
+      const c = gcCtx();
+      if (!c) return;
+      if (c.state !== "running") {
+        try { const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); } catch (e) {}
+        c.resume().catch(function() {});
+      }
+    }
+    function playBoingSel() {   // 「ぴょいん！」
+      const c = gcCtx();
+      if (!c) return;
+      if (c.state !== "running") c.resume().catch(function() {});
+      const t = c.currentTime, o = c.createOscillator(), gn = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(260, t); o.frequency.exponentialRampToValueAtTime(1100, t + 0.09); o.frequency.exponentialRampToValueAtTime(700, t + 0.16);
+      o.frequency.exponentialRampToValueAtTime(980, t + 0.26); o.frequency.exponentialRampToValueAtTime(520, t + 0.42);
+      lfo.frequency.value = 28; lg.gain.value = 40; lfo.connect(lg); lg.connect(o.frequency);
+      gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.22, t + 0.01); gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
+      o.connect(gn); gn.connect(c.destination);
+      o.start(t); o.stop(t + 0.47); lfo.start(t); lfo.stop(t + 0.47);
+    }
+    function selPreload() {    // 音楽ファイルを先に読み込む（鳴らさない）
+      if (selBuf || selLoading || selLeaving) return;
+      const c = gcCtx();
+      if (!c) return;
+      selLoading = true;
+      fetch(SEL_BGM_URL).then(function(r) { return r.arrayBuffer(); })
+        .then(function(ab) { return new Promise(function(res, rej) { c.decodeAudioData(ab, res, rej); }); })
+        .then(function(buf) { selBuf = buf; selLoading = false; selStart(); })
+        .catch(function() { selLoading = false; });
+    }
+    function selStart() {
+      if (!selWanted || selLeaving) return;
+      const c = gcCtx();
+      if (!c) return;
+      if (c.state !== "running") c.resume().catch(function() {});
+      if (selSrc) return;
+      if (!selBuf) { selPreload(); return; }
+      selSrc = c.createBufferSource(); selSrc.buffer = selBuf; selSrc.loop = true;
+      selGain = c.createGain(); selGain.gain.setValueAtTime(0.0001, c.currentTime); selGain.gain.linearRampToValueAtTime(0.25, c.currentTime + 0.8);
+      selSrc.connect(selGain); selGain.connect(c.destination);
+      selSrc.start(0);
+    }
+    function selFadeOut(sec) {
+      if (selGain && gcAudio) {
+        const t = gcAudio.currentTime;
+        selGain.gain.cancelScheduledValues(t); selGain.gain.setValueAtTime(selGain.gain.value, t); selGain.gain.linearRampToValueAtTime(0.0001, t + sec);
+      }
+    }
+    function selStopAndClose() {   // ページを離れるとき：止めて、音の装置ごと閉じる
+      selLeaving = true;
+      if (selSrc) { try { selSrc.stop(); } catch (e) {} try { selSrc.disconnect(); } catch (e) {} selSrc = null; }
+      const c = gcAudio; gcAudio = null; selGain = null; selLoading = false;
+      if (c) { try { c.onstatechange = null; const pr = c.close(); if (pr && pr.catch) pr.catch(function() {}); } catch (e) {} }
+    }
+    function selArm() {   // 鳴り始めるまで、指を離した瞬間などの操作のたびに再開を試みる
+      if (selArmed || selLeaving) return;
+      selArmed = true;
+      const evs = ["touchend", "pointerup", "click", "keydown"];
+      const h = function() {
+        if (selLeaving || introActive) return;
+        unlockAudio(); selStart();
+        if (gcAudio && gcAudio.state === "running" && selSrc) { evs.forEach(function(ev) { window.removeEventListener(ev, h, true); }); selArmed = false; }
+      };
+      evs.forEach(function(ev) { window.addEventListener(ev, h, true); });
+    }
+    function selBegin() { selWanted = true; selStart(); selArm(); }   // オープニング終了後（または2回目以降の表示）に呼ぶ
+    window.addEventListener("pagehide", selStopAndClose);
+    window.addEventListener("pageshow", function(e) {
+      if (e.persisted) { selLeaving = false; selArmed = false; selSrc = null; if (selWanted) selBegin(); }
+    });
+    document.addEventListener("visibilitychange", function() {
+      if (document.hidden) { if (gcAudio && gcAudio.state === "running") gcAudio.suspend().catch(function() {}); }
+      else if (!selLeaving && selWanted) { if (gcAudio && gcAudio.state !== "running") gcAudio.resume().catch(function() {}); selArm(); }
+    });
+    selPreload();
+
+    // ===== ゲームを選ぶ（タップ／クリックの演出 → BGMをフェードアウト → 移動） =====
+    document.querySelectorAll(".cart[data-href]").forEach(function(el) {
+      el.addEventListener("click", function() {
+        if (el.dataset.busy) return;
+        el.dataset.busy = "1";
+        el.classList.add("picked");
+        unlockAudio();
+        playBoingSel();   // 選んだときも「ぴょいん！」
+        selFadeOut(0.3);
+        setTimeout(function() { selStopAndClose(); window.location.href = el.getAttribute("data-href"); }, 480);
+      });
+    });
+
+    // ===== 🎬 オープニング（同じタブでは最初の1回だけ。?intro を付けると毎回見られる）。再生中は操作不能 =====
+    (function() {
+      const ov = document.getElementById("introOverlay");
+      if (!ov) return;
+      if (!introActive) { ov.parentNode.removeChild(ov); const gt0 = document.getElementById("gateOverlay"); if (gt0 && gt0.parentNode) gt0.parentNode.removeChild(gt0); selBegin(); return; }
+      const letters = [].slice.call(ov.querySelectorAll(".intro-letter")), title = document.getElementById("introTitle"),
+            footer = document.getElementById("introFooter"), star = document.getElementById("introStar");
+      const later = function(fn, ms) { setTimeout(fn, ms); };
+      const ac = gcCtx(); if (ac) ac.resume().catch(function() {});
+      function glintSound() {   // 「キラーン」
+        if (!ac || ac.state !== "running") return;
+        const t = ac.currentTime;
+        [[2093, 0], [3136, 0.05], [4186, 0.1], [5274, 0.16], [6272, 0.22]].forEach(function(v) {
+          const o = ac.createOscillator(), g = ac.createGain();
+          o.type = "sine"; o.frequency.value = v[0];
+          g.gain.setValueAtTime(0.0001, t + v[1]); g.gain.exponentialRampToValueAtTime(0.14, t + v[1] + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + v[1] + 0.9);
+          o.connect(g); g.connect(ac.destination); o.start(t + v[1]); o.stop(t + v[1] + 1);
+        });
+        const z = ac.createOscillator(), zg = ac.createGain();
+        z.type = "sine"; z.frequency.setValueAtTime(1200, t); z.frequency.exponentialRampToValueAtTime(7000, t + 0.2);
+        zg.gain.setValueAtTime(0.0001, t); zg.gain.exponentialRampToValueAtTime(0.1, t + 0.02); zg.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+        z.connect(zg); zg.connect(ac.destination); z.start(t); z.stop(t + 0.35);
+      }
+      function finish() {
+        if (ov.parentNode) ov.parentNode.removeChild(ov);
+        try { sessionStorage.setItem("gcIntroDone", "1"); } catch (e) {}
+        introActive = false;
+        BLOCK_EVENTS.forEach(function(ev) { window.removeEventListener(ev, blockInput, { capture: true }); });
+        selBegin();   // ここでゲーム選択画面のBGM開始（オープニング中は鳴らさない）
+      }
+      function runIntro() {
+        letters.forEach(function(el, i) { later(function() { el.classList.add("on"); }, 440 + i * 242); });          // G→A→M→E→C→A→T
+        later(function() { title.classList.add("glint"); star.classList.add("go"); glintSound(); }, 2365);          // キラーン
+        later(function() { title.classList.add("fade-out"); footer.classList.add("fade-out"); }, 3740);              // 全ての文字がフェードアウト
+        later(function() { ov.style.opacity = "0"; }, 4730);
+        later(finish, 5445);
+      }
+
+      // 🔊 音声の案内画面：STARTを押した操作で音の許可を取り、そのあとオープニング（キラーン）を始める
+      const gate = document.getElementById("gateOverlay"), gBtn = document.getElementById("gateStart"), gCv = document.getElementById("gateCat");
+      if (!gate || !gBtn || !gCv) { gateActive = false; runIntro(); return; }
+      const gx = gCv.getContext("2d");
+      function drawGateCat(fr) {   // GCRの初期の四足歩行ガンジャキャット
+        const x = 4, y = 16 + ((fr % 8 < 4) ? 0 : -1), hx = x + 16, hy = y - 10, body = "#87CEEB", stripe = "#4169E1";
+        gx.clearRect(0, 0, 48, 36);
+        gx.fillStyle = body; gx.fillRect(x, y, 22, 14);
+        gx.fillStyle = stripe; gx.fillRect(x + 4, y, 3, 14); gx.fillRect(x + 11, y, 3, 14);
+        gx.fillStyle = body; gx.fillRect(hx, hy, 12, 12);
+        gx.fillStyle = stripe; gx.fillRect(hx + 4, hy, 2, 4);
+        gx.fillStyle = body; gx.fillRect(hx + 2, hy - 3, 3, 3); gx.fillRect(hx + 9, hy - 3, 3, 3);
+        [2, 7].forEach(function(ox) {
+          gx.fillStyle = "#ffffff"; gx.fillRect(hx + ox, hy + 2, 4, 4);
+          gx.fillStyle = "#FF69B4"; gx.fillRect(hx + ox, hy + 2, 2, 1); gx.fillRect(hx + ox, hy + 3, 1, 2);
+          gx.fillStyle = "#FFD700"; gx.fillRect(hx + ox + 2, hy + 2, 2, 1); gx.fillRect(hx + ox + 3, hy + 3, 1, 2);
+          gx.fillStyle = "#00FFFF"; gx.fillRect(hx + ox + 1, hy + 4, 2, 1); gx.fillRect(hx + ox + 2, hy + 5, 1, 1);
+          gx.fillStyle = "#9370DB"; gx.fillRect(hx + ox + 1, hy + 3, 1, 1);
+        });
+        gx.fillStyle = "#ffffff"; gx.fillRect(x + 28, y - 2, 6, 2);
+        gx.fillStyle = "#ff0000"; gx.fillRect(x + 33, y - 2, 1, 2);
+        gx.fillStyle = body;
+        if (Math.floor(fr / 2) % 2 === 0) { gx.fillRect(x + 1, y + 14, 4, 4); gx.fillRect(x + 12, y + 14, 4, 4); }
+        else { gx.fillRect(x + 5, y + 14, 4, 4); gx.fillRect(x + 17, y + 14, 4, 4); }
+      }
+      const PF = {
+        "T": ["11111","00100","00100","00100","00100","00100","00100"], "h": ["10000","10000","10110","11001","10001","10001","10001"],
+        "i": ["00100","00000","01100","00100","00100","00100","01110"], "s": ["00000","00000","01110","10000","01110","00001","11110"],
+        "g": ["00000","01111","10001","10001","01111","00001","01110"], "a": ["00000","00000","01110","00001","01111","10001","01111"],
+        "m": ["00000","00000","11010","10101","10101","10001","10001"], "e": ["00000","00000","01110","10001","11111","10000","01110"],
+        "p": ["00000","11110","10001","10001","11110","10000","10000"], "l": ["01100","00100","00100","00100","00100","00100","01110"],
+        "y": ["00000","10001","10001","10001","01111","00001","01110"], "o": ["00000","00000","01110","10001","10001","10001","01110"],
+        "u": ["00000","00000","10001","10001","10001","10011","01101"], "n": ["00000","00000","10110","11001","10001","10001","10001"],
+        "d": ["00001","00001","01101","10011","10001","10011","01101"], ".": ["00000","00000","00000","00000","00000","01100","01100"],
+        " ": ["00000","00000","00000","00000","00000","00000","00000"]
+      };
+      function drawPixelBubble(cv, lines, sc) {   // ドット絵の吹き出し：白いフチ、中は透明、白いドット文字
+        const lw = lines.map(function(l) { return l.length * 6 - 1; }), tw = Math.max.apply(null, lw), padX = 6, padY = 5, gap = 3;
+        const W = tw + padX * 2 + 2, Hb = lines.length * 7 + (lines.length - 1) * gap + padY * 2 + 2, H = Hb + 4, tx = Math.round(W * 0.49);
+        cv.width = W; cv.height = H; cv.style.width = (W * sc) + "px"; cv.style.height = (H * sc) + "px";
+        const c = cv.getContext("2d"); c.clearRect(0, 0, W, H); c.fillStyle = "#ffffff";
+        c.fillRect(2, 0, W - 4, 1); c.fillRect(0, 2, 1, Hb - 4); c.fillRect(W - 1, 2, 1, Hb - 4);
+        c.fillRect(1, 1, 1, 1); c.fillRect(W - 2, 1, 1, 1); c.fillRect(1, Hb - 2, 1, 1); c.fillRect(W - 2, Hb - 2, 1, 1);
+        c.fillRect(2, Hb - 1, tx - 2, 1); c.fillRect(tx + 8, Hb - 1, W - 2 - (tx + 8), 1);
+        for (let i = 0; i < 4; i++) { c.fillRect(tx + i, Hb + i, 1, 1); c.fillRect(tx + 7 - i, Hb + i, 1, 1); }
+        lines.forEach(function(l, li) {
+          const x0 = 1 + padX + Math.floor((tw - lw[li]) / 2), y0 = 1 + padY + li * (7 + gap);
+          for (let k = 0; k < l.length; k++) {
+            const g = PF[l[k]]; if (!g) continue;
+            for (let r = 0; r < 7; r++) for (let q = 0; q < 5; q++) if (g[r][q] === "1") c.fillRect(x0 + k * 6 + q, y0 + r, 1, 1);
+          }
+        });
+      }
+      drawPixelBubble(document.getElementById("gateBubble"), ["This game", "plays sound."], 3);
+      let gf = 0; drawGateCat(0);
+      const gTimer = setInterval(function() { gf++; drawGateCat(gf); }, 110);
+      let gPressed = false;
+      function gatePress(e) {
+        e.preventDefault();
+        if (gPressed) return;
+        gPressed = true; gateActive = false;      // 以降の操作は、オープニングが終わるまで無効
+        unlockAudio();                              // 指を離した瞬間の操作の中で、音の許可を取る
+        playBoingSel();
+        gBtn.classList.add("pressed");
+        setTimeout(function() { gate.style.opacity = "0"; }, 380);
+        setTimeout(function() { clearInterval(gTimer); if (gate.parentNode) gate.parentNode.removeChild(gate); runIntro(); }, 900);
+      }
+      gBtn.addEventListener("click", gatePress);
+      gBtn.addEventListener("touchend", gatePress, { passive: false });
+    })();
+  </script>
+</body>
+</html>
