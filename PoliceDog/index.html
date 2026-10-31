@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>GameCat</title>
+  <title>POLICE DOG</title>
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われる名前(titleより優先される) -->
-  <meta name="apple-mobile-web-app-title" content="GameCat">
+  <meta name="apple-mobile-web-app-title" content="PoliceDog">
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われるアイコン -->
-  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="apple-touch-icon" href="../icon.png">
   <!-- 🌐 ブラウザのタブに表示されるアイコン -->
-  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="icon" type="image/png" href="../icon.png">
   <!-- 📱 Brave・Android Chrome等が参照するWebアプリマニフェスト -->
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="../manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
@@ -91,6 +91,13 @@
       text-shadow: 0 0 10px rgba(248, 113, 113, 0.8);
     }
 
+    .start-btn.pressed { animation: startPress 0.38s ease-out both; box-shadow: 0 0 30px rgba(96, 165, 250, 0.95), inset 0 0 20px rgba(255, 255, 255, 0.35); }
+    @keyframes startPress {
+      0% { transform: none; filter: brightness(1); }
+      20% { transform: translateY(5px) scale(0.94, 0.9); filter: brightness(1.5); }
+      55% { transform: translateY(-4px) scale(1.06, 1.08); filter: brightness(1.7); }
+      100% { transform: translateY(0) scale(1.02); filter: brightness(1.3); }
+    }
     .dpad { position: absolute; left: 35px; bottom: 180px; width: 80px; height: 80px; cursor: pointer; z-index: 5; }
     .dpad-axis { position: absolute; background: #2b2b2b; border-radius: 3px; box-shadow: 0 4px 0 #111; }
     .dpad-h { top: 27px; left: 0; width: 80px; height: 26px; }
@@ -145,47 +152,6 @@
       transform: translateY(1px) scale(0.98);
     }
 
-    /* 🎮 ゲーム選択：カートリッジ画像を2列×2段に並べる */
-    .cart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; width: 88%; }
-    .cart { position: relative; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform 0.12s, filter 0.12s; }
-    .cart img { width: 100%; height: auto; display: block; pointer-events: none; filter: drop-shadow(0 6px 8px rgba(0,0,0,0.55)); }
-    .cart:active { transform: translateY(2px) scale(0.98); filter: brightness(1.15); }
-    /* 次のゲーム用の空き枠：SELECT GAMEと同じ色の細い四角いフレーム（塗りなし）＋控えめなSOON */
-    .cart-soon { aspect-ratio: 462 / 527; box-sizing: border-box; border: 2px solid; border-image: linear-gradient(135deg, #ffffff 0%, #34d399 100%) 1; display: flex; justify-content: center; align-items: center; }
-    .cart-soon span { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 13px; letter-spacing: 3px; background: linear-gradient(135deg, #ffffff 0%, #34d399 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; opacity: 0.8; }
-    @media (hover: hover) {
-      .cart:hover { transform: translateY(-6px) scale(1.05); filter: brightness(1.12) drop-shadow(0 0 14px rgba(52, 211, 153, 0.8)); }
-    }
-    .cart.picked { animation: pickFlash 0.32s ease-out both; }
-    @keyframes pickFlash {
-      0% { transform: scale(1); filter: brightness(1); }
-      45% { transform: translateY(-6px) scale(1.1); filter: brightness(1.7) drop-shadow(0 0 20px rgba(110, 255, 200, 0.95)); }
-      100% { transform: translateY(-4px) scale(1.05); filter: brightness(1.2) drop-shadow(0 0 14px rgba(52, 211, 153, 0.8)); }
-    }
-
-    /* 🎬 オープニング：GAME CAT が1文字ずつ現れる */
-    /* 🔊 音声の案内画面（最初に1回だけ。STARTを押して音の許可を取ってからオープニングへ） */
-    #gateOverlay { z-index: 600; background: #0f172a; transition: opacity 0.4s ease; }
-    #gateBubble { display: block; image-rendering: pixelated; margin-bottom: 8px; }
-    #gateCat { width: 192px; height: 144px; image-rendering: pixelated; margin-bottom: 18px; }
-    .start-btn.pressed { animation: startPress 0.38s ease-out both; box-shadow: 0 0 30px rgba(96, 165, 250, 0.95), inset 0 0 20px rgba(255, 255, 255, 0.35); }
-    @keyframes startPress {
-      0% { transform: none; filter: brightness(1); }
-      20% { transform: translateY(5px) scale(0.94, 0.9); filter: brightness(1.5); }
-      55% { transform: translateY(-4px) scale(1.06, 1.08); filter: brightness(1.7); }
-      100% { transform: translateY(0) scale(1.02); filter: brightness(1.3); }
-    }
-    #introOverlay { z-index: 500; background: #0f172a; transition: opacity 0.66s ease; touch-action: none; cursor: default; }
-    .intro-title { position: relative; display: flex; align-items: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 46px; color: #fff; letter-spacing: 2px; text-shadow: 0 0 18px rgba(52, 211, 153, 0.55), 0 0 40px rgba(52, 211, 153, 0.3); transition: opacity 0.88s ease, text-shadow 0.44s; }
-    .intro-letter { display: inline-block; opacity: 0; transform: translateY(-16px) scale(1.3); }
-    .intro-letter.on { opacity: 1; transform: none; transition: opacity 0.2s ease-out, transform 0.26s cubic-bezier(0.2, 1.4, 0.4, 1); }
-    .intro-gap { display: inline-block; width: 18px; }
-    .intro-title.glint { text-shadow: 0 0 10px #fff, 0 0 26px rgba(110, 255, 200, 0.95), 0 0 56px rgba(52, 211, 153, 0.7); }
-    #introStar { position: absolute; right: -14px; top: -16px; font-size: 40px; line-height: 1; color: #fff; opacity: 0; text-shadow: 0 0 14px #fff, 0 0 30px rgba(110, 255, 200, 1); pointer-events: none; }
-    #introStar.go { animation: starGlint 0.99s ease-out both; }
-    @keyframes starGlint { 0% { opacity: 0; transform: scale(0) rotate(-40deg); } 35% { opacity: 1; transform: scale(1.7) rotate(0deg); } 100% { opacity: 0; transform: scale(0.6) rotate(40deg); } }
-    #introFooter { position: absolute; bottom: 48px; left: 0; width: 100%; text-align: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 1.5px; color: #a7f3d0; transition: opacity 0.88s ease; }
-    .intro-title.fade-out, #introFooter.fade-out { opacity: 0; }
     #statusMessage { position: absolute; color: #333; font-size: 11px; bottom: 20px; font-weight: bold; width: 80%; text-align: center; z-index: 200; pointer-events: none;}
 
     .share-btn {
@@ -222,6 +188,14 @@
       -webkit-text-fill-color: transparent;
       text-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
     }
+  
+    .pd-title {
+      font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 32px; letter-spacing: 1px;
+      margin: 0 0 6px; text-align: center;
+      background: linear-gradient(135deg, #ffffff 0%, #60a5fa 100%);
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 20px rgba(96, 165, 250, 0.35);
+    }
   </style>
 </head>
 <body>
@@ -229,6 +203,8 @@
     <div id="gameWrapper" class="game-wrapper">
       <div class="gameboy-body">
         
+        <button id="btnMusicToggle" class="music-btn is-on">🎵 ON</button>
+
         <div class="gb-screen-border">
           <canvas id="gameCanvas" width="240" height="160"></canvas>
           <button id="shareButton" class="share-btn" title="Share">
@@ -240,7 +216,7 @@
           </button>
         </div>
         
-        <div class="gb-title">Game Cat</div>
+        <div class="gb-title">Police Dog</div>
 
         <div id="statusMessage"></div>
         
@@ -269,44 +245,12 @@
           <div class="gb-speaker-line"></div>
         </div>
 
-        <div id="setupOverlay" class="overlay">
-          <h1 class="title-glow" style="font-size: 30px; margin-bottom: 20px;">SELECT GAME</h1>
-          <div class="cart-grid">
-            <div class="cart" data-href="GanjaCatRun/" role="button" aria-label="GANJA CAT RUN 2"><img src="GCR2_title.webp" alt="GANJA CAT RUN 2"></div>
-            <div class="cart" data-href="BeamStruggle/" role="button" aria-label="BEAM STRUGGLE"><img src="BeamStruggle_title.webp" alt="BEAM STRUGGLE"></div>
-            <div class="cart" data-href="PoliceDog/" role="button" aria-label="POLICE DOG"><img src="PoliceDog_title.webp" alt="POLICE DOG"></div>
-            <div class="cart-soon" aria-hidden="true"><span>SOON</span></div>
-          </div>
-        </div>
-
-        <div id="gateOverlay" class="overlay">
-          <canvas id="gateBubble"></canvas>
-          <canvas id="gateCat" width="48" height="36"></canvas>
-          <div class="mode-buttons" style="width: 60%;">
-            <button id="gateStart" class="start-btn normal-btn">START</button>
-          </div>
-        </div>
-
-        <div id="introOverlay" class="overlay">
-          <div id="introTitle" class="intro-title">
-            <span class="intro-letter">G</span><span class="intro-letter">A</span><span class="intro-letter">M</span><span class="intro-letter">E</span><span class="intro-gap"></span><span class="intro-letter">C</span><span class="intro-letter">A</span><span class="intro-letter">T</span>
-            <span id="introStar">&#10022;</span>
-          </div>
-          <div id="introFooter">GanjaFlare &copy;</div>
-        </div>
-
-        <div id="rewardOverlay" class="overlay" style="display: none;">
-          <h1 style="color:#ffd700; font-size: 24px; margin-bottom: 5px;">🎉 CLEAR!! 🎉</h1>
-          <p style="font-size: 11px; margin-bottom: 15px; color: #fff;">150点達成！報酬を獲得しました！</p>
-          
-          <div class="input-wrapper" style="width: 85%;">
-            <input type="text" id="walletInput" placeholder="0x... (Wallet Address)" style="padding: 12px 15px; border: 2px solid #ffd700;">
-          </div>
-          
-          <div class="mode-buttons" style="width: 85%;">
-            <button id="btnClaim" class="start-btn" style="background: #ffd700; color: #000; box-shadow: 0 4px 0 #b8860b; font-weight: bold;">
-              CLAIM REWARD & SAVE
-            </button>
+                <div id="setupOverlay" class="overlay">
+          <h1 class="pd-title">POLICE DOG</h1>
+          <canvas id="titleWalkCanvas" width="200" height="50" style="image-rendering: pixelated; margin: 4px 0 8px;"></canvas>
+          <div class="mode-buttons">
+            <button id="btnNormal" class="start-btn normal-btn">START</button>
+            <button id="btnBackSelect" class="start-btn" style="background:#334155;color:#e2e8f0;box-shadow:0 4px 0 #1e293b;font-size:12px;">&lt; BACK TO GAME SELECT</button>
           </div>
         </div>
 
@@ -315,241 +259,945 @@
   </div>
 
   <script>
-    // ===== オープニング中は操作を完全に無効にする（画面のどこを押しても、キーを押しても、何も起きない） =====
-    let introActive = false; let gateActive = false;
-    const BLOCK_EVENTS = ["pointerdown", "pointerup", "mousedown", "mouseup", "click", "dblclick", "contextmenu", "touchstart", "touchend", "touchmove", "keydown", "keyup", "wheel"];
-    function blockInput(e) { if (introActive && !gateActive) { e.preventDefault(); e.stopImmediatePropagation(); } }
-    (function() {
-      let seen = false;
-      try { seen = sessionStorage.getItem("gcIntroDone") === "1" && !/[?&]intro/.test(location.search); } catch (e) {}
-      if (!seen) { introActive = true; gateActive = true; BLOCK_EVENTS.forEach(function(ev) { window.addEventListener(ev, blockInput, { capture: true, passive: false }); }); }
-    })();
+    window.addEventListener('error', function(e) {
+      const m = document.getElementById('statusMessage');
+      if (m) { m.innerText = 'Error: ' + e.message; m.style.color = '#ff4444'; }
+    });
 
-    function resizeGame() {
-      const wrapper = document.getElementById("gameWrapper");
-      if (!wrapper) return;
-      const scale = Math.min(window.innerWidth / 340, window.innerHeight / 680);
-      wrapper.style.transform = `translate(-50%, -50%) scale(${scale})`;
-    }
-    window.addEventListener("resize", resizeGame);
-    resizeGame();
-    const cv = document.getElementById("gameCanvas");
-    if (cv) { const c2 = cv.getContext("2d"); c2.fillStyle = "#8b956d"; c2.fillRect(0, 0, 240, 160); }
-    const sb = document.getElementById("shareButton");
-    if (sb) sb.style.display = "none";
+    // =====================================================================
+    //  POLICE DOG  (GAME CAT / GanjaCatRun 2 のボス戦スピンオフ)
+    // =====================================================================
+    const BGM_URL = "../iwashiro_yanagi_bocho.mp3";   // ← GCRと同じ階層構成（ゲームフォルダの1つ上＝GitHubルート）
+    const BACK_URL = "../";                            // ← GAME SELECTへ戻るリンク先
 
-    // ===== 🎵 ゲーム選択画面のBGM（オープニング中は鳴らさず、終わってから開始） =====
-    const SEL_BGM_URL = "iwashiro_tuto_and_rial.mp3";
-    let gcAudio = null, selBuf = null, selSrc = null, selGain = null, selLoading = false;
-    let selWanted = false, selLeaving = false, selArmed = false;
-    function gcCtx() {
-      if (!gcAudio) {
+    // ---------- 調整しやすい設定値 ----------
+    const DOG_HP = 5;                  // ポリスドッグのライフ（レーザー命中数）
+    const CAT_LIFE = 5;                // ガンジャキャットのライフ
+    const GAUGE_MAX = 5;               // 避けた弾丸N発でゲージMAX
+    const CHARGE_FRAMES = 26;          // 「しゃきーん！」から発射までの溜め
+    const BULLET_SPEED_START = 4.0;    // 弾速（開始時）※遅すぎるとジャンプしても着弾するので注意
+    const BULLET_SPEED_END = 7.0;      // 弾速（最大）
+        const SHOT_WAIT_START = 105;       // 発射間隔（開始時, フレーム）
+    const SHOT_WAIT_END = 42;          // 発射間隔（最大難度時）
+    const DROP_MIN = 1200, DROP_MAX = 2400;   // パラシュート出現間隔（20〜40秒）
+    const NITRO_TOTAL = 240;           // ニトロ無敵時間（4秒・原作と同じ）
+
+    const W = 240, H = 160, GROUND = 133, CAT_X = 20, CAT_REST = 115, DOG_STAND_X = 170;
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    // =====================================================================
+    //  AUDIO
+    // =====================================================================
+    let audioCtx = null, bgmBuffer = null, bgmSource = null, bgmGain = null, bgmLoading = false;
+    let leaving = false, unlockArmed = false, bgmWanted = false, isMusicOn = true, startPressed = false;
+    let nitroNodes = [];
+
+    function ensureAudioCtx() {
+      if (!audioCtx) {
         const C = window.AudioContext || window.webkitAudioContext;
         if (C) {
-          gcAudio = new C();
-          gcAudio.onstatechange = function() { if (selWanted && !selLeaving && gcAudio && gcAudio.state !== "running" && !document.hidden) selArm(); };
+          audioCtx = new C();
+          audioCtx.onstatechange = function() {
+            if (audioCtx && audioCtx.state !== 'running' && !leaving && isMusicOn && bgmWanted && !document.hidden) armBgmUnlock();
+          };
         }
       }
-      return gcAudio;
+      return audioCtx;
     }
-    function unlockAudio() {   // iPhone対策：指を離した瞬間に無音を1回鳴らして許可を取る
-      const c = gcCtx();
-      if (!c) return;
-      if (c.state !== "running") {
-        try { const b = c.createBuffer(1, 1, 22050), src = c.createBufferSource(); src.buffer = b; src.connect(c.destination); src.start(0); } catch (e) {}
-        c.resume().catch(function() {});
+    function unlockAudio() {
+      const c = ensureAudioCtx(); if (!c) return;
+      if (c.state !== 'running') {
+        try { const b = c.createBuffer(1, 1, 22050), s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start(0); } catch (e) {}
+        c.resume().catch(function(){});
       }
     }
-    function playBoingSel() {   // 「ぴょいん！」
-      const c = gcCtx();
-      if (!c) return;
-      if (c.state !== "running") c.resume().catch(function() {});
+    function startBgm() {
+      if (!isMusicOn || leaving || !bgmWanted) return;
+      const c = ensureAudioCtx(); if (!c) return;
+      if (c.state !== 'running') c.resume().catch(function(){});
+      if (bgmSource) return;
+      if (!bgmBuffer) { preloadBgm(); return; }
+      bgmSource = c.createBufferSource(); bgmSource.buffer = bgmBuffer; bgmSource.loop = true;
+      bgmGain = c.createGain(); bgmGain.gain.value = paused ? 0 : 0.22;
+      bgmSource.connect(bgmGain); bgmGain.connect(c.destination); bgmSource.start(0);
+    }
+    function stopBgm() {
+      if (bgmSource) {
+        try { bgmSource.stop(); } catch (e) {}
+        try { bgmSource.disconnect(); } catch (e) {}
+        bgmSource = null;
+      }
+    }
+    function stopBgmAndClose() {
+      leaving = true; stopBgm(); bgmLoading = false;
+      const c = audioCtx; audioCtx = null;
+      if (c) { try { c.onstatechange = null; const pr = c.close(); if (pr && pr.catch) pr.catch(function(){}); } catch (e) {} }
+    }
+    function preloadBgm() {
+      if (bgmBuffer || bgmLoading || leaving) return;
+      const c = ensureAudioCtx(); if (!c) return;
+      bgmLoading = true;
+      fetch(BGM_URL).then(function(r){ return r.arrayBuffer(); })
+        .then(function(ab){ return new Promise(function(res, rej){ c.decodeAudioData(ab, res, rej); }); })
+        .then(function(buf){ bgmBuffer = buf; bgmLoading = false; startBgm(); })
+        .catch(function(){ bgmLoading = false; });
+    }
+    function bgmOn() { bgmWanted = true; startBgm(); if (!bgmSource || !audioCtx || audioCtx.state !== 'running') armBgmUnlock(); }
+    function bgmOff() { bgmWanted = false; stopBgm(); }
+    function armBgmUnlock() {
+      if (unlockArmed || leaving) return;
+      unlockArmed = true;
+      const evs = ['touchend', 'pointerup', 'click', 'keydown'];
+      const h = function() {
+        if (leaving) return;
+        unlockAudio(); startBgm();
+        const c = audioCtx;
+        if (c && c.state === 'running' && (bgmSource || !isMusicOn || !bgmWanted)) {
+          evs.forEach(function(ev){ window.removeEventListener(ev, h, true); });
+          unlockArmed = false;
+        }
+      };
+      evs.forEach(function(ev){ window.addEventListener(ev, h, true); });
+    }
+    window.addEventListener('pagehide', function() { stopBgmAndClose(); });
+    window.addEventListener('pageshow', function(e) {
+      if (e.persisted) { leaving = false; unlockArmed = false; if (bgmWanted) { armBgmUnlock(); startBgm(); } }
+    });
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) {
+        if (audioCtx && audioCtx.state === 'running') audioCtx.suspend().catch(function(){});
+        if (mode === 'intro' || mode === 'fight' || mode === 'dying') setPaused(true);
+      } else if (!leaving) {
+        if (audioCtx && audioCtx.state !== 'running') audioCtx.resume().catch(function(){});
+        if (bgmWanted) armBgmUnlock();
+      }
+    });
+
+    // --- 効果音の部品 ---
+    function tone(type, f0, f1, dur, vol, delay) {
+      const c = ensureAudioCtx(); if (!c) return;
+      if (c.state === 'suspended') c.resume().catch(function(){});
+      const t0 = c.currentTime + (delay || 0), o = c.createOscillator(), g = c.createGain();
+      o.type = type; o.frequency.setValueAtTime(f0, t0);
+      if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t0 + dur);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.008); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.03);
+    }
+    function noise(dur, vol, cutoff, delay, ftype) {
+      const c = ensureAudioCtx(); if (!c) return;
+      if (c.state === 'suspended') c.resume().catch(function(){});
+      const t0 = c.currentTime + (delay || 0), len = Math.max(1, Math.floor(c.sampleRate * dur));
+      const b = c.createBuffer(1, len, c.sampleRate), d = b.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      const s = c.createBufferSource(); s.buffer = b;
+      const f = c.createBiquadFilter(); f.type = ftype || 'lowpass'; f.frequency.value = cutoff;
+      const g = c.createGain(); g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      s.connect(f); f.connect(g); g.connect(c.destination); s.start(t0); s.stop(t0 + dur + 0.02);
+    }
+    function sfxJump() { tone('square', 400, 800, 0.1, 0.15); }
+    function sfxCoin() { tone('triangle', 900, 1800, 0.1, 0.2); }
+    function sfxHurt() { tone('sawtooth', 150, 80, 0.2, 0.3); noise(0.12, 0.2, 700); }
+    function sfxThud() { tone('sine', 110, 36, 0.24, 0.5); noise(0.12, 0.25, 320); }
+    function sfxGunshot() { noise(0.28, 0.5, 900); tone('sine', 150, 32, 0.34, 0.7); tone('square', 300, 60, 0.08, 0.12); }
+    function sfxLaser() { tone('sine', 3600, 1300, 0.07, 0.16); tone('sine', 1500, 1100, 0.22, 0.12, 0.05); tone('triangle', 3000, 2000, 0.1, 0.05, 0.02); }
+    function sfxDokun() { tone('sine', 85, 36, 0.24, 0.6); tone('sine', 60, 28, 0.2, 0.5, 0.02); }
+    function sfxExplosion() { tone('sawtooth', 150, 10, 0.8, 0.4); tone('square', 50, 5, 0.8, 0.25); noise(0.6, 0.4, 1500); }
+    function sfxGaugeTick(n) { tone('square', 420 + n * 130, 420 + n * 130, 0.06, 0.09); }
+    function sfxHeal() { [660, 880, 1320].forEach(function(f, i) { tone('sine', f, f * 1.01, 0.28, 0.12, i * 0.09); tone('triangle', f * 2, f * 2, 0.18, 0.04, i * 0.09); }); }
+    function sfxDrop() { tone('sine', 520, 980, 0.18, 0.1); tone('sine', 980, 740, 0.2, 0.08, 0.12); }
+    function sfxCount() { tone('square', 660, 660, 0.12, 0.12); }
+    // ⚔️ 「しゃきーん！」：刃物を抜くような金属音（ノイズの擦過音 → 高音の響き）
+    function sfxShakiin() {
+      noise(0.22, 0.30, 5200, 0, 'highpass');
+      tone('sawtooth', 1400, 6200, 0.09, 0.07);
+      [2093, 3136, 4186, 6272].forEach(function(f, i) { tone('sine', f, f, 0.95 - i * 0.12, 0.11 - i * 0.015, 0.07); });
+    }
+    function sfxBoing() {
+      const c = ensureAudioCtx(); if (!c) return;
+      if (c.state !== 'running') c.resume().catch(function(){});
       const t = c.currentTime, o = c.createOscillator(), gn = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
-      o.type = "sine";
-      o.frequency.setValueAtTime(260, t); o.frequency.exponentialRampToValueAtTime(1100, t + 0.09); o.frequency.exponentialRampToValueAtTime(700, t + 0.16);
-      o.frequency.exponentialRampToValueAtTime(980, t + 0.26); o.frequency.exponentialRampToValueAtTime(520, t + 0.42);
+      o.type = 'sine';
+      o.frequency.setValueAtTime(260, t);
+      o.frequency.exponentialRampToValueAtTime(1100, t + 0.09);
+      o.frequency.exponentialRampToValueAtTime(700, t + 0.16);
+      o.frequency.exponentialRampToValueAtTime(980, t + 0.26);
+      o.frequency.exponentialRampToValueAtTime(520, t + 0.42);
       lfo.frequency.value = 28; lg.gain.value = 40; lfo.connect(lg); lg.connect(o.frequency);
       gn.gain.setValueAtTime(0.0001, t); gn.gain.exponentialRampToValueAtTime(0.22, t + 0.01); gn.gain.exponentialRampToValueAtTime(0.0001, t + 0.45);
       o.connect(gn); gn.connect(c.destination);
       o.start(t); o.stop(t + 0.47); lfo.start(t); lfo.stop(t + 0.47);
     }
-    function selPreload() {    // 音楽ファイルを先に読み込む（鳴らさない）
-      if (selBuf || selLoading || selLeaving) return;
-      const c = gcCtx();
-      if (!c) return;
-      selLoading = true;
-      fetch(SEL_BGM_URL).then(function(r) { return r.arrayBuffer(); })
-        .then(function(ab) { return new Promise(function(res, rej) { c.decodeAudioData(ab, res, rej); }); })
-        .then(function(buf) { selBuf = buf; selLoading = false; selStart(); })
-        .catch(function() { selLoading = false; });
-    }
-    function selStart() {
-      if (!selWanted || selLeaving) return;
-      const c = gcCtx();
-      if (!c) return;
-      if (c.state !== "running") c.resume().catch(function() {});
-      if (selSrc) return;
-      if (!selBuf) { selPreload(); return; }
-      selSrc = c.createBufferSource(); selSrc.buffer = selBuf; selSrc.loop = true;
-      selGain = c.createGain(); selGain.gain.setValueAtTime(0.0001, c.currentTime); selGain.gain.linearRampToValueAtTime(0.25, c.currentTime + 0.8);
-      selSrc.connect(selGain); selGain.connect(c.destination);
-      selSrc.start(0);
-    }
-    function selFadeOut(sec) {
-      if (selGain && gcAudio) {
-        const t = gcAudio.currentTime;
-        selGain.gain.cancelScheduledValues(t); selGain.gain.setValueAtTime(selGain.gain.value, t); selGain.gain.linearRampToValueAtTime(0.0001, t + sec);
-      }
-    }
-    function selStopAndClose() {   // ページを離れるとき：止めて、音の装置ごと閉じる
-      selLeaving = true;
-      if (selSrc) { try { selSrc.stop(); } catch (e) {} try { selSrc.disconnect(); } catch (e) {} selSrc = null; }
-      const c = gcAudio; gcAudio = null; selGain = null; selLoading = false;
-      if (c) { try { c.onstatechange = null; const pr = c.close(); if (pr && pr.catch) pr.catch(function() {}); } catch (e) {} }
-    }
-    function selArm() {   // 鳴り始めるまで、指を離した瞬間などの操作のたびに再開を試みる
-      if (selArmed || selLeaving) return;
-      selArmed = true;
-      const evs = ["touchend", "pointerup", "click", "keydown"];
-      const h = function() {
-        if (selLeaving || introActive) return;
-        unlockAudio(); selStart();
-        if (gcAudio && gcAudio.state === "running" && selSrc) { evs.forEach(function(ev) { window.removeEventListener(ev, h, true); }); selArmed = false; }
-      };
-      evs.forEach(function(ev) { window.addEventListener(ev, h, true); });
-    }
-    function selBegin() { selWanted = true; selStart(); selArm(); }   // オープニング終了後（または2回目以降の表示）に呼ぶ
-    window.addEventListener("pagehide", selStopAndClose);
-    window.addEventListener("pageshow", function(e) {
-      if (e.persisted) { selLeaving = false; selArmed = false; selSrc = null; if (selWanted) selBegin(); }
-    });
-    document.addEventListener("visibilitychange", function() {
-      if (document.hidden) { if (gcAudio && gcAudio.state === "running") gcAudio.suspend().catch(function() {}); }
-      else if (!selLeaving && selWanted) { if (gcAudio && gcAudio.state !== "running") gcAudio.resume().catch(function() {}); selArm(); }
-    });
-    selPreload();
-
-    // ===== ゲームを選ぶ（タップ／クリックの演出 → BGMをフェードアウト → 移動） =====
-    document.querySelectorAll(".cart[data-href]").forEach(function(el) {
-      el.addEventListener("click", function() {
-        if (el.dataset.busy) return;
-        el.dataset.busy = "1";
-        el.classList.add("picked");
-        unlockAudio();
-        playBoingSel();   // 選んだときも「ぴょいん！」
-        selFadeOut(0.3);
-        setTimeout(function() { selStopAndClose(); window.location.href = el.getAttribute("data-href"); }, 480);
+    function sfxKirarin() {
+      const c = ensureAudioCtx(); if (!c) return;
+      if (c.state === 'suspended') c.resume().catch(function(){});
+      const t = c.currentTime;
+      [1319, 1760, 2349, 2794, 3520, 4699, 5920].forEach(function(f, i) {
+        const st = t + i * 0.055;
+        [['sine', f, 0.16], ['triangle', f * 2, 0.05]].forEach(function(v) {
+          const o = c.createOscillator(), gn = c.createGain();
+          o.type = v[0]; o.frequency.setValueAtTime(v[1], st);
+          gn.gain.setValueAtTime(0.0001, st);
+          gn.gain.exponentialRampToValueAtTime(v[2], st + 0.006);
+          gn.gain.exponentialRampToValueAtTime(0.0001, st + (i === 6 ? 0.9 : 0.35));
+          o.connect(gn); gn.connect(c.destination); o.start(st); o.stop(st + 1);
+        });
       });
-    });
+    }
+    // 🟢 ニトロ（原作と同じ「キュイーーーン！」）
+    function stopNitroSound() {
+      nitroNodes.forEach(function(n) { try { n.stop(); } catch (e) {} try { n.disconnect(); } catch (e) {} });
+      nitroNodes = [];
+    }
+    function sfxNitro() {
+      const c = ensureAudioCtx(); if (!c) return;
+      if (c.state === 'suspended') c.resume().catch(function(){});
+      stopNitroSound();
+      const t = c.currentTime;
+      [['sine', 1, 0.13], ['triangle', 2, 0.05]].forEach(function(v) {
+        const o = c.createOscillator(), gn = c.createGain(), vib = c.createOscillator(), vg = c.createGain();
+        o.type = v[0];
+        o.frequency.setValueAtTime(600 * v[1], t);
+        o.frequency.exponentialRampToValueAtTime(2400 * v[1], t + 0.5);
+        o.frequency.setValueAtTime(2400 * v[1], t + 3.4);
+        o.frequency.exponentialRampToValueAtTime(220 * v[1], t + 4.0);
+        vib.frequency.value = 7; vg.gain.value = 25 * v[1]; vib.connect(vg); vg.connect(o.frequency);
+        gn.gain.setValueAtTime(0.0001, t);
+        gn.gain.exponentialRampToValueAtTime(v[2], t + 0.05);
+        gn.gain.setValueAtTime(v[2], t + 3.4);
+        gn.gain.exponentialRampToValueAtTime(0.0001, t + 4.0);
+        o.connect(gn); gn.connect(c.destination);
+        o.start(t); o.stop(t + 4.05); vib.start(t); vib.stop(t + 4.05);
+        nitroNodes.push(o, vib);
+      });
+    }
 
-    // ===== 🎬 オープニング（同じタブでは最初の1回だけ。?intro を付けると毎回見られる）。再生中は操作不能 =====
-    (function() {
-      const ov = document.getElementById("introOverlay");
-      if (!ov) return;
-      if (!introActive) { ov.parentNode.removeChild(ov); const gt0 = document.getElementById("gateOverlay"); if (gt0 && gt0.parentNode) gt0.parentNode.removeChild(gt0); selBegin(); return; }
-      const letters = [].slice.call(ov.querySelectorAll(".intro-letter")), title = document.getElementById("introTitle"),
-            footer = document.getElementById("introFooter"), star = document.getElementById("introStar");
-      const later = function(fn, ms) { setTimeout(fn, ms); };
-      const ac = gcCtx(); if (ac) ac.resume().catch(function() {});
-      function glintSound() {   // 「キラーン」
-        if (!ac || ac.state !== "running") return;
-        const t = ac.currentTime;
-        [[2093, 0], [3136, 0.05], [4186, 0.1], [5274, 0.16], [6272, 0.22]].forEach(function(v) {
-          const o = ac.createOscillator(), g = ac.createGain();
-          o.type = "sine"; o.frequency.value = v[0];
-          g.gain.setValueAtTime(0.0001, t + v[1]); g.gain.exponentialRampToValueAtTime(0.14, t + v[1] + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + v[1] + 0.9);
-          o.connect(g); g.connect(ac.destination); o.start(t + v[1]); o.stop(t + v[1] + 1);
-        });
-        const z = ac.createOscillator(), zg = ac.createGain();
-        z.type = "sine"; z.frequency.setValueAtTime(1200, t); z.frequency.exponentialRampToValueAtTime(7000, t + 0.2);
-        zg.gain.setValueAtTime(0.0001, t); zg.gain.exponentialRampToValueAtTime(0.1, t + 0.02); zg.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
-        z.connect(zg); zg.connect(ac.destination); z.start(t); z.stop(t + 0.35);
+    // =====================================================================
+    //  背景：刑務所の牢屋の中（1回だけ描いて使い回す）
+    // =====================================================================
+    const bgCv = document.createElement('canvas'); bgCv.width = W; bgCv.height = H;
+    (function buildBackground() {
+      const g = bgCv.getContext('2d');
+      let seed = 7; const rnd = function() { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+      g.fillStyle = '#12151f'; g.fillRect(0, 0, W, H);
+      // レンガ壁
+      const bh = 10, bw = 26;
+      for (let row = 0; row * bh < GROUND; row++) {
+        const off = (row % 2) * bw / 2;
+        for (let x = -bw; x < W + bw; x += bw) {
+          const bx = x + off, by = row * bh;
+          g.fillStyle = ['#2d3345', '#363d53', '#282e3e'][Math.floor(rnd() * 3)];
+          g.fillRect(bx + 1, by + 1, bw - 1, bh - 1);
+          g.fillStyle = 'rgba(255,255,255,0.05)'; g.fillRect(bx + 1, by + 1, bw - 1, 1);
+          if (rnd() < 0.14) { g.fillStyle = 'rgba(0,0,0,0.28)'; g.fillRect(bx + 3 + Math.floor(rnd() * 14), by + 3 + Math.floor(rnd() * 4), 3, 2); }
+        }
       }
-      function finish() {
-        if (ov.parentNode) ov.parentNode.removeChild(ov);
-        try { sessionStorage.setItem("gcIntroDone", "1"); } catch (e) {}
-        introActive = false;
-        BLOCK_EVENTS.forEach(function(ev) { window.removeEventListener(ev, blockInput, { capture: true }); });
-        selBegin();   // ここでゲーム選択画面のBGM開始（オープニング中は鳴らさない）
-      }
-      function runIntro() {
-        letters.forEach(function(el, i) { later(function() { el.classList.add("on"); }, 440 + i * 242); });          // G→A→M→E→C→A→T
-        later(function() { title.classList.add("glint"); star.classList.add("go"); glintSound(); }, 2365);          // キラーン
-        later(function() { title.classList.add("fade-out"); footer.classList.add("fade-out"); }, 3740);              // 全ての文字がフェードアウト
-        later(function() { ov.style.opacity = "0"; }, 4730);
-        later(finish, 5445);
-      }
-
-      // 🔊 音声の案内画面：STARTを押した操作で音の許可を取り、そのあとオープニング（キラーン）を始める
-      const gate = document.getElementById("gateOverlay"), gBtn = document.getElementById("gateStart"), gCv = document.getElementById("gateCat");
-      if (!gate || !gBtn || !gCv) { gateActive = false; runIntro(); return; }
-      const gx = gCv.getContext("2d");
-      function drawGateCat(fr) {   // GCRの初期の四足歩行ガンジャキャット
-        const x = 4, y = 16 + ((fr % 8 < 4) ? 0 : -1), hx = x + 16, hy = y - 10, body = "#87CEEB", stripe = "#4169E1";
-        gx.clearRect(0, 0, 48, 36);
-        gx.fillStyle = body; gx.fillRect(x, y, 22, 14);
-        gx.fillStyle = stripe; gx.fillRect(x + 4, y, 3, 14); gx.fillRect(x + 11, y, 3, 14);
-        gx.fillStyle = body; gx.fillRect(hx, hy, 12, 12);
-        gx.fillStyle = stripe; gx.fillRect(hx + 4, hy, 2, 4);
-        gx.fillStyle = body; gx.fillRect(hx + 2, hy - 3, 3, 3); gx.fillRect(hx + 9, hy - 3, 3, 3);
-        [2, 7].forEach(function(ox) {
-          gx.fillStyle = "#ffffff"; gx.fillRect(hx + ox, hy + 2, 4, 4);
-          gx.fillStyle = "#FF69B4"; gx.fillRect(hx + ox, hy + 2, 2, 1); gx.fillRect(hx + ox, hy + 3, 1, 2);
-          gx.fillStyle = "#FFD700"; gx.fillRect(hx + ox + 2, hy + 2, 2, 1); gx.fillRect(hx + ox + 3, hy + 3, 1, 2);
-          gx.fillStyle = "#00FFFF"; gx.fillRect(hx + ox + 1, hy + 4, 2, 1); gx.fillRect(hx + ox + 2, hy + 5, 1, 1);
-          gx.fillStyle = "#9370DB"; gx.fillRect(hx + ox + 1, hy + 3, 1, 1);
-        });
-        gx.fillStyle = "#ffffff"; gx.fillRect(x + 28, y - 2, 6, 2);
-        gx.fillStyle = "#ff0000"; gx.fillRect(x + 33, y - 2, 1, 2);
-        gx.fillStyle = body;
-        if (Math.floor(fr / 2) % 2 === 0) { gx.fillRect(x + 1, y + 14, 4, 4); gx.fillRect(x + 12, y + 14, 4, 4); }
-        else { gx.fillRect(x + 5, y + 14, 4, 4); gx.fillRect(x + 17, y + 14, 4, 4); }
-      }
-      const PF = {
-        "T": ["11111","00100","00100","00100","00100","00100","00100"], "h": ["10000","10000","10110","11001","10001","10001","10001"],
-        "i": ["00100","00000","01100","00100","00100","00100","01110"], "s": ["00000","00000","01110","10000","01110","00001","11110"],
-        "g": ["00000","01111","10001","10001","01111","00001","01110"], "a": ["00000","00000","01110","00001","01111","10001","01111"],
-        "m": ["00000","00000","11010","10101","10101","10001","10001"], "e": ["00000","00000","01110","10001","11111","10000","01110"],
-        "p": ["00000","11110","10001","10001","11110","10000","10000"], "l": ["01100","00100","00100","00100","00100","00100","01110"],
-        "y": ["00000","10001","10001","10001","01111","00001","01110"], "o": ["00000","00000","01110","10001","10001","10001","01110"],
-        "u": ["00000","00000","10001","10001","10001","10011","01101"], "n": ["00000","00000","10110","11001","10001","10001","10001"],
-        "d": ["00001","00001","01101","10011","10001","10011","01101"], ".": ["00000","00000","00000","00000","00000","01100","01100"],
-        " ": ["00000","00000","00000","00000","00000","00000","00000"]
-      };
-      function drawPixelBubble(cv, lines, sc) {   // ドット絵の吹き出し：白いフチ、中は透明、白いドット文字
-        const lw = lines.map(function(l) { return l.length * 6 - 1; }), tw = Math.max.apply(null, lw), padX = 6, padY = 5, gap = 3;
-        const W = tw + padX * 2 + 2, Hb = lines.length * 7 + (lines.length - 1) * gap + padY * 2 + 2, H = Hb + 4, tx = Math.round(W * 0.49);
-        cv.width = W; cv.height = H; cv.style.width = (W * sc) + "px"; cv.style.height = (H * sc) + "px";
-        const c = cv.getContext("2d"); c.clearRect(0, 0, W, H); c.fillStyle = "#ffffff";
-        c.fillRect(2, 0, W - 4, 1); c.fillRect(0, 2, 1, Hb - 4); c.fillRect(W - 1, 2, 1, Hb - 4);
-        c.fillRect(1, 1, 1, 1); c.fillRect(W - 2, 1, 1, 1); c.fillRect(1, Hb - 2, 1, 1); c.fillRect(W - 2, Hb - 2, 1, 1);
-        c.fillRect(2, Hb - 1, tx - 2, 1); c.fillRect(tx + 8, Hb - 1, W - 2 - (tx + 8), 1);
-        for (let i = 0; i < 4; i++) { c.fillRect(tx + i, Hb + i, 1, 1); c.fillRect(tx + 7 - i, Hb + i, 1, 1); }
-        lines.forEach(function(l, li) {
-          const x0 = 1 + padX + Math.floor((tw - lw[li]) / 2), y0 = 1 + padY + li * (7 + gap);
-          for (let k = 0; k < l.length; k++) {
-            const g = PF[l[k]]; if (!g) continue;
-            for (let r = 0; r < 7; r++) for (let q = 0; q < 5; q++) if (g[r][q] === "1") c.fillRect(x0 + k * 6 + q, y0 + r, 1, 1);
-          }
-        });
-      }
-      drawPixelBubble(document.getElementById("gateBubble"), ["This game", "plays sound."], 3);
-      let gf = 0; drawGateCat(0);
-      const gTimer = setInterval(function() { gf++; drawGateCat(gf); }, 110);
-      let gPressed = false;
-      function gatePress(e) {
-        e.preventDefault();
-        if (gPressed) return;
-        gPressed = true; gateActive = false;      // 以降の操作は、オープニングが終わるまで無効
-        unlockAudio();                              // 指を離した瞬間の操作の中で、音の許可を取る
-        playBoingSel();
-        gBtn.classList.add("pressed");
-        setTimeout(function() { gate.style.opacity = "0"; }, 380);
-        setTimeout(function() { clearInterval(gTimer); if (gate.parentNode) gate.parentNode.removeChild(gate); runIntro(); }, 900);
-      }
-      gBtn.addEventListener("click", gatePress);
-      gBtn.addEventListener("touchend", gatePress, { passive: false });
+      // 鉄格子の窓（夜空と月）
+      g.fillStyle = '#586079'; g.fillRect(146, 8, 64, 54);
+      g.fillStyle = '#2a2f40'; g.fillRect(148, 10, 60, 50);
+      const sky = g.createLinearGradient(0, 10, 0, 60); sky.addColorStop(0, '#0a1230'); sky.addColorStop(1, '#22306a');
+      g.fillStyle = sky; g.fillRect(150, 12, 56, 46);
+      g.fillStyle = '#fff'; [[156, 18], [168, 44], [196, 20], [200, 48], [184, 52], [160, 34]].forEach(function(s) { g.fillRect(s[0], s[1], 1, 1); });
+      const mg = g.createRadialGradient(185, 28, 2, 185, 28, 16); mg.addColorStop(0, 'rgba(220,235,255,0.55)'); mg.addColorStop(1, 'rgba(220,235,255,0)');
+      g.fillStyle = mg; g.fillRect(165, 8, 40, 40);
+      g.fillStyle = '#eef3ff'; g.beginPath(); g.arc(185, 28, 6, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#c5d0ee'; g.fillRect(183, 26, 2, 2); g.fillRect(187, 30, 2, 2);
+      for (let i = 0; i < 6; i++) { const bx = 152 + i * 10; g.fillStyle = '#0d0f15'; g.fillRect(bx, 12, 4, 46); g.fillStyle = '#4d5468'; g.fillRect(bx, 12, 1, 46); }
+      g.fillStyle = '#0d0f15'; g.fillRect(150, 33, 56, 3); g.fillStyle = '#4d5468'; g.fillRect(150, 33, 56, 1);
+      // 月明かりの筋
+      g.fillStyle = 'rgba(170,195,255,0.06)';
+      g.beginPath(); g.moveTo(150, 60); g.lineTo(206, 60); g.lineTo(236, GROUND); g.lineTo(112, GROUND); g.closePath(); g.fill();
+      // 壁の「正」の字（日数のキズ）
+      g.fillStyle = '#7b849c';
+      [[20, 30], [38, 30], [56, 30]].forEach(function(p, gi) {
+        for (let i = 0; i < 4; i++) g.fillRect(p[0] + i * 3, p[1], 1, 10);
+        if (gi < 2) { g.fillRect(p[0] - 1, p[1] + 3, 12, 1); g.fillRect(p[0] - 1, p[1] + 3, 1, 1); }
+      });
+      g.fillRect(56, 30, 1, 10);
+      // 吊り下げ鎖と手枷
+      for (let i = 0; i < 9; i++) { g.fillStyle = i % 2 ? '#6b7388' : '#4b5265'; g.fillRect(104 + (i % 2), i * 5, 3, 5); }
+      g.fillStyle = '#3b4152'; g.fillRect(98, 45, 15, 6); g.fillStyle = '#1b1e29'; g.fillRect(101, 47, 9, 3);
+      g.fillStyle = '#6b7388'; g.fillRect(98, 45, 15, 1);
+      // 天井ランプのコード
+      g.fillStyle = '#0d0f15'; g.fillRect(70, 0, 1, 12); g.fillStyle = '#3a3f50'; g.fillRect(67, 11, 7, 3);
+      // 石の床
+      g.fillStyle = '#1d212d'; g.fillRect(0, GROUND, W, H - GROUND);
+      g.fillStyle = '#566078'; g.fillRect(0, GROUND, W, 2);
+      g.fillStyle = '#2a2f3f'; g.fillRect(0, GROUND + 2, W, 3);
+      g.fillStyle = '#10131b'; g.fillRect(0, 147, W, 1);
+      for (let x = 0; x < W; x += 30) g.fillRect(x, GROUND + 5, 1, 12);
+      for (let x = 15; x < W; x += 30) g.fillRect(x, 148, 1, 12);
+      for (let i = 0; i < 26; i++) { g.fillStyle = 'rgba(255,255,255,0.05)'; g.fillRect(Math.floor(rnd() * W), GROUND + 5 + Math.floor(rnd() * 20), 2 + Math.floor(rnd() * 4), 1); }
+      // 四隅を暗く
+      const vg = g.createRadialGradient(120, 80, 45, 120, 80, 160); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,0.55)');
+      g.fillStyle = vg; g.fillRect(0, 0, W, H);
     })();
+
+    // =====================================================================
+    //  キャラクター描画
+    // =====================================================================
+    // 🐈 通常ガンジャキャット（GCRのLv1・四足歩行）
+    function drawCatBase(a, x, y, state, frame, idleBob) {
+      const body = "#87CEEB", stripe = "#4169E1";
+      const hx = x + 16, hy = y - 10 + idleBob;
+      a.fillStyle = body; a.fillRect(x, y, 22, 14);
+      a.fillStyle = stripe; a.fillRect(x + 4, y, 3, 14); a.fillRect(x + 11, y, 3, 14);
+      a.fillStyle = body; a.fillRect(hx, hy, 12, 12);
+      a.fillStyle = stripe; a.fillRect(hx + 4, hy, 2, 4);
+      a.fillStyle = body; a.fillRect(hx + 2, hy - 3, 3, 3); a.fillRect(hx + 9, hy - 3, 3, 3);
+      if (state === 'hit') {
+        a.fillStyle = "#fff";
+        a.fillRect(hx + 3, hy + 3, 2, 1); a.fillRect(hx + 4, hy + 4, 1, 1); a.fillRect(hx + 3, hy + 5, 2, 1);
+        a.fillRect(hx + 8, hy + 3, 2, 1); a.fillRect(hx + 8, hy + 4, 1, 1); a.fillRect(hx + 8, hy + 5, 2, 1);
+        a.fillRect(hx + 5, hy + 8, 4, 3); a.fillStyle = stripe; a.fillRect(hx + 6, hy + 9, 2, 1);
+      } else {
+        [2, 7].forEach(function(o) {
+          a.fillStyle = "#ffffff"; a.fillRect(hx + o, hy + 2, 4, 4);
+          a.fillStyle = "#FF69B4"; a.fillRect(hx + o, hy + 2, 2, 1); a.fillRect(hx + o, hy + 3, 1, 2);
+          a.fillStyle = "#FFD700"; a.fillRect(hx + o + 2, hy + 2, 2, 1); a.fillRect(hx + o + 3, hy + 3, 1, 2);
+          a.fillStyle = "#00FFFF"; a.fillRect(hx + o + 1, hy + 4, 2, 1); a.fillRect(hx + o + 2, hy + 5, 1, 1);
+          a.fillStyle = "#9370DB"; a.fillRect(hx + o + 1, hy + 3, 1, 1);
+        });
+        a.fillStyle = "#ffffff"; a.fillRect(x + 28, y - 2 + idleBob, 6, 2);
+        a.fillStyle = "#ff0000"; a.fillRect(x + 33, y - 2 + idleBob, 1, 2);
+      }
+      a.fillStyle = body;
+      if (state === 'jump') {
+        a.fillRect(x, y + 14, 3, 5); a.fillRect(x + 6, y + 14, 3, 5); a.fillRect(x + 13, y + 14, 3, 5); a.fillRect(x + 19, y + 14, 3, 5);
+      } else if (state === 'hit') {
+        a.fillRect(x, y + 14, 5, 3); a.fillRect(x + 17, y + 14, 5, 3);
+      } else {   // その場で踏ん張る（ボス戦中は前進しない）
+        a.fillRect(x + 1, y + 14, 4, 4); a.fillRect(x + 6, y + 14, 4, 4); a.fillRect(x + 12, y + 14, 4, 4); a.fillRect(x + 17, y + 14, 4, 4);
+      }
+    }
+    function glow(a, cx, cy, r, c0, c1) {
+      const gr = a.createRadialGradient(cx, cy, 0, cx, cy, r);
+      gr.addColorStop(0, c0); gr.addColorStop(1, c1);
+      a.fillStyle = gr; a.beginPath(); a.arc(cx, cy, r, 0, Math.PI * 2); a.fill();
+    }
+    function drawCat(x, y, state) {
+      const cx = x + 14, cy = y + 2, bob = (state === 'run' && Math.floor(frameCount / 28) % 2 === 1) ? 1 : 0;
+      // 変身フラッシュ（アイテム取得時）
+      if (cat.powerFlash > 0) {
+        const a = cat.powerFlash / cat.powerFlashMax, k = 1 - a;
+        glow(ctx, cx, cy, 16 + 26 * k, 'rgba(' + cat.powerFlashColor + ',' + (0.85 * a) + ')', 'rgba(' + cat.powerFlashColor + ',0)');
+      }
+      // ニトロのオーラ
+      if (cat.nitro > 0) {
+        const s = cat.nitro < 30 ? cat.nitro / 30 : 1, r = (30 + 3 * Math.sin(frameCount * 0.4)) * s;
+        glow(ctx, cx, cy, r, 'rgba(90,255,130,0.65)', 'rgba(60,220,100,0)');
+      }
+      // レーザー溜め中のオーラ
+      if (cat.charge > 0) {
+        const k = 1 - cat.charge / CHARGE_FRAMES;
+        glow(ctx, cx + 8, cy - 4, 14 + 16 * k + 2 * Math.sin(frameCount * 0.8), 'rgba(140,240,255,' + (0.35 + 0.4 * k) + ')', 'rgba(34,211,238,0)');
+      }
+      drawCatBase(ctx, x, y, state, frameCount, bob);
+      // ニトロの粒（※前進していないので、左側の流れる軌跡は無し）
+      if (cat.nitro > 0) {
+        const s = cat.nitro < 30 ? cat.nitro / 30 : 1, cols = ['#22c55e', '#86efac', '#bbf7d0'];
+        for (let k = 0; k < 10; k++) {
+          const an = k / 10 * Math.PI * 2 + frameCount * 0.25, rr = (15 + (k % 3) * 3 + Math.sin(frameCount * 0.6 + k) * 3) * s;
+          ctx.fillStyle = cols[k % 3];
+          ctx.fillRect(Math.round(cx + Math.cos(an) * rr * 1.1), Math.round(cy + Math.sin(an) * rr * 0.9 - 3), 3, 5 + (k % 2) * 2);
+        }
+      }
+      // 「しゃきーん！」目のきらめき
+      if (cat.glint > 0) {
+        const k = cat.glint / 16, L = Math.round(2 + 9 * Math.sin(Math.PI * (1 - k))), gx = x + 16 + 4, gy = y - 10 + 4 + bob;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(gx - L, gy, L * 2 + 1, 1); ctx.fillRect(gx, gy - L, 1, L * 2 + 1);
+        ctx.fillStyle = 'rgba(180,250,255,0.9)';
+        ctx.fillRect(gx - Math.floor(L / 2), gy - Math.floor(L / 2), 1, 1); ctx.fillRect(gx + Math.floor(L / 2), gy - Math.floor(L / 2), 1, 1);
+        ctx.fillRect(gx - Math.floor(L / 2), gy + Math.floor(L / 2), 1, 1); ctx.fillRect(gx + Math.floor(L / 2), gy + Math.floor(L / 2), 1, 1);
+      }
+    }
+
+    // 👮 ポリスDOG（GCRのドット絵をそのまま使用。a=描画先, s=拡大率, flip=右向き）
+    function drawPoliceDog(a, X, Y, s, fr, walking, muzzle, mouth, flip) {
+      const step = walking ? (Math.floor(fr / 10) % 2) : 0;
+      a.save();
+      if (flip) { const px = X + 10.5 * s; a.translate(px, 0); a.scale(-1, 1); a.translate(-px, 0); }
+      const r = function(c, lx, ly, lw, lh) { a.fillStyle = c; a.fillRect(Math.round(X + lx * s), Math.round(Y + ly * s), Math.max(1, Math.round(lw * s)), Math.max(1, Math.round(lh * s))); };
+      r('#1e3a8a', 10, 34, 8, 10 - step * 2); r('#1e3a8a', 22, 34, 8, 10 - (1 - step) * 2);
+      r('#111', 8, 44 - step * 2, 12, 4); r('#111', 20, 44 - (1 - step) * 2, 12, 4);
+      r('#1e3a8a', 7, 17, 27, 19); r('#2748a8', 9, 18, 23, 3);
+      r('#111', 7, 31, 27, 3); r('#fbbf24', 18, 31, 5, 3);
+      r('#fbbf24', 24, 22, 5, 5); r('#fde68a', 26, 23, 1, 3);
+      r('#1e3a8a', 31, 20, 6, 12); r('#c9a26b', 31, 31, 6, 4);
+      r('#a67c52', 3, 3, 29, 17); r('#c9a26b', 3, 7, 13, 11);
+      if (mouth) { r('#5a1a1a', 3, 17, 29, 3); r('#8a6340', 3, 20, 29, 5); } else { r('#8a6340', 3, 17, 29, 5); }
+      r('#111', 2, 8, 5, 4);
+      r('#fff', 4, 14, 3, 5); r('#fff', 12, 14, 3, 5);
+      r('#3b2412', 17, 4, 9, 2);
+      const gr = a.createRadialGradient(X + 20 * s, Y + 8 * s, 0, X + 20 * s, Y + 8 * s, 8 * s);
+      gr.addColorStop(0, 'rgba(255,40,40,0.55)'); gr.addColorStop(1, 'rgba(255,40,40,0)');
+      a.fillStyle = gr; a.fillRect(X + 11 * s, Y, 18 * s, 16 * s);
+      r('#ff1a1a', 17, 6, 6, 4); r('#fff', 18, 7, 2, 1);
+      r('#6b4a2b', 28, 4, 6, 10);
+      r('#0b1f4a', 6, -4, 24, 7); r('#000', 2, 1, 22, 3); r('#fbbf24', 16, -2, 6, 4);
+      a.strokeStyle = '#1e3a8a'; a.lineWidth = Math.max(1, 5 * s); a.beginPath(); a.moveTo(X + 10 * s, Y + 22 * s); a.lineTo(X - 2 * s, Y + 27 * s); a.stroke();
+      r('#c9a26b', -5, 25, 5, 5);
+      r('#111', -16, 24, 12, 3); r('#2a2a2a', -8, 24, 8, 5); r('#2a2a2a', -5, 28, 3, 4);
+      if (muzzle > 0) { r('#fde047', -24, 21, 8, 8); r('#fff', -22, 23, 4, 4); }
+      a.restore();
+    }
+    // 戦闘用ポリスDOGは一度オフスクリーンに描いて、色味（被弾=白 / 回復=緑 / 瀕死=赤）を重ねる
+    const dogCv = document.createElement('canvas'); dogCv.width = 104; dogCv.height = 92;
+    const dogCtx = dogCv.getContext('2d');
+    function drawBattleDog(jx, jy) {
+      dogCtx.clearRect(0, 0, 104, 92);
+      drawPoliceDog(dogCtx, 40, 10, 1.5, frameCount, dog.walking, dog.muzzle, dog.mouth, false);
+      let tint = null;
+      if (dog.flash > 0) tint = 'rgba(255,255,255,' + (0.8 * dog.flash / 6) + ')';
+      else if (dog.healT > 0) tint = 'rgba(110,255,150,' + (0.55 * Math.min(1, dog.healT / 20) * (0.6 + 0.4 * Math.sin(frameCount * 0.5))) + ')';
+      else if (mode === 'dying') tint = 'rgba(255,40,40,' + (0.12 + 0.3 * Math.max(0, dog.pulse) + 0.2 * Math.min(1, dog.beatN / 14)) + ')';
+      if (tint) { dogCtx.globalCompositeOperation = 'source-atop'; dogCtx.fillStyle = tint; dogCtx.fillRect(0, 0, 104, 92); dogCtx.globalCompositeOperation = 'source-over'; }
+      ctx.drawImage(dogCv, Math.round(dog.x - 40 + jx), 51 + jy);
+    }
+
+    function drawGanjaCoin(a, x, y) {
+      a.fillStyle = "#ffd700"; a.beginPath(); a.arc(x, y, 9, 0, Math.PI * 2); a.fill();
+      a.strokeStyle = "#b8860b"; a.lineWidth = 1; a.stroke();
+      a.fillStyle = "#10b981"; a.fillRect(x - 1, y - 6, 2, 12); a.fillRect(x - 5, y - 2, 10, 2);
+      a.fillRect(x - 4, y - 4, 2, 2); a.fillRect(x + 2, y - 4, 2, 2); a.fillRect(x - 3, y + 2, 2, 2); a.fillRect(x + 1, y + 2, 2, 2);
+    }
+    function drawNitro(a, x, y) {   // 原作と同じ見た目
+      const r = 19 + 3 * Math.sin(frameCount * 0.2);
+      glow(a, x, y, r, 'rgba(80,255,120,0.7)', 'rgba(80,255,120,0)');
+      a.fillStyle = "#16a34a"; a.fillRect(x - 8, y - 7, 16, 19);
+      a.fillStyle = "#4ade80"; a.fillRect(x - 6, y - 6, 4, 15);
+      a.fillStyle = "#14532d"; a.fillRect(x - 8, y + 1, 16, 3);
+      a.fillStyle = "#6b7280"; a.fillRect(x - 6, y - 11, 12, 5);
+      a.fillStyle = "#d1d5db"; a.fillRect(x - 2, y - 15, 4, 4);
+    }
+    // 🪂 パラシュート＋支援物資（小さめ）
+    function drawParachute(p) {
+      const x = Math.round(p.x), y = Math.round(p.y), endY = y + 20;
+      // 紐
+      ctx.strokeStyle = 'rgba(230,230,230,0.9)'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x - 12, y + 1); ctx.lineTo(x, endY); ctx.moveTo(x - 4, y + 3); ctx.lineTo(x, endY);
+      ctx.moveTo(x + 4, y + 3); ctx.lineTo(x, endY); ctx.moveTo(x + 12, y + 1); ctx.lineTo(x, endY);
+      ctx.stroke();
+      // 傘
+      ctx.fillStyle = '#f8fafc'; ctx.beginPath(); ctx.arc(x, y, 13, Math.PI, 0); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.moveTo(x - 4.3, y - 12.3); ctx.arc(x, y, 13, Math.PI * 1.33, Math.PI * 1.67); ctx.lineTo(x, y); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ef4444'; ctx.fillRect(x - 13, y - 1, 3, 2); ctx.fillRect(x + 10, y - 1, 3, 2);
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.arc(x, y, 13, Math.PI, 0); ctx.stroke();
+      // 物資
+      ctx.save();
+      if (p.type === 'nitro') { ctx.translate(x, endY + 11); ctx.scale(0.75, 0.75); drawNitro(ctx, 0, 0); }
+      else { ctx.translate(x, endY + 8); ctx.scale(0.8, 0.8); drawGanjaCoin(ctx, 0, 0); }
+      ctx.restore();
+    }
+
+    // =====================================================================
+    //  ゲーム状態
+    // =====================================================================
+    let mode = 'title';            // title / intro / fight / dying / boom / clear
+    let t = 0, frameCount = 0, fightT = 0, paused = false;
+    let shake = 0, flashA = 0;
+    const cat = { life: 5, dead: false, y: CAT_REST, vy: 0, jumpBuf: 0, hitFlash: 0, gauge: 0, charge: 0, laserT: 0, glint: 0, nitro: 0, pop: 0,
+                  powerFlash: 0, powerFlashMax: 30, powerFlashColor: '110,225,255' };
+    const dog = { x: 270, hits: 0, flash: 0, muzzle: 0, mouth: false, walking: false, healT: 0, hurtT: 0, gone: false,
+                  pulse: 0, beatN: 0, beatT: 0, beatInt: 60 };
+    let bullets = [], parts = [], rings = [], labels = [], para = null;
+    const aim = { y: 99, ty: 99, sl: 0 };   // 🎯 ターゲットマーク（次に撃つ高さ）
+    function chooseAim() { aim.sl = [0, 0, 0, 0.2, -0.2, 0.35, -0.35][Math.floor(Math.random() * 7)]; aim.ty = Math.max(24, Math.min(140, 99.25 - aim.sl * (dog.x - 64))); }
+    let nextShot = 0, pendingShot = false, fireAt = 0, nextDrop = 0;
+    let stats = { hitsTaken: 0, dodges: 0, heals: 0, time: 0 };
+
+    function resetGame() {
+      mode = 'intro'; t = 0; fightT = 0; paused = false; shake = 0; flashA = 0;
+      cat.life = CAT_LIFE; cat.dead = false; cat.y = CAT_REST; cat.vy = 0; cat.jumpBuf = 0; cat.hitFlash = 0; cat.gauge = 0; cat.charge = 0; cat.laserT = 0; cat.glint = 0; cat.nitro = 0; cat.pop = 0; cat.powerFlash = 0;
+      dog.x = 270; dog.hits = 0; dog.flash = 0; dog.muzzle = 0; dog.mouth = false; dog.walking = false; dog.healT = 0; dog.hurtT = 0; dog.gone = false;
+      dog.pulse = 0; dog.beatN = 0; dog.beatT = 0; dog.beatInt = 60;
+      bullets = []; parts = []; rings = []; labels = []; para = null; aim.sl = 0; aim.y = aim.ty = 99;
+      pendingShot = false; nextShot = 70; nextDrop = DROP_MIN + Math.floor(Math.random() * (DROP_MAX - DROP_MIN));
+      stats = { hitsTaken: 0, dodges: 0, heals: 0, time: 0 };
+      stopNitroSound();
+    }
+    function startGame() {
+      resetGame();
+      bgmOn();
+    }
+
+    // ---------- パーティクル ----------
+    function burst(x, y, n, cols, spd, g) {
+      for (let i = 0; i < n; i++) {
+        const an = Math.random() * Math.PI * 2, v = Math.random() * spd;
+        parts.push({ x: x, y: y, vx: Math.cos(an) * v, vy: Math.sin(an) * v - 1, g: g === undefined ? 0.15 : g, life: 30 + Math.random() * 30, size: 2 + Math.random() * 3, color: cols[Math.floor(Math.random() * cols.length)] });
+      }
+    }
+    function addLabel(text, x, y, color) { labels.push({ text: text, x: x, y: y, life: 55, color: color }); }
+    function dogCenter() { return { x: dog.x + 26, y: 100 }; }
+
+    // ---------- 戦闘ロジック ----------
+    function intensity() { return Math.min(1, dog.hits / (DOG_HP - 1)); }   // ポリスドッグのライフが減るほど難しい
+    function fireBullet() {
+      const k = intensity(), sp = BULLET_SPEED_START + (BULLET_SPEED_END - BULLET_SPEED_START) * k;
+      const sl = aim.sl;   // ターゲットマークが示していた高さに撃つ
+      const mx = dog.x - 24, my = 61 + 25.5 * 1.5;
+      bullets.push({ x: mx, y: my, vx: -sp, vy: -sp * sl, counted: false });
+      chooseAim(); dog.muzzle = 4; sfxGunshot(); shake = Math.max(shake, 2);
+      burst(mx - 4, my, 5, ['#e5e7eb', '#9ca3af', '#fde047'], 1.6, 0.02);
+    }
+    function onDodge() {
+      stats.dodges++;
+      if (cat.charge > 0 || cat.gauge >= GAUGE_MAX) return;
+      cat.gauge++; cat.pop = 10; sfxGaugeTick(cat.gauge);
+      if (cat.gauge >= GAUGE_MAX) startCharge();
+    }
+    function startCharge() {
+      cat.gauge = GAUGE_MAX; cat.charge = CHARGE_FRAMES; cat.glint = 16;
+      sfxShakiin();
+      cat.powerFlash = cat.powerFlashMax = 24; cat.powerFlashColor = '140,240,255';
+      rings.push({ cx: 40, cy: cat.y - 4, r: 4, a: 0.9, w: 2, c: '150,240,255', grow: 2.2, ell: 1 });
+    }
+    function fireLaser() {
+      cat.laserT = 12; cat.gauge = 0; cat.charge = 0; sfxLaser();
+      dog.hits++; dog.flash = 6; dog.hurtT = 10; shake = Math.max(shake, 4);
+      const c = dogCenter();
+      burst(c.x, 84, 14, ['#fff', '#a5f3fc', '#22d3ee', '#fde047'], 3.5);
+      if (dog.hits >= DOG_HP) startDying();
+    }
+    function catHurt() {
+      stats.hitsTaken++;
+      cat.life--; cat.hitFlash = 45; cat.gauge = 0; cat.charge = 0; cat.glint = 0;
+      sfxHurt(); shake = Math.max(shake, 5);
+      if (cat.life <= 0) startCatDie();
+    }
+    function startCatDie() {   // ガンジャキャット爆散 → GAME OVER
+      mode = 'catdie'; t = 0; cat.dead = true; bullets.length = 0; pendingShot = false; para = null; cat.charge = 0; cat.laserT = 0;
+      stopBgm(); stopNitroSound(); flashA = 1; shake = 18; sfxExplosion();
+      burst(38, cat.y, 130, ['#fff', '#fde047', '#fb923c', '#ef4444', '#87CEEB', '#4169E1'], 8);
+      rings.push({ cx: 38, cy: cat.y, r: 5, a: 1, w: 4, c: '255,200,80', grow: 3.5, ell: 1 });
+    }
+    function startDying() {
+      mode = 'dying'; t = 0; bullets.length = 0; pendingShot = false; para = null; cat.charge = 0;
+      stopBgm();
+    }
+    function collectItem(p) {
+      if (p.type === 'nitro') {
+        cat.nitro = NITRO_TOTAL; sfxNitro(); sfxKirarin();
+        cat.powerFlash = cat.powerFlashMax = 40; cat.powerFlashColor = '90,255,130';
+        burst(34, cat.y, 24, ['#22c55e', '#86efac', '#bbf7d0', '#fff'], 4);
+        addLabel('NITRO!', 36, cat.y - 22, '#86efac');
+      } else {
+        sfxCoin(); setTimeout(sfxCoin, 90);
+        cat.powerFlash = cat.powerFlashMax = 30; cat.powerFlashColor = '255,215,0';
+        burst(34, cat.y, 24, ['#ffd700', '#fde047', '#fff', '#b8860b'], 4);
+        addLabel('LASER MAX!', 36, cat.y - 22, '#fde047');
+        if (cat.charge <= 0 && cat.gauge < GAUGE_MAX) { cat.pop = 10; startCharge(); }
+        else if (cat.charge <= 0) { startCharge(); }
+      }
+    }
+
+    // ---------- 1フレーム更新 ----------
+    function step() {
+      frameCount++;
+      if (mode === 'title') { titleStep(); return; }
+      if (paused) return;
+      t++;
+      if (cat.hitFlash > 0) cat.hitFlash--;
+      if (cat.powerFlash > 0) cat.powerFlash--;
+      if (cat.glint > 0) cat.glint--;
+      if (cat.pop > 0) cat.pop--;
+      if (cat.laserT > 0) cat.laserT--;
+      if (cat.nitro > 0) { cat.nitro--; if (cat.nitro === 0) stopNitroSound(); }
+      if (dog.flash > 0) dog.flash--;
+      if (dog.muzzle > 0) dog.muzzle--;
+      if (dog.hurtT > 0) dog.hurtT--;
+      if (dog.healT > 0) dog.healT--;
+      if (dog.pulse > 0) dog.pulse -= 0.08;
+      if (flashA > 0) flashA -= 0.05;
+      if (shake > 0) shake -= 0.5;
+
+      // ジャンプ・重力（GCRと同じ物理）
+      cat.vy += 1.0; cat.y += cat.vy;
+      if (cat.y >= CAT_REST) { cat.y = CAT_REST; cat.vy = 0; if (cat.jumpBuf > 0) doJump(); }
+      if (cat.jumpBuf > 0) cat.jumpBuf--;
+
+      if (mode === 'intro') stepIntro();
+      else if (mode === 'fight') stepFight();
+      else if (mode === 'dying') stepDying();
+      else if (mode === 'catdie') { if (t >= 100) { mode = 'gameover'; t = 0; } }
+      else if (mode === 'boom') { if (t >= 100) { mode = 'clear'; t = 0; stats.time = fightT / 60; sfxKirarin(); setTimeout(sfxKirarin, 220); } }
+
+      // パーティクル・リング・ラベル
+      for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i]; p.x += p.vx; p.y += p.vy; p.vy += p.g; p.life--;
+        if (p.life <= 0) parts.splice(i, 1);
+      }
+      for (let i = rings.length - 1; i >= 0; i--) { const rg = rings[i]; rg.r += rg.grow; rg.a -= 0.02; if (rg.a <= 0) rings.splice(i, 1); }
+      for (let i = labels.length - 1; i >= 0; i--) { const lb = labels[i]; lb.y -= 0.35; lb.life--; if (lb.life <= 0) labels.splice(i, 1); }
+    }
+
+    function stepIntro() {
+      dog.x = Math.max(DOG_STAND_X, 270 - 1.1 * t);
+      dog.walking = dog.x > DOG_STAND_X;
+      if (dog.walking && t % 20 === 1) { sfxThud(); shake = 5; }
+      if (t === 105) { sfxKirarin(); }
+      if (t === 110 || t === 130) sfxCount();
+      if (t >= 180) { mode = 'fight'; t = 0; fightT = 0; dog.walking = false; chooseAim(); aim.y = aim.ty; }
+    }
+
+    function stepFight() {
+      fightT++;
+      const k = intensity();
+      aim.y += Math.max(-2.5, Math.min(2.5, aim.ty - aim.y));
+      // ポリスDOGの射撃：だんだん速く・頻繁に
+      if (!pendingShot && fightT >= nextShot) { pendingShot = true; fireAt = fightT + 14; }
+      if (pendingShot && fightT >= fireAt) {
+        pendingShot = false; fireBullet();
+        const wait = SHOT_WAIT_START + (SHOT_WAIT_END - SHOT_WAIT_START) * k;
+        const jitter = (45 - 30 * k) * Math.random();
+        nextShot = fightT + Math.round(wait + jitter);
+      }
+      // 弾の移動・判定
+      const top = cat.y - 14, bottom = cat.y + 18;
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const bl = bullets[i]; bl.x += bl.vx; bl.y += bl.vy;
+        if (bl.x - 16 < 48 && bl.x + 10 > 30 && bl.y + 4 > top && bl.y - 4 < bottom) {
+          if (cat.hitFlash <= 0 && cat.nitro <= 0) { bullets.splice(i, 1); catHurt(); continue; }
+        }
+        if (!bl.counted && bl.x + 10 < 30) { bl.counted = true; onDodge(); }
+        if (bl.x < -30 || bl.y < -20 || bl.y > 180) bullets.splice(i, 1);
+      }
+      if (mode !== 'fight') return;
+      // レーザー溜め → 発射
+      if (cat.charge > 0) {
+        const an = Math.random() * Math.PI * 2, rr = 26;
+        const hx = 42, hy = cat.y - 4;
+        parts.push({ x: hx + Math.cos(an) * rr, y: hy + Math.sin(an) * rr, vx: -Math.cos(an) * rr / 12, vy: -Math.sin(an) * rr / 12, g: 0, life: 12, size: 2, color: ['#fff', '#67e8f9', '#a5f3fc'][Math.floor(Math.random() * 3)] });
+        cat.charge--;
+        if (cat.charge === 0) { fireLaser(); if (mode !== 'fight') return; }
+      }
+      // パラシュート支援物資（20〜40秒に1回）
+      if (!para) {
+        if (--nextDrop <= 0) {
+          para = { x0: 30 + Math.random() * 16, x: 36, y: -30, t: 0, type: Math.random() < 0.5 ? 'nitro' : 'coin' };
+          sfxDrop();
+        }
+      } else {
+        para.t++; para.y += 0.55; para.x = para.x0 + Math.sin(para.t * 0.06) * 4;
+        const cx = para.x, cy = para.y + 20 + (para.type === 'nitro' ? 11 : 8);
+        if (cx > 22 && cx < 54 && cy + 9 > top && cy - 9 < bottom) {
+          collectItem(para); para = null;
+          nextDrop = DROP_MIN + Math.floor(Math.random() * (DROP_MAX - DROP_MIN));
+        } else if (para.y > 170) {
+          para = null; nextDrop = DROP_MIN + Math.floor(Math.random() * (DROP_MAX - DROP_MIN));
+        }
+      }
+      // 回復エフェクト（ポリスDOGの体の周りにヒーリングの光）
+      if (dog.healT > 0) spawnHealFx();
+    }
+    function spawnHealFx() {
+      if (dog.healT % 2 === 0) {
+        const px = dog.x - 2 + Math.random() * 56, py = 78 + Math.random() * 55;
+        parts.push({ x: px, y: py, vx: (Math.random() - 0.5) * 0.3, vy: -0.5 - Math.random() * 0.7, g: -0.005, life: 34 + Math.random() * 14, size: Math.random() < 0.5 ? 1 : 2, shape: Math.random() < 0.6 ? 'plus' : 'sq', color: ['#86efac', '#bbf7d0', '#ffffff', '#4ade80'][Math.floor(Math.random() * 4)] });
+      }
+      if (dog.healT === 48 || dog.healT === 28) rings.push({ cx: dog.x + 26, cy: 110, r: 6, a: 0.8, w: 2, c: '110,255,150', grow: 1.4, ell: 0.45 });
+    }
+
+    function stepDying() {   // 赤く発光しドクン…が加速して爆散（原作と同じ演出）
+      dog.beatT++;
+      if (dog.beatT >= dog.beatInt) {
+        dog.beatT = 0; dog.beatN++; sfxDokun(); dog.pulse = 1; shake = Math.min(7, 1 + dog.beatN * 0.5);
+        dog.beatInt = Math.max(6, dog.beatInt * 0.8);
+        if (dog.beatN >= 14) {
+          mode = 'boom'; t = 0; dog.gone = true; flashA = 1; shake = 18; sfxExplosion();
+          burst(dog.x + 30, 100, 130, ['#fff', '#fde047', '#fb923c', '#ef4444', '#7f1d1d', '#1e3a8a'], 8);
+          rings.push({ cx: dog.x + 30, cy: 100, r: 5, a: 1, w: 4, c: '255,120,60', grow: 3.5, ell: 1 });
+        }
+      }
+    }
+
+    // =====================================================================
+    //  描画
+    // =====================================================================
+    function outlineText(str, x, y, size, color, align) {
+      ctx.font = "bold " + size + "px 'Courier New'"; ctx.textAlign = align || 'left'; ctx.lineJoin = 'round';
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.strokeText(str, x, y);
+      ctx.fillStyle = color; ctx.fillText(str, x, y); ctx.textAlign = 'left';
+    }
+    function drawBullet(bl) {
+      ctx.save(); ctx.translate(bl.x, bl.y); ctx.rotate(Math.atan2(bl.vy, bl.vx));
+      ctx.fillStyle = '#e0b030'; ctx.fillRect(2, -4, 14, 8);
+      ctx.fillStyle = '#b87333'; ctx.fillRect(-8, -4, 10, 8); ctx.fillRect(-10, -2, 2, 4);
+      ctx.fillStyle = '#7a4a1e'; ctx.fillRect(14, -4, 2, 8);
+      ctx.fillStyle = '#fff6c4'; ctx.fillRect(3, -3, 9, 2);
+      ctx.restore();
+    }
+    function drawLifeBar(x, life, total, col, flash) {
+      const y = 14, h = 112, w = 10, segH = 20;
+      ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(x, y, w, h);
+      for (let i = 0; i < total; i++) {
+        if (i >= life) continue;
+        const yy = y + h - 2 - (i + 1) * segH - i * 2;
+        ctx.fillStyle = flash > 0 ? '#ffffff' : col; ctx.fillRect(x + 2, yy, w - 4, segH);
+      }
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+    }
+    function drawHud() {
+      if (mode === 'title') return;
+      // 縦のライフゲージ（左：ガンジャキャット / 右：ポリスドッグ）
+      drawLifeBar(3, cat.life, CAT_LIFE, '#22d3ee', cat.hitFlash > 38 ? 1 : 0);
+      if (!(mode === 'intro' && t < 60)) drawLifeBar(227, DOG_HP - dog.hits, DOG_HP, '#ef4444', dog.flash);
+      // レーザーゲージ（ガンジャキャットの下＝左下）
+      outlineText('LASER', 5, 156, 8, '#a5f3fc');
+      const full = cat.gauge >= GAUGE_MAX;
+      for (let i = 0; i < GAUGE_MAX; i++) {
+        const px = 40 + i * 15, py = 147, on = i < cat.gauge;
+        const popK = (on && i === cat.gauge - 1 && cat.pop > 0) ? cat.pop / 10 : 0;
+        ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(px - popK * 2, py - popK * 2, 13 + popK * 4, 8 + popK * 4);
+        if (on) {
+          ctx.fillStyle = full ? (Math.floor(frameCount / 3) % 2 ? '#fde047' : '#ffffff') : '#22d3ee';
+          ctx.fillRect(px + 1 - popK * 2, py + 1 - popK * 2, 11 + popK * 4, 6 + popK * 4);
+        }
+        ctx.strokeStyle = full ? '#fde047' : '#fff'; ctx.lineWidth = 1; ctx.strokeRect(px + 0.5, py + 0.5, 12, 7);
+      }
+      if (full && mode === 'fight') outlineText('MAX!', 118, 156, 9, Math.floor(frameCount / 4) % 2 ? '#fde047' : '#fff');
+    }
+    // 🎯 ターゲットマーク：ポリスドッグが次に撃つ高さを示す
+    function drawAim() {
+      const x = 40, y = Math.round(aim.y), warn = pendingShot && Math.floor(frameCount / 2) % 2 === 0;
+      ctx.save();
+      ctx.strokeStyle = warn ? '#ffffff' : '#ff3b3b'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x - 11, y); ctx.lineTo(x - 4, y); ctx.moveTo(x + 4, y); ctx.lineTo(x + 11, y);
+      ctx.moveTo(x, y - 11); ctx.lineTo(x, y - 4); ctx.moveTo(x, y + 4); ctx.lineTo(x, y + 11); ctx.stroke();
+      ctx.fillStyle = warn ? '#ffffff' : '#ff3b3b'; ctx.fillRect(x - 1, y - 1, 2, 2);
+      ctx.restore();
+    }
+
+    function draw() {
+      if (mode === 'title') { titleDraw(); return; }
+      ctx.drawImage(bgCv, 0, 0);
+      // 天井ランプのゆらめく明かり
+      const fl = 0.12 + 0.03 * Math.sin(frameCount * 0.31) + 0.02 * Math.sin(frameCount * 0.93);
+      glow(ctx, 70, 16, 80, 'rgba(255,200,110,' + fl + ')', 'rgba(255,200,110,0)');
+      ctx.fillStyle = '#ffe9a8'; ctx.fillRect(69, 14, 3, 3);
+
+      ctx.save();
+      if (shake > 0) ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+
+      // ポリスDOG
+      if (!dog.gone && (mode !== 'intro' || dog.x < 268)) {
+        let jx = 0, jy = 0;
+        if (mode === 'dying') {
+          const cx = dog.x + 30, r = 50 + Math.max(0, dog.pulse) * 30, al = 0.25 + 0.15 * Math.min(1, dog.beatN / 14) + 0.45 * Math.max(0, dog.pulse);
+          glow(ctx, cx, 100, r, 'rgba(255,40,40,' + al + ')', 'rgba(255,40,40,0)');
+          jx = (Math.random() - 0.5) * Math.min(5, dog.beatN * 0.5);
+        }
+        if (dog.healT > 0) glow(ctx, dog.x + 26, 100, 44 + 4 * Math.sin(frameCount * 0.4), 'rgba(120,255,160,' + (0.32 * Math.min(1, dog.healT / 20)) + ')', 'rgba(120,255,160,0)');
+        if (dog.hurtT > 0) { jx += (Math.random() - 0.5) * 3; jy += (Math.random() - 0.5) * 2; }
+        drawBattleDog(jx, jy);
+      }
+      // パラシュート
+      if (para) drawParachute(para);
+      // ガンジャキャット
+      if (mode !== 'title' && !cat.dead) {
+        if (cat.hitFlash > 0 && Math.floor(cat.hitFlash / 3) % 2 === 0) ctx.globalAlpha = 0.4;
+        const st = cat.hitFlash > 30 ? 'hit' : (cat.y < CAT_REST ? 'jump' : 'run');
+        drawCat(CAT_X, cat.y, st);
+        ctx.globalAlpha = 1;
+      }
+      // 弾丸
+      bullets.forEach(drawBullet);
+      if (mode === 'fight') drawAim();
+      // レーザー
+      if (cat.laserT > 0 && !(mode === 'boom' && dog.gone)) {
+        const c = dogCenter(), ox = 49, oy = cat.y - 5, w = 1 + cat.laserT / 12 * 4;
+        ctx.save(); ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = 8; ctx.lineCap = 'butt';
+        ctx.strokeStyle = '#67e8f9'; ctx.lineWidth = w + 2; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(c.x, 84); ctx.stroke();
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(1, w - 2); ctx.stroke();
+        ctx.restore();
+      }
+      // リング
+      rings.forEach(function(rg) {
+        ctx.strokeStyle = 'rgba(' + rg.c + ',' + Math.max(0, rg.a) + ')'; ctx.lineWidth = rg.w;
+        ctx.beginPath(); ctx.ellipse(rg.cx, rg.cy, rg.r, rg.r * rg.ell, 0, 0, Math.PI * 2); ctx.stroke();
+      });
+      // パーティクル
+      parts.forEach(function(p) {
+        ctx.fillStyle = p.color;
+        if (p.shape === 'plus') {
+          const s = Math.max(1, Math.round(p.size));
+          ctx.fillRect(Math.round(p.x) - s, Math.round(p.y), s * 3, s); ctx.fillRect(Math.round(p.x), Math.round(p.y) - s, s, s * 3);
+        } else ctx.fillRect(Math.round(p.x), Math.round(p.y), Math.max(1, Math.round(p.size)), Math.max(1, Math.round(p.size)));
+      });
+      ctx.restore();
+
+      // ラベル
+      labels.forEach(function(lb) { ctx.globalAlpha = Math.min(1, lb.life / 20); outlineText(lb.text, lb.x, lb.y, 9, lb.color, 'center'); ctx.globalAlpha = 1; });
+
+      drawHud();
+
+      // イントロ演出
+      if (mode === 'intro' && t >= 105) {
+        const k = Math.min(1, (t - 105) / 8), sc = 1 + (1 - k) * 1.2;
+        ctx.save(); ctx.translate(120, 74); ctx.scale(sc, sc);
+        outlineText('FIGHT!!', 0, 0, 20, '#ffffff', 'center');
+        ctx.restore();
+      }
+      if (flashA > 0) { ctx.fillStyle = 'rgba(255,255,255,' + Math.min(1, flashA) + ')'; ctx.fillRect(0, 0, W, H); }
+
+      // クリア画面
+      if (mode === 'clear') drawClear();
+      if (mode === 'gameover') drawGameOver();
+      if (paused) drawPause();
+    }
+    function drawClear() {
+      const k = Math.min(1, t / 30);
+      ctx.fillStyle = 'rgba(0,0,0,' + (0.62 * k) + ')'; ctx.fillRect(0, 0, W, H);
+      if (t < 8) return;
+      outlineText('YOU WIN!', 120, 52, 24, '#ffd700', 'center');
+      outlineText('CLEAR TIME', 120, 82, 10, '#a5f3fc', 'center');
+      outlineText(stats.time.toFixed(1) + ' SEC', 120, 106, 20, '#ffffff', 'center');
+      if (t > 70 && Math.floor(t / 25) % 2 === 0) outlineText('A / TAP : PLAY AGAIN', 120, 134, 9, '#fff', 'center');
+      outlineText('SELECT : TITLE', 120, 148, 8, '#cbd5e1', 'center');
+    }
+    function drawGameOver() {
+      const k = Math.min(1, t / 30);
+      ctx.fillStyle = 'rgba(0,0,0,' + (0.62 * k) + ')'; ctx.fillRect(0, 0, W, H);
+      if (t < 8) return;
+      outlineText('GAME OVER', 120, 76, 22, '#ef4444', 'center');
+      if (t > 70 && Math.floor(t / 25) % 2 === 0) outlineText('A / TAP : RETRY', 120, 112, 9, '#fff', 'center');
+      outlineText('SELECT : TITLE', 120, 130, 8, '#cbd5e1', 'center');
+    }
+    function drawPause() {
+      ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, W, H);
+      outlineText('PAUSE', 120, 72, 20, '#fff', 'center');
+      outlineText('START : RESUME', 120, 96, 9, '#cbd5e1', 'center');
+      outlineText('SELECT : TITLE', 120, 110, 9, '#cbd5e1', 'center');
+    }
+
+    // =====================================================================
+    //  タイトル画面：ポリスDOGが何かを探してウロウロ歩く
+    // =====================================================================
+    const walkCanvas = document.getElementById('titleWalkCanvas');
+    const wctx = walkCanvas.getContext('2d');
+    const TD = { x: 85, dir: -1, mode: 'walk', modeT: 90, lookT: 0, fr: 0 };
+    function titlePick() {
+      const r = Math.random();
+      if (r < 0.5) { TD.mode = 'walk'; TD.modeT = 70 + Math.floor(Math.random() * 130); if (Math.random() < 0.35) TD.dir *= -1; }
+      else if (r < 0.75) { TD.mode = 'stand'; TD.modeT = 40 + Math.floor(Math.random() * 70); }
+      else { TD.mode = 'look'; TD.lookT = 0; TD.modeT = 16 * (3 + Math.floor(Math.random() * 3)); }   // キョロキョロ
+    }
+    function titleStep() {
+      TD.fr++; TD.modeT--;
+      if (TD.mode === 'walk') {
+        TD.x += 0.55 * TD.dir;
+        if (TD.x < 14) { TD.x = 14; TD.dir = 1; }
+        if (TD.x > 158) { TD.x = 158; TD.dir = -1; }
+      } else if (TD.mode === 'look') {
+        TD.lookT++; if (TD.lookT % 16 === 0) TD.dir *= -1;
+      }
+      if (TD.modeT <= 0) titlePick();
+    }
+    function titleDraw() {
+      wctx.clearRect(0, 0, 200, 50);
+      const bob = (TD.mode === 'stand' && Math.floor(TD.fr / 22) % 2) ? 1 : 0;
+      drawPoliceDog(wctx, Math.round(TD.x), 12 + bob, 0.56, TD.fr, TD.mode === 'walk', 0, false, TD.dir === 1);
+    }
+
+    // =====================================================================
+    //  入力・画面切り替え
+    // =====================================================================
+    function doJump() { cat.vy = -12.3; cat.jumpBuf = 0; sfxJump(); }
+    function triggerJump() {
+      if (mode === 'title') return;
+      if (mode === 'clear' || mode === 'gameover') { if (t > 70) startGame(); return; }
+      if (mode === 'catdie') return;
+      if (paused || mode === 'boom') return;
+      if (cat.y >= CAT_REST) doJump(); else cat.jumpBuf = 10;
+    }
+    function setPaused(p) {
+      if (mode === 'title' || mode === 'clear' || mode === 'boom' || mode === 'catdie' || mode === 'gameover') return;
+      paused = p;
+      if (bgmGain) bgmGain.gain.value = p ? 0 : 0.22;
+      if (p) stopNitroSoundSoft();
+    }
+    function stopNitroSoundSoft() { /* ニトロ音は短いのでそのまま */ }
+    function togglePause() { if (mode === 'title' || mode === 'clear' || mode === 'boom' || mode === 'catdie' || mode === 'gameover') return; setPaused(!paused); }
+    function showTitle() {
+      bgmOff(); stopNitroSound();
+      mode = 'title'; paused = false; startPressed = false;
+      document.getElementById('setupOverlay').style.display = 'flex';
+      const sb = document.getElementById('btnNormal'); if (sb) sb.classList.remove('pressed');
+    }
+    function setMusic(on) {
+      isMusicOn = on;
+      const b = document.getElementById('btnMusicToggle');
+      if (b) { b.textContent = on ? '🎵 ON' : '🎵 OFF'; b.classList.toggle('is-on', on); }
+      if (on) { if (bgmWanted) { startBgm(); if (!bgmSource) armBgmUnlock(); } } else stopBgm();
+    }
+    function resizeGame() {
+      const wrapper = document.getElementById("gameWrapper"); if (!wrapper) return;
+      const scale = Math.min(window.innerWidth / 340, window.innerHeight / 680);
+      wrapper.style.transform = 'translate(-50%, -50%) scale(' + scale + ')';
+    }
+    window.addEventListener("resize", resizeGame);
+
+    function bindTap(el, fn) {
+      if (!el) return;
+      el.addEventListener("mousedown", function(e) { e.preventDefault(); fn(); });
+      el.addEventListener("touchstart", function(e) { e.preventDefault(); fn(); }, { passive: false });
+    }
+    function initEvents() {
+      resizeGame();
+      const btn = document.getElementById('btnNormal');
+      const press = function(e) {
+        e.preventDefault();
+        if (startPressed) return;
+        startPressed = true;
+        btn.classList.remove("pressed"); void btn.offsetWidth; btn.classList.add("pressed");
+        sfxBoing(); bgmOn();
+        setTimeout(function() { document.getElementById('setupOverlay').style.display = 'none'; resetGame(); }, 380);
+      };
+      btn.addEventListener("click", press);
+      btn.addEventListener("touchend", press, { passive: false });
+      const back = document.getElementById('btnBackSelect');
+      const goBack = function(e) { e.preventDefault(); stopBgmAndClose(); window.location.href = BACK_URL; };
+      back.addEventListener("click", goBack);
+      back.addEventListener("touchstart", goBack, { passive: false });
+      preloadBgm();
+
+      bindTap(document.getElementById('dpadControl'), triggerJump);
+      bindTap(document.getElementById('btnArea'), triggerJump);
+      bindTap(canvas, triggerJump);
+      bindTap(document.getElementById('btnStart'), togglePause);
+      bindTap(document.getElementById('btnSelect'), function() { if (mode !== 'title') showTitle(); });
+
+      const mb = document.getElementById('btnMusicToggle');
+      if (mb) {
+        const tog = function(e) { e.preventDefault(); e.stopPropagation(); setMusic(!isMusicOn); };
+        mb.addEventListener('click', tog);
+        mb.addEventListener('touchend', tog, { passive: false });
+      }
+      window.addEventListener("keydown", function(e) {
+        if (e.code === "Space" || e.code === "ArrowUp") { e.preventDefault(); triggerJump(); }
+        if (e.code === "Enter") togglePause();
+        if (e.code === "KeyM" || e.code === "Backspace") { if (mode !== 'title') showTitle(); }
+      });
+    }
+
+    // 60fps固定のメインループ（120Hzスマホでも速くならない）
+    let lastTs = performance.now(), acc = 0;
+    function loop(now) {
+      requestAnimationFrame(loop);
+      let dt = now - lastTs; lastTs = now;
+      if (dt > 100) dt = 100;
+      acc += dt;
+      let n = 0;
+      while (acc >= 1000 / 60 && n < 4) { step(); acc -= 1000 / 60; n++; }
+      if (n === 4) acc = 0;
+      draw();
+    }
+    initEvents();
+    requestAnimationFrame(loop);
   </script>
 </body>
 </html>
