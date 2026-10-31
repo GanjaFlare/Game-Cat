@@ -275,9 +275,11 @@
     const CAT_LIFE = 5;                // ガンジャキャットのライフ
     const GAUGE_MAX = 5;               // 避けた弾丸N発でゲージMAX
     const CHARGE_FRAMES = 26;          // 「しゃきーん！」から発射までの溜め
-    const BULLET_SPEED_START = 4.0;    // 弾速（開始時）※遅すぎるとジャンプしても着弾するので注意
-    const BULLET_SPEED_END = 7.0;      // 弾速（最大）
-        const SHOT_WAIT_START = 105;       // 発射間隔（開始時, フレーム）
+    const BULLET_SPEED = 5.0;          // 弾速（ずっと一定）※遅すぎるとジャンプしても着弾するので注意
+    const LIFE_ROWS = 28, LIFE_MAX = 140;   // ライフゲージは28行（1行=5）
+    const HIT_DMG = 28;                // 1回のダメージ＝ゲージの5分の1（5回で死亡）
+    const HEAL_AMOUNT = 84;            // ハート：3段階（5分の3）回復
+        const SHOT_WAIT_START = 105;       // 発射間隔（ポリスドッグのライフ満タン時, フレーム）
     const SHOT_WAIT_END = 42;          // 発射間隔（最大難度時）
     const DROP_MIN = 1200, DROP_MAX = 2400;   // パラシュート出現間隔（20〜40秒）
     const NITRO_TOTAL = 240;           // ニトロ無敵時間（4秒・原作と同じ）
@@ -406,6 +408,8 @@
     function sfxGaugeTick(n) { tone('square', 420 + n * 130, 420 + n * 130, 0.06, 0.09); }
     function sfxHeal() { [660, 880, 1320].forEach(function(f, i) { tone('sine', f, f * 1.01, 0.28, 0.12, i * 0.09); tone('triangle', f * 2, f * 2, 0.18, 0.04, i * 0.09); }); }
     function sfxDrop() { tone('sine', 520, 980, 0.18, 0.1); tone('sine', 980, 740, 0.2, 0.08, 0.12); }
+    function sfxPi(hi) { tone('square', hi ? 2500 : 1900, hi ? 2500 : 1900, hi ? 0.11 : 0.07, 0.13); }   // ターゲットマークの「ピピ！」
+    function sfxChargeTick() { tone('square', 1760, 1760, 0.035, 0.07); }   // ライフ回復「ティリリリ」
     function sfxCount() { tone('square', 660, 660, 0.12, 0.12); }
     // ⚔️ 「しゃきーん！」：刃物を抜くような金属音（ノイズの擦過音 → 高音の響き）
     function sfxShakiin() {
@@ -671,6 +675,14 @@
       a.fillStyle = "#6b7280"; a.fillRect(x - 6, y - 11, 12, 5);
       a.fillStyle = "#d1d5db"; a.fillRect(x - 2, y - 15, 4, 4);
     }
+    function drawHeart(a, x, y) {
+      glow(a, x, y, 14, 'rgba(255,120,170,0.55)', 'rgba(255,120,170,0)');
+      const P = ['.XX.XX.', 'XXXXXXX', 'XXXXXXX', '.XXXXX.', '..XXX..', '...X...'];
+      for (let r = 0; r < P.length; r++) for (let c = 0; c < 7; c++) if (P[r][c] === 'X') {
+        a.fillStyle = (r === 0 && c === 1) || (r === 1 && c === 1) ? '#fecdd3' : (r >= 3 ? '#dc2626' : '#ef4444');
+        a.fillRect(x - 7 + c * 2, y - 6 + r * 2, 2, 2);
+      }
+    }
     // 🪂 パラシュート＋支援物資（小さめ）
     function drawParachute(p) {
       const x = Math.round(p.x), y = Math.round(p.y), endY = y + 20;
@@ -688,6 +700,7 @@
       // 物資
       ctx.save();
       if (p.type === 'nitro') { ctx.translate(x, endY + 11); ctx.scale(0.75, 0.75); drawNitro(ctx, 0, 0); }
+      else if (p.type === 'heart') { ctx.translate(x, endY + 8); drawHeart(ctx, 0, 0); }
       else { ctx.translate(x, endY + 8); ctx.scale(0.8, 0.8); drawGanjaCoin(ctx, 0, 0); }
       ctx.restore();
     }
@@ -698,23 +711,23 @@
     let mode = 'title';            // title / intro / fight / dying / boom / clear
     let t = 0, frameCount = 0, fightT = 0, paused = false;
     let shake = 0, flashA = 0;
-    const cat = { life: 5, dead: false, y: CAT_REST, vy: 0, jumpBuf: 0, hitFlash: 0, gauge: 0, charge: 0, laserT: 0, glint: 0, nitro: 0, pop: 0,
+    const cat = { hp: LIFE_MAX, healQ: 0, dead: false, y: CAT_REST, vy: 0, jumpBuf: 0, hitFlash: 0, gauge: 0, charge: 0, laserT: 0, glint: 0, nitro: 0, pop: 0,
                   powerFlash: 0, powerFlashMax: 30, powerFlashColor: '110,225,255' };
-    const dog = { x: 270, hits: 0, flash: 0, muzzle: 0, mouth: false, walking: false, healT: 0, hurtT: 0, gone: false,
+    const dog = { x: 270, hp: LIFE_MAX, hits: 0, flash: 0, muzzle: 0, mouth: false, walking: false, healT: 0, hurtT: 0, gone: false,
                   pulse: 0, beatN: 0, beatT: 0, beatInt: 60 };
     let bullets = [], parts = [], rings = [], labels = [], para = null;
     const aim = { y: 99, ty: 99, sl: 0 };   // 🎯 ターゲットマーク（次に撃つ高さ）
     function chooseAim() { aim.sl = [0, 0, 0, 0.2, -0.2, 0.35, -0.35][Math.floor(Math.random() * 7)]; aim.ty = Math.max(24, Math.min(140, 99.25 - aim.sl * (dog.x - 64))); }
-    let nextShot = 0, pendingShot = false, fireAt = 0, nextDrop = 0;
+    let nextShot = 0, pendingShot = false, pendT = 0, nextDrop = 0;
     let stats = { hitsTaken: 0, dodges: 0, heals: 0, time: 0 };
 
     function resetGame() {
       mode = 'intro'; t = 0; fightT = 0; paused = false; shake = 0; flashA = 0;
-      cat.life = CAT_LIFE; cat.dead = false; cat.y = CAT_REST; cat.vy = 0; cat.jumpBuf = 0; cat.hitFlash = 0; cat.gauge = 0; cat.charge = 0; cat.laserT = 0; cat.glint = 0; cat.nitro = 0; cat.pop = 0; cat.powerFlash = 0;
-      dog.x = 270; dog.hits = 0; dog.flash = 0; dog.muzzle = 0; dog.mouth = false; dog.walking = false; dog.healT = 0; dog.hurtT = 0; dog.gone = false;
+      cat.hp = LIFE_MAX; cat.healQ = 0; cat.dead = false; cat.y = CAT_REST; cat.vy = 0; cat.jumpBuf = 0; cat.hitFlash = 0; cat.gauge = 0; cat.charge = 0; cat.laserT = 0; cat.glint = 0; cat.nitro = 0; cat.pop = 0; cat.powerFlash = 0;
+      dog.x = 270; dog.hp = LIFE_MAX; dog.hits = 0; dog.flash = 0; dog.muzzle = 0; dog.mouth = false; dog.walking = false; dog.healT = 0; dog.hurtT = 0; dog.gone = false;
       dog.pulse = 0; dog.beatN = 0; dog.beatT = 0; dog.beatInt = 60;
       bullets = []; parts = []; rings = []; labels = []; para = null; aim.sl = 0; aim.y = aim.ty = 99;
-      pendingShot = false; nextShot = 70; nextDrop = DROP_MIN + Math.floor(Math.random() * (DROP_MAX - DROP_MIN));
+      pendingShot = false; pendT = 0; nextShot = 70; nextDrop = DROP_MIN + Math.floor(Math.random() * (DROP_MAX - DROP_MIN));
       stats = { hitsTaken: 0, dodges: 0, heals: 0, time: 0 };
       stopNitroSound();
     }
@@ -734,9 +747,9 @@
     function dogCenter() { return { x: dog.x + 26, y: 100 }; }
 
     // ---------- 戦闘ロジック ----------
-    function intensity() { return Math.min(1, dog.hits / (DOG_HP - 1)); }   // ポリスドッグのライフが減るほど難しい
+    function intensity() { return Math.min(1, (LIFE_MAX - dog.hp) / (LIFE_MAX - HIT_DMG)); }   // 発射頻度のみ：ポリスドッグのライフが減るほど上がる（弾速は一定）
     function fireBullet() {
-      const k = intensity(), sp = BULLET_SPEED_START + (BULLET_SPEED_END - BULLET_SPEED_START) * k;
+      const sp = BULLET_SPEED;
       const sl = aim.sl;   // ターゲットマークが示していた高さに撃つ
       const mx = dog.x - 24, my = 61 + 25.5 * 1.5;
       bullets.push({ x: mx, y: my, vx: -sp, vy: -sp * sl, counted: false });
@@ -757,16 +770,16 @@
     }
     function fireLaser() {
       cat.laserT = 12; cat.gauge = 0; cat.charge = 0; sfxLaser();
-      dog.hits++; dog.flash = 6; dog.hurtT = 10; shake = Math.max(shake, 4);
+      dog.hits++; dog.hp -= HIT_DMG; dog.flash = 6; dog.hurtT = 10; shake = Math.max(shake, 4);
       const c = dogCenter();
       burst(c.x, 84, 14, ['#fff', '#a5f3fc', '#22d3ee', '#fde047'], 3.5);
-      if (dog.hits >= DOG_HP) startDying();
+      if (dog.hp <= 0) startDying();
     }
     function catHurt() {
       stats.hitsTaken++;
-      cat.life--; cat.hitFlash = 45; cat.gauge = 0; cat.charge = 0; cat.glint = 0;
+      cat.hp -= HIT_DMG; cat.hitFlash = 45; cat.gauge = 0; cat.charge = 0; cat.glint = 0;
       sfxHurt(); shake = Math.max(shake, 5);
-      if (cat.life <= 0) startCatDie();
+      if (cat.hp <= 0) startCatDie();
     }
     function startCatDie() {   // ガンジャキャット爆散 → GAME OVER
       mode = 'catdie'; t = 0; cat.dead = true; bullets.length = 0; pendingShot = false; para = null; cat.charge = 0; cat.laserT = 0;
@@ -778,12 +791,22 @@
       mode = 'dying'; t = 0; bullets.length = 0; pendingShot = false; para = null; cat.charge = 0;
       stopBgm();
     }
+    function pickType() {
+      let ty = ['nitro', 'coin', 'heart'][Math.floor(Math.random() * 3)];
+      if (ty === 'heart' && cat.hp >= LIFE_MAX) ty = Math.random() < 0.5 ? 'nitro' : 'coin';   // ライフ満タンならハートは出さない
+      return ty;
+    }
     function collectItem(p) {
       if (p.type === 'nitro') {
         cat.nitro = NITRO_TOTAL; sfxNitro(); sfxKirarin();
         cat.powerFlash = cat.powerFlashMax = 40; cat.powerFlashColor = '90,255,130';
         burst(34, cat.y, 24, ['#22c55e', '#86efac', '#bbf7d0', '#fff'], 4);
         addLabel('NITRO!', 36, cat.y - 22, '#86efac');
+      } else if (p.type === 'heart') {
+        cat.healQ += HEAL_AMOUNT;
+        cat.powerFlash = cat.powerFlashMax = 30; cat.powerFlashColor = '255,120,170';
+        burst(34, cat.y, 20, ['#f9a8d4', '#fb7185', '#ffffff', '#ef4444'], 3.5, -0.02);
+        addLabel('LIFE UP!', 36, cat.y - 22, '#f9a8d4');
       } else {
         sfxCoin(); setTimeout(sfxCoin, 90);
         cat.powerFlash = cat.powerFlashMax = 30; cat.powerFlashColor = '255,215,0';
@@ -805,6 +828,10 @@
       if (cat.glint > 0) cat.glint--;
       if (cat.pop > 0) cat.pop--;
       if (cat.laserT > 0) cat.laserT--;
+      if (cat.healQ > 0 && !cat.dead && frameCount % 2 === 0) {   // ロックマン式：下から1行ずつ溜まる
+        const add = Math.min(5, cat.healQ, LIFE_MAX - cat.hp);
+        if (add <= 0) cat.healQ = 0; else { cat.hp += add; cat.healQ -= add; sfxChargeTick(); }
+      }
       if (cat.nitro > 0) { cat.nitro--; if (cat.nitro === 0) stopNitroSound(); }
       if (dog.flash > 0) dog.flash--;
       if (dog.muzzle > 0) dog.muzzle--;
@@ -848,8 +875,9 @@
       const k = intensity();
       aim.y += Math.max(-2.5, Math.min(2.5, aim.ty - aim.y));
       // ポリスDOGの射撃：だんだん速く・頻繁に
-      if (!pendingShot && fightT >= nextShot) { pendingShot = true; fireAt = fightT + 14; }
-      if (pendingShot && fightT >= fireAt) {
+      if (!pendingShot && fightT >= nextShot && Math.abs(aim.ty - aim.y) < 1.5) { pendingShot = true; pendT = 0; }
+      if (pendingShot) { pendT++; if (pendT === 1) sfxPi(false); if (pendT === 10) sfxPi(true); }
+      if (pendingShot && pendT >= 20) {
         pendingShot = false; fireBullet();
         const wait = SHOT_WAIT_START + (SHOT_WAIT_END - SHOT_WAIT_START) * k;
         const jitter = (45 - 30 * k) * Math.random();
@@ -877,7 +905,7 @@
       // パラシュート支援物資（20〜40秒に1回）
       if (!para) {
         if (--nextDrop <= 0) {
-          para = { x0: 30 + Math.random() * 16, x: 36, y: -30, t: 0, type: Math.random() < 0.5 ? 'nitro' : 'coin' };
+          para = { x0: 30 + Math.random() * 16, x: 36, y: -30, t: 0, type: pickType() };
           sfxDrop();
         }
       } else {
@@ -930,21 +958,19 @@
       ctx.fillStyle = '#fff6c4'; ctx.fillRect(3, -3, 9, 2);
       ctx.restore();
     }
-    function drawLifeBar(x, life, total, col, flash) {
-      const y = 14, h = 112, w = 10, segH = 20;
+    function drawLifeBar(x, hp, col, flash) {   // ロックマン式：28行の縦ゲージ（1行=2px）
+      const y = 14, w = 8, h = LIFE_ROWS * 2 + 2, rows = Math.ceil(hp / 5);
       ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(x, y, w, h);
-      for (let i = 0; i < total; i++) {
-        if (i >= life) continue;
-        const yy = y + h - 2 - (i + 1) * segH - i * 2;
-        ctx.fillStyle = flash > 0 ? '#ffffff' : col; ctx.fillRect(x + 2, yy, w - 4, segH);
-      }
+      if (rows > 0) { const fh = rows * 2; ctx.fillStyle = flash > 0 ? '#ffffff' : col; ctx.fillRect(x + 1, y + 1 + LIFE_ROWS * 2 - fh, w - 2, fh); }
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      for (let i = 0; i < LIFE_ROWS; i++) ctx.fillRect(x + 1, y + 2 + i * 2, w - 2, 1);
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
     }
     function drawHud() {
       if (mode === 'title') return;
       // 縦のライフゲージ（左：ガンジャキャット / 右：ポリスドッグ）
-      drawLifeBar(3, cat.life, CAT_LIFE, '#22d3ee', cat.hitFlash > 38 ? 1 : 0);
-      if (!(mode === 'intro' && t < 60)) drawLifeBar(227, DOG_HP - dog.hits, DOG_HP, '#ef4444', dog.flash);
+      drawLifeBar(3, cat.hp, '#22d3ee', cat.hitFlash > 38 ? 1 : 0);
+      if (!(mode === 'intro' && t < 60)) drawLifeBar(229, dog.hp, '#ef4444', dog.flash);
       // レーザーゲージ（ガンジャキャットの下＝左下）
       outlineText('LASER', 5, 156, 8, '#a5f3fc');
       const full = cat.gauge >= GAUGE_MAX;
@@ -962,13 +988,16 @@
     }
     // 🎯 ターゲットマーク：ポリスドッグが次に撃つ高さを示す
     function drawAim() {
-      const x = 40, y = Math.round(aim.y), warn = pendingShot && Math.floor(frameCount / 2) % 2 === 0;
+      const x = 40, y = Math.round(aim.y);
+      const lit = pendingShot ? Math.min(1, pendT / 6) : 0, beep = pendingShot && (pendT < 6 || (pendT >= 10 && pendT < 16));
       ctx.save();
-      ctx.strokeStyle = warn ? '#ffffff' : '#ff3b3b'; ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.stroke();
+      if (pendingShot) glow(ctx, x, y, 12 + 8 * lit, 'rgba(255,255,255,' + (beep ? 0.55 : 0.3) + ')', 'rgba(255,60,60,0)');
+      const col = beep ? '#ffffff' : '#ff3b3b';
+      ctx.strokeStyle = col; ctx.lineWidth = beep ? 2 : 1.5;
+      ctx.beginPath(); ctx.arc(x, y, beep ? 7 : 6, 0, Math.PI * 2); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(x - 11, y); ctx.lineTo(x - 4, y); ctx.moveTo(x + 4, y); ctx.lineTo(x + 11, y);
       ctx.moveTo(x, y - 11); ctx.lineTo(x, y - 4); ctx.moveTo(x, y + 4); ctx.lineTo(x, y + 11); ctx.stroke();
-      ctx.fillStyle = warn ? '#ffffff' : '#ff3b3b'; ctx.fillRect(x - 1, y - 1, 2, 2);
+      ctx.fillStyle = col; ctx.fillRect(x - 1, y - 1, 2, 2);
       ctx.restore();
     }
 
