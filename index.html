@@ -150,6 +150,9 @@
     .cart { position: relative; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform 0.12s, filter 0.12s; }
     .cart img { width: 100%; height: auto; display: block; pointer-events: none; filter: drop-shadow(0 6px 8px rgba(0,0,0,0.55)); }
     .cart:active { transform: translateY(2px) scale(0.98); filter: brightness(1.15); }
+    /* 次のゲーム用の空き枠：SELECT GAMEと同じ色の細い四角いフレーム（塗りなし）＋控えめなSOON */
+    .cart-soon { aspect-ratio: 462 / 527; box-sizing: border-box; border: 2px solid; border-image: linear-gradient(135deg, #ffffff 0%, #34d399 100%) 1; display: flex; justify-content: center; align-items: center; }
+    .cart-soon span { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 13px; letter-spacing: 3px; background: linear-gradient(135deg, #ffffff 0%, #34d399 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; opacity: 0.8; }
     @media (hover: hover) {
       .cart:hover { transform: translateY(-6px) scale(1.05); filter: brightness(1.12) drop-shadow(0 0 14px rgba(52, 211, 153, 0.8)); }
     }
@@ -271,6 +274,8 @@
           <div class="cart-grid">
             <div class="cart" data-href="GanjaCatRun/" role="button" aria-label="GANJA CAT RUN 2"><img src="GCR2_title.webp" alt="GANJA CAT RUN 2"></div>
             <div class="cart" data-href="BeamStruggle/" role="button" aria-label="BEAM STRUGGLE"><img src="BeamStruggle_title.webp" alt="BEAM STRUGGLE"></div>
+            <div class="cart" data-href="PoliceDog/" role="button" aria-label="POLICE DOG"><img src="PoliceDog_title.webp" alt="POLICE DOG"></div>
+            <div class="cart-soon" aria-hidden="true"><span>SOON</span></div>
           </div>
         </div>
 
