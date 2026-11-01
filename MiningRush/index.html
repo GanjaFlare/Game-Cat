@@ -643,9 +643,9 @@ function firework(q){const x=rnd(30,210),y=rnd(34,80);spark(x,y,clear?40:26,COL)
 function newZone(){zw=rnd(26,46);zc=zw/2+Math.random()*(200-zw);gs=rnd(1.8,3.6)}
 function mkItems(){const a=[];let m=rnd(10,20);while(m<90){a.push({m,t:Math.random()<.65?'D':'S',got:false});m+=rnd(18,28)}return a}
 function newGame(){
-  const tt=(round-1)/4;iv0=60-18*tt;iv1=90-30*tt;
+  const tt=Math.min(round-1,4)/4,u=Math.max(0,round-5)/5;iv0=60-18*tt-6*u;iv1=90-30*tt-10*u;
   const ks=['pico','dragon','hugo','fcat','wick'].sort(()=>Math.random()-.5).slice(0,2);
-  ch=['cat',ks[0],ks[1]].map((k,i)=>({k,x:LX[i],d:0,dd:0,an:0,pg:0,t:rnd(45,80),sk:rnd(.3+.4*tt,.75+.25*tt),fz:0,dm:0,cu:0,it:null,rk:-1,ms:0,items:mkItems()}));
+  ch=['cat',ks[0],ks[1]].map((k,i)=>({k,x:LX[i],d:0,dd:0,an:0,pg:0,t:rnd(45,80),sk:rnd(.3+.4*tt+.3*u,.75+.25*tt+.25*u),fz:0,dm:0,cu:0,it:null,rk:-1,ms:0,items:mkItems()}));
   order=0;curses=[];P=[];pops=[];msg=null;cd=0;cn=3;goalT=0;pcd=0;gx=0;gd=1;newZone();st='ROUND';rc=0;flash=0;
 }
 function item(c,i,t){
@@ -678,7 +678,7 @@ function act(){
 }
 function endGame(){
   rank=[...ch].sort((a,b)=>(a.rk<0)-(b.rk<0)||(a.rk>=0?a.rk-b.rk:b.d-a.d));
-  win=rank[0]===ch[0];clear=win&&round===5;win?playKirarin():bossTone('sawtooth',300,80,.8,.15);
+  win=rank[0]===ch[0];clear=win&&round===10;win?playKirarin():bossTone('sawtooth',300,80,.8,.15);
   st='PODIUM';pf=0;lock=performance.now()+3500;flash=6;
   if(rank[0]===ch[0]){const t=firstAf-t0;if(!best||t<best){best=t;try{localStorage.setItem('gcMiningRushBest',best)}catch(e){}}}
 }
@@ -764,7 +764,7 @@ function draw(){
   if(flash>0){g.globalAlpha=flash/6*.7;R(0,0,W,H,'#fff');g.globalAlpha=1;flash--}
   g.restore();
   if(st!=='PODIUM')T('ROUND '+round,237,3,'#ffd700',1,'r');
-  if(st==='ROUND'){g.globalAlpha=.45;R(0,0,W,123,'#000');g.globalAlpha=1;T('ROUND '+round,120,40,'#ffd700',5);T(round===5?'FINAL ROUND!':'GET 1ST PLACE!',120,80,round===5&&((af>>3)&1)?'#ff5a3a':'#fff',2)}
+  if(st==='ROUND'){g.globalAlpha=.45;R(0,0,W,123,'#000');g.globalAlpha=1;T('ROUND '+round,120,40,'#ffd700',5);T(round===10?'FINAL ROUND!':'GET 1ST PLACE!',120,80,round===10&&((af>>3)&1)?'#ff5a3a':'#fff',2)}
   else if(st==='COUNT')T(cn?cn:'GO!',120,50,cn?'#ffd700':'#6bff7a',cn?8:6);
   else if(st==='PLAY'&&goalT>0&&((af>>2)&1))T('GOAL!',120,50,'#ffd700',5);
 }
