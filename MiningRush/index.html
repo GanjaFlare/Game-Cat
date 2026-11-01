@@ -641,9 +641,10 @@ function firework(){const x=rnd(30,210),y=rnd(34,80);spark(x,y,26,COL);bossTone(
 
 /* ---------- ゲーム進行 ---------- */
 function newZone(){zw=rnd(26,46);zc=zw/2+Math.random()*(200-zw);gs=rnd(1.8,3.6)}
+function mkItems(){const a=[];let m=rnd(10,20);while(m<90){a.push({m,t:Math.random()<.65?'D':'S',got:false});m+=rnd(18,28)}return a}
 function newGame(){
   const ks=['pico','dragon','hugo','fcat','wick'].sort(()=>Math.random()-.5).slice(0,2);
-  ch=['cat',ks[0],ks[1]].map((k,i)=>({k,x:LX[i],d:0,dd:0,an:0,pg:0,t:rnd(45,80),sk:rnd(.43,.93),fz:0,dm:0,cu:0,it:null,rk:-1,ms:0}));
+  ch=['cat',ks[0],ks[1]].map((k,i)=>({k,x:LX[i],d:0,dd:0,an:0,pg:0,t:rnd(45,80),sk:rnd(.43,.93),fz:0,dm:0,cu:0,it:null,rk:-1,ms:0,items:mkItems()}));
   order=0;curses=[];P=[];pops=[];msg=null;cd=0;cn=3;goalT=0;pcd=0;gx=0;gd=1;newZone();st='COUNT';flash=0;
 }
 function item(c,i,t){
@@ -658,7 +659,7 @@ function stepCh(c,i){
   if(c.fz>0){c.fz--;if(af%6===0)smoke(c.x,SY+c.dd*K-cam);return}
   if(c.an>0&&--c.an===10){
     c.d=Math.min(100,c.d+c.pg);dirt(c.x,SY+c.dd*K-cam+8);
-    if(c.pg>0){bossTone('square',200,90,.08,.12);c.ms=0;if(c.d<100&&Math.random()<.057)item(c,i,Math.random()<.6?'D':'S')}else if(++c.ms>=2){c.ms=0;item(c,i,'B')}
+    if(c.pg>0){bossTone('square',200,90,.08,.12);c.ms=0;c.items.forEach(o=>{if(!o.got&&c.d>=o.m){o.got=true;item(c,i,o.t)}})}else if(++c.ms>=2){c.ms=0;item(c,i,'B')}
     if(c.d>=100&&c.rk<0){c.rk=order++;bossTone('square',660,1320,.3,.15);if(order===1){firstAf=af;goalT=70}if(i===0)playKirarin()}
   }
   if(i&&c.an<=0&&c.rk<0&&--c.t<=0){
@@ -702,6 +703,10 @@ function scene(){
   for(let y=y0;y<123;y+=150)g.drawImage(dt,0,Math.round(y));
   g.drawImage(bg,0,-Math.round(cam));
   LX.forEach(x=>{for(let m=10;m<100;m+=10){const y=Math.round(SY+m*K-cam);if(y>-8&&y<123){R(x-26,y,m%25?5:9,1,'#c09a62');if(m%25===0)T(m+'M',x-36,y-7,'#e8c890',1,'l')}}});
+  ch.forEach(c=>c.items.forEach(o=>{if(o.got)return;const y=Math.round(SY+o.m*K-cam);if(y<-20||y>123)return;
+    R(c.x-13,y-3,26,20,'#6a4a28');R(c.x-12,y-2,24,18,'#2a1a0c');
+    g.save();g.translate(c.x-10,y+2);g.scale(2,2);icon(o.t,0,0);g.restore();
+    if(o.t==='D'&&((af>>4)&3)===0)R(c.x+5,y,2,2,'#fff')}));
   ch.forEach((c,ci)=>{
     const y=SY+c.dd*K-cam;
     R(c.x-16,SY-cam,32,Math.round(c.dd*K)+3,'#1e1208');
