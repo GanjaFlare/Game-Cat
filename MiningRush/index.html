@@ -560,7 +560,7 @@ F['+']='000010111010000';
 const $=id=>document.getElementById(id),ov=$('setupOverlay');
 const rnd=(a,b)=>a+Math.random()*(b-a),pick=a=>a[Math.random()*a.length|0];
 const LX=[40,120,200],GX=20,SY=50,K=3.6,COL=['#fff','#7efff5','#ff9a3c','#ffee55','#ff4a4a','#6bff7a','#ff6ad0'];
-let curses=[],cam=0,st='TITLE',af=0,ch=[],P=[],pops=[],lock=0,flash=0,shake=0,msg=null,best=0,order=0,firstAf=0,t0=0,cd=0,cn=3,rank=[],pf=0,goalT=0;
+let round=1,rc=0,win=false,clear=false,iv0=60,iv1=90,curses=[],cam=0,st='TITLE',af=0,ch=[],P=[],pops=[],lock=0,flash=0,shake=0,msg=null,best=0,order=0,firstAf=0,t0=0,cd=0,cn=3,rank=[],pf=0,goalT=0;
 let gx=0,gd=1,gs=2,zc=100,zw=36,pcd=0;
 try{best=+localStorage.getItem('gcMiningRushBest')||0}catch(e){}
 
@@ -637,15 +637,16 @@ function icon(t,x,y){x|=0;y|=0;
 function spark(x,y,n,cs){for(let i=0;i<n;i++){const a=Math.random()*6.28,v=rnd(.5,2.2);P.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-.5,g:.06,l:rnd(20,40),s:2,c:pick(cs)})}}
 const dirt=(x,y)=>spark(x,y,5,['#7a5230','#3a2410','#9a7242']);
 const smoke=(x,y)=>P.push({x:x+rnd(-4,4),y:y-8,vx:rnd(-.2,.2),vy:-.5,g:0,l:30,s:2,c:'#666'});
-function firework(){const x=rnd(30,210),y=rnd(34,80);spark(x,y,26,COL);bossTone('sine',900,200,.3,.1);bossNoise(.2,.1,3000)}
+function firework(q){const x=rnd(30,210),y=rnd(34,80);spark(x,y,clear?40:26,COL);if(!q){bossTone('sine',900,200,.3,.1);bossNoise(.2,.1,3000)}}
 
 /* ---------- ゲーム進行 ---------- */
 function newZone(){zw=rnd(26,46);zc=zw/2+Math.random()*(200-zw);gs=rnd(1.8,3.6)}
 function mkItems(){const a=[];let m=rnd(10,20);while(m<90){a.push({m,t:Math.random()<.65?'D':'S',got:false});m+=rnd(18,28)}return a}
 function newGame(){
+  const tt=(round-1)/4;iv0=60-18*tt;iv1=90-30*tt;
   const ks=['pico','dragon','hugo','fcat','wick'].sort(()=>Math.random()-.5).slice(0,2);
-  ch=['cat',ks[0],ks[1]].map((k,i)=>({k,x:LX[i],d:0,dd:0,an:0,pg:0,t:rnd(45,80),sk:rnd(.43,.93),fz:0,dm:0,cu:0,it:null,rk:-1,ms:0,items:mkItems()}));
-  order=0;curses=[];P=[];pops=[];msg=null;cd=0;cn=3;goalT=0;pcd=0;gx=0;gd=1;newZone();st='COUNT';flash=0;
+  ch=['cat',ks[0],ks[1]].map((k,i)=>({k,x:LX[i],d:0,dd:0,an:0,pg:0,t:rnd(45,80),sk:rnd(.3+.4*tt,.75+.25*tt),fz:0,dm:0,cu:0,it:null,rk:-1,ms:0,items:mkItems()}));
+  order=0;curses=[];P=[];pops=[];msg=null;cd=0;cn=3;goalT=0;pcd=0;gx=0;gd=1;newZone();st='ROUND';rc=0;flash=0;
 }
 function item(c,i,t){
   const y=SY+c.dd*K-cam;c.it={t,l:60};
@@ -664,7 +665,7 @@ function stepCh(c,i){
   }
   if(i&&c.an<=0&&c.rk<0&&--c.t<=0){
     const r=Math.random(),pP=.08+.3*c.sk,pG=pP+.17+.17*c.sk,pO=pG+.27;
-    c.pg=r<pP?10/3:r<pG?2:r<pO?1:0;c.an=c.pg?20:14;c.t=rnd(50,75)/(c.dm>0?1.6:1);
+    c.pg=r<pP?10/3:r<pG?2:r<pO?1:0;c.an=c.pg?20:14;c.t=rnd(iv0,iv1)/(c.dm>0?1.6:1);
   }
 }
 function act(){
@@ -677,6 +678,7 @@ function act(){
 }
 function endGame(){
   rank=[...ch].sort((a,b)=>(a.rk<0)-(b.rk<0)||(a.rk>=0?a.rk-b.rk:b.d-a.d));
+  win=rank[0]===ch[0];clear=win&&round===5;win?playKirarin():bossTone('sawtooth',300,80,.8,.15);
   st='PODIUM';pf=0;lock=performance.now()+3500;flash=6;
   if(rank[0]===ch[0]){const t=firstAf-t0;if(!best||t<best){best=t;try{localStorage.setItem('gcMiningRushBest',best)}catch(e){}}}
 }
@@ -687,12 +689,14 @@ function upd(){
   curses.forEach(q=>{q.t++;if(q.t===10)playSound('thunder');
     if(q.t===24)ch.forEach((o,j)=>{if(j!==q.i&&o.rk<0){o.d=Math.max(0,o.d-20);o.cu=60;pops.push({x:o.x,y:SY+o.dd*K-cam-50,t:'-20M',c:'#c6f',l:50});spark(o.x,SY+o.dd*K-cam-14,12,['#c060ff','#fff']);if(j===0)shake=10}})});
   curses=curses.filter(q=>q.t<70);
+  if(st==='ROUND'){if(rc===0)bossTone('square',523,1046,.3,.15);if(++rc>=100){st='COUNT';cd=0;cn=3}}
   if(st==='COUNT'){if(cd===0)playCount(cn===0);if(++cd>=(cn?50:35)){cd=0;if(--cn<0){st='PLAY';t0=af}}}
   if(st==='COUNT'||st==='PLAY'){gx+=gd*gs;if(gx>=200){gx=200;gd=-1}else if(gx<=0){gx=0;gd=1}}
   if(st==='PLAY'){ch.forEach(stepCh);if(order>0){if(goalT>0)goalT--;if(order>=3||af-firstAf>600)endGame()}}
   else if(st==='PODIUM'){
-    pf++;if(pf%2===0)P.push({x:Math.random()*W,y:-3,vx:rnd(-.3,.3),vy:rnd(.6,1.2),g:0,l:220,s:2,c:pick(COL)});
-    if(pf>100&&pf%24===0)firework();
+    pf++;
+    if(win){for(let k=0;k<(clear?5:1);k++)if(pf%2===0)P.push({x:Math.random()*W,y:-3,vx:rnd(-.5,.5),vy:rnd(.6,1.4),g:0,l:220,s:clear?3:2,c:pick(COL)});
+      if(clear){if(pf>20&&pf%10===0)firework(pf%30!==0);if(pf%30===0&&pf<240)playKirarin()}else if(pf>100&&pf%24===0)firework()}
   }
 }
 
@@ -732,7 +736,9 @@ function scene(){
   if(st==='COUNT')T('PRESS A / SPACE IN THE ZONE!',120,153,'#aaa');
 }
 function podium(){
-  ['#1a1240','#2a1b5c','#4a2a7a','#7a3a8a','#b84a8a','#e8668a','#ff9a6a','#ffc27a'].forEach((c,i)=>R(0,i*18,W,18,c));
+  const cols=['#1a1240','#2a1b5c','#4a2a7a','#7a3a8a','#b84a8a','#e8668a','#ff9a6a','#ffc27a'],o=clear?(af>>3):0;
+  cols.forEach((c,i)=>R(0,i*18,W,18,cols[(i+o)%8]));
+  if(clear){g.globalAlpha=.22;for(let i=0;i<12;i++){const a=i*Math.PI/6+af*.03;for(let n=4;n<34;n++){const d=n*6;R(120+Math.cos(a)*d-2,100+Math.sin(a)*d-2,5,5,'#ffee55')}}g.globalAlpha=1}
   [[10,8],[40,20],[90,5],[150,12],[200,9],[225,24],[180,30]].forEach(p=>R(p[0],p[1],1,1,'#fff'));
   R(0,146,W,14,'#3a2a5a');
   const X=[120,72,168],TP=[100,112,120],BC=['#e8b830','#c0c8d4','#c07838'],pr=rank.indexOf(ch[0]);
@@ -740,15 +746,16 @@ function podium(){
     const gr=Math.min(1,Math.max(0,(pf-(2-r)*25)/20)),top=146-(146-TP[r])*gr;
     R(X[r]-20,top,40,146-top,BC[r]);R(X[r]-20,top,40,2,'#fff');
     if(gr>=1)T(String(r+1),X[r],TP[r]+8,'#000',3,'c',null);
-    const jmp=r===0&&pf>120?Math.abs(Math.sin((pf-120)*.13))*14:0;
+    const jmp=(r===0&&pf>120)?Math.abs(Math.sin((pf-120)*.13))*(clear?18:14):(clear&&pf>90?Math.abs(Math.sin((pf-90)*.13+r))*12:0);
     drawCh(c.k,X[r],Math.round(top-jmp),0,false);
   });
   if(pf>60)T('YOU',X[pr],TP[pr]-60,'#ffee55');
   if(pf>80){
-    T(pr===0?'YOU WIN!':'YOU: '+['1ST','2ND','3RD'][pr],120,6,pr===0&&((af>>3)&1)?'#ffd700':'#fff',3);
-    if(pr===0){T('TIME '+((firstAf-t0)/60).toFixed(1)+'S',120,24,'#fff');T('BEST '+(best/60).toFixed(1)+'S',120,32,'#aaa')}
+    if(clear){T('ALL ROUNDS CLEAR!!',120,4,COL[(af>>2)%COL.length],2);T('CONGRATULATIONS!!',120,16,COL[((af>>2)+3)%COL.length],2)}
+    else if(win){T('YOU WIN!',120,6,(af>>3)&1?'#ffd700':'#fff',3);T('TIME '+((firstAf-t0)/60).toFixed(1)+'S',120,24,'#fff');T('BEST '+(best/60).toFixed(1)+'S',120,32,'#aaa')}
+    else{T('GAME OVER',120,6,'#ff4a4a',3);T('YOU: '+['1ST','2ND','3RD'][pr],120,24,'#fff',2)}
   }
-  if(pf>40)T(performance.now()<lock?'WAIT...':'TAP / SPACE TO CONTINUE',120,150,performance.now()<lock?'#888':'#fff');
+  if(pf>40){const w=performance.now()<lock;T(w?'WAIT...':clear?'TAP TO PLAY AGAIN':win?'TAP FOR ROUND '+(round+1):'TAP TO RETRY',120,150,w?'#888':clear?COL[(af>>2)%COL.length]:'#fff')}
 }
 function draw(){
   g.save();if(shake>0){g.translate((Math.random()*4-2)|0,(Math.random()*4-2)|0);shake--}
@@ -756,7 +763,9 @@ function draw(){
   P.forEach(p=>R(p.x,p.y,p.s,p.s,p.c));
   if(flash>0){g.globalAlpha=flash/6*.7;R(0,0,W,H,'#fff');g.globalAlpha=1;flash--}
   g.restore();
-  if(st==='COUNT')T(cn?cn:'GO!',120,50,cn?'#ffd700':'#6bff7a',cn?8:6);
+  if(st!=='PODIUM')T('ROUND '+round,237,3,'#ffd700',1,'r');
+  if(st==='ROUND'){g.globalAlpha=.45;R(0,0,W,123,'#000');g.globalAlpha=1;T('ROUND '+round,120,40,'#ffd700',5);T(round===5?'FINAL ROUND!':'GET 1ST PLACE!',120,80,round===5&&((af>>3)&1)?'#ff5a3a':'#fff',2)}
+  else if(st==='COUNT')T(cn?cn:'GO!',120,50,cn?'#ffd700':'#6bff7a',cn?8:6);
   else if(st==='PLAY'&&goalT>0&&((af>>2)&1))T('GOAL!',120,50,'#ffd700',5);
 }
 
@@ -766,12 +775,12 @@ function startGame(){
   if(startPressed)return;startPressed=true;
   const b=$('btnMineStart');b.classList.remove('pressed');void b.offsetWidth;b.classList.add('pressed');
   playBoing();au();bgmOn();
-  setTimeout(function(){bgmOn();ov.style.display='none';newGame()},380);
+  setTimeout(function(){bgmOn();ov.style.display='none';round=1;newGame()},380);
 }
 function press(e){
   if(e&&e.preventDefault)e.preventDefault();
   if(ov.style.display!=='none'){startGame();return}
-  if(st==='PLAY')act();else if(st==='PODIUM'&&performance.now()>=lock)newGame();
+  if(st==='PLAY')act();else if(st==='PODIUM'&&performance.now()>=lock){if(win&&!clear)round++;else round=1;newGame()}
 }
 {const h=function(e){e.preventDefault();startGame()};
 $('btnMineStart').addEventListener('click',h);$('btnMineStart').addEventListener('touchend',h,{passive:false})}
