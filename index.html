@@ -156,6 +156,15 @@
     .cart.noimg::after { content: attr(data-label); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 2px; text-align: center; background: linear-gradient(135deg, #ffffff 0%, #34d399 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
     .cart-soon { aspect-ratio: 462 / 527; box-sizing: border-box; border: 2px solid; border-image: linear-gradient(135deg, #ffffff 0%, #34d399 100%) 1; display: flex; justify-content: center; align-items: center; }
     .cart-soon span { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 13px; letter-spacing: 3px; background: linear-gradient(135deg, #ffffff 0%, #34d399 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; opacity: 0.8; }
+    /* 🔗 関連プロジェクトのリンク一覧（ゲームと間違えないよう、細いフレームと小さなアイコンだけ） */
+    .more-box { width: 88%; margin-top: 16px; box-sizing: border-box; border: 1px solid; border-image: linear-gradient(135deg, #ffffff 0%, #34d399 100%) 1; padding: 8px 12px 2px; text-align: left; }
+    .more-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 4px; }
+    .more-link { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid rgba(148, 163, 184, 0.18); color: #e2e8f0; text-decoration: none; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px; -webkit-tap-highlight-color: transparent; }
+    .more-link .ico, .more-link img { width: 30px; height: 30px; box-sizing: border-box; object-fit: contain; background: #1e293b; border: 1px solid rgba(52, 211, 153, 0.5); flex-shrink: 0; }
+    .more-link .ico { display: flex; justify-content: center; align-items: center; color: #6ee7b7; font-weight: 800; font-size: 14px; }
+    .more-link .nm { flex: 1; }
+    .more-link .ext { color: #6ee7b7; font-size: 14px; }
+    @media (hover: hover) { .more-link:hover { color: #6ee7b7; } }
     @media (hover: hover) {
       .cart:hover { transform: translateY(-6px) scale(1.05); filter: brightness(1.12) drop-shadow(0 0 14px rgba(52, 211, 153, 0.8)); }
     }
@@ -279,6 +288,12 @@
             <div class="cart" data-href="BeamStruggle/" role="button" aria-label="BEAM STRUGGLE"><img src="BeamStruggle_title.webp" alt="BEAM STRUGGLE"></div>
             <div class="cart" data-href="PoliceDog/" role="button" aria-label="POLICE DOG"><img src="PoliceDog_title.webp" alt="POLICE DOG"></div>
             <div class="cart" data-href="MiningRush/" data-label="MINING RUSH" role="button" aria-label="MINING RUSH"><img src="MiningRush_title.webp" alt="MINING RUSH" onerror="this.parentNode.classList.add('noimg'); this.remove();"></div>
+          </div>
+          <div class="more-box">
+            <div class="more-title">MORE FROM GANJAFLARE</div>
+            <a class="more-link" href="https://picoflr.xyz/" target="_blank" rel="noopener noreferrer"><img src="image/PICO.webp" alt="" onerror="this.outerHTML='<span class=&quot;ico&quot;>P</span>'"><span class="nm">PICO</span><span class="ext" aria-hidden="true">&#8599;</span></a>
+            <a class="more-link" href="https://botlockcrypto.com/onboarding" target="_blank" rel="noopener noreferrer"><img src="image/FlareTopia/BotLockHQ%20EcoSystem.webp" alt="" onerror="this.outerHTML='<span class=&quot;ico&quot;>F</span>'"><span class="nm">FlareTopia</span><span class="ext" aria-hidden="true">&#8599;</span></a>
+            <a class="more-link" href="https://www.flamix.trade/" target="_blank" rel="noopener noreferrer"><img src="image/Flamix%20trade.webp" alt="" onerror="this.outerHTML='<span class=&quot;ico&quot;>F</span>'"><span class="nm">Flamix trade</span><span class="ext" aria-hidden="true">&#8599;</span></a>
           </div>
         </div>
 
