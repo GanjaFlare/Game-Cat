@@ -888,7 +888,6 @@
       const tx = (t >= 55 && t < 95) ? Math.sin(t * 2.2) * 1.2 : 0, bob = mini.run ? (Math.floor(frameCount / 4) % 2) : 0;
       drawPoliceDog(ctx, Math.round(mini.x + tx), Math.round(106 + mini.yoff - bob), 0.56, frameCount, mini.run, 0, mini.mouth, mini.flip, false);
       if (t >= 8 && t < 55) outlineText('!', Math.round(mini.x + 6), Math.round(98 + mini.yoff), Math.round(10 + 8 * Math.min(1, (t - 8) / 5)), '#ef4444', 'center');
-      if (t >= 55) jpText('びえーん', Math.round(mini.x + 6), Math.round(96 + mini.yoff - bob), 9, '#7dd3fc', 'center');
     }
 
     // ---------- 1フレーム更新 ----------
@@ -1165,11 +1164,6 @@
       }
       if ((mode === 'rage' && t >= 20) || (mode === 'fight' && dog.spirit)) { ctx.fillStyle = 'rgba(255,0,0,' + (mode === 'rage' ? 0.09 + 0.06 * Math.sin(t * 0.5) : 0.06) + ')'; ctx.fillRect(0, 0, W, H); }
       if (mode === 'rage') {
-        if (t >= 20 && t < 170) {
-          const sc = 1 + 0.1 * Math.sin(t * 0.9);
-          ctx.save(); ctx.translate(120 + (Math.random() - 0.5) * 5, 52 + (Math.random() - 0.5) * 5); ctx.scale(sc, sc);
-          jpText('ぐおおおおおおおお!!!!', 0, 0, 16, '#ff2a2a', 'center'); ctx.restore();
-        }
         if (t >= 165) {
           ctx.fillStyle = 'rgba(100,0,0,0.5)'; ctx.fillRect(0, 62, W, 48);
           outlineText('DEATH MODE', 120, 90, 22, Math.floor(t / 5) % 2 ? '#ffffff' : '#ff3030', 'center');
