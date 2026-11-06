@@ -410,6 +410,25 @@
     function sfxDrop() { tone('sine', 520, 980, 0.18, 0.1); tone('sine', 980, 740, 0.2, 0.08, 0.12); }
     function sfxPi(hi) { tone('square', hi ? 2500 : 1900, hi ? 2500 : 1900, hi ? 0.11 : 0.07, 0.13); }   // ターゲットマークの「ピピ！」
     function sfxChargeTick() { tone('square', 1760, 1760, 0.035, 0.07); }   // ライフ回復「ティリリリ」
+    function toneHold(type, f0, f1, dur, vol, vib) {   // 持続する音（咆哮用）
+      const c = ensureAudioCtx(); if (!c) return;
+      if (c.state === 'suspended') c.resume().catch(function(){});
+      const t0 = c.currentTime, o = c.createOscillator(), g = c.createGain(), l = c.createOscillator(), lg = c.createGain();
+      o.type = type; o.frequency.setValueAtTime(f0, t0); o.frequency.linearRampToValueAtTime(f1, t0 + dur);
+      l.frequency.value = 13; lg.gain.value = vib; l.connect(lg); lg.connect(o.frequency);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(vol, t0 + 0.12); g.gain.setValueAtTime(vol, t0 + dur - 0.5); g.gain.linearRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.05); l.start(t0); l.stop(t0 + dur + 0.05);
+    }
+    function sfxRoar() {   // 「ぐおおおおお！！」
+      toneHold('sawtooth', 135, 80, 2.6, 0.30, 9); toneHold('sawtooth', 142, 76, 2.6, 0.20, 12); toneHold('square', 68, 44, 2.6, 0.16, 5);
+      noise(2.4, 0.30, 650); toneHold('sawtooth', 260, 150, 1.6, 0.07, 18);
+    }
+    function sfxDeathStart() {
+      tone('sawtooth', 100, 36, 1.0, 0.5); noise(0.6, 0.45, 1100);
+      [0, 0.16, 0.32, 0.48].forEach(function(d, i) { tone('square', i % 2 ? 660 : 880, i % 2 ? 660 : 880, 0.13, 0.12, d); });
+    }
+    function sfxPyon() { tone('sine', 500, 1500, 0.14, 0.2); }
+    function sfxCry() { [0, 0.45].forEach(function(d) { tone('sine', 1000, 640, 0.4, 0.14, d); tone('triangle', 2000, 1280, 0.4, 0.05, d); }); }
     function sfxCount() { tone('square', 660, 660, 0.12, 0.12); }
     // ⚔️ 「しゃきーん！」：刃物を抜くような金属音（ノイズの擦過音 → 高音の響き）
     function sfxShakiin() {
@@ -618,7 +637,7 @@
     }
 
     // 👮 ポリスDOG（GCRのドット絵をそのまま使用。a=描画先, s=拡大率, flip=右向き）
-    function drawPoliceDog(a, X, Y, s, fr, walking, muzzle, mouth, flip) {
+    function drawPoliceDog(a, X, Y, s, fr, walking, muzzle, mouth, flip, angry) {
       const step = walking ? (Math.floor(fr / 10) % 2) : 0;
       a.save();
       if (flip) { const px = X + 10.5 * s; a.translate(px, 0); a.scale(-1, 1); a.translate(-px, 0); }
@@ -644,6 +663,13 @@
       r('#c9a26b', -5, 25, 5, 5);
       r('#111', -16, 24, 12, 3); r('#2a2a2a', -8, 24, 8, 5); r('#2a2a2a', -5, 28, 3, 4);
       if (muzzle > 0) { r('#fde047', -24, 21, 8, 8); r('#fff', -22, 23, 4, 4); }
+      if (angry) {   // 激怒：血走った大きな目・吊り上がった眉・怒りマーク
+        r('#ffe14d', 15, 4, 10, 8); r('#ff0000', 17, 5, 7, 6); r('#000', 20, 7, 2, 3);
+        a.strokeStyle = '#1a0505'; a.lineWidth = Math.max(1, 3.2 * s);
+        a.beginPath(); a.moveTo(X + 29 * s, Y + 0.5 * s); a.lineTo(X + 13 * s, Y + 7.5 * s); a.stroke();
+        r('#7f1d1d', 3, 17, 29, 2);
+        r('#ff3030', 25, 12, 6, 1.6); r('#ff3030', 27.2, 10, 1.6, 6);
+      }
       a.restore();
     }
     // 戦闘用ポリスDOGは一度オフスクリーンに描いて、色味（被弾=白 / 回復=緑 / 瀕死=赤）を重ねる
@@ -651,11 +677,13 @@
     const dogCtx = dogCv.getContext('2d');
     function drawBattleDog(jx, jy) {
       dogCtx.clearRect(0, 0, 104, 92);
-      drawPoliceDog(dogCtx, 40, 10, 1.5, frameCount, dog.walking, dog.muzzle, dog.mouth, false);
+      drawPoliceDog(dogCtx, 40, 10, 1.5, frameCount, dog.walking, dog.muzzle, dog.mouth, false, dog.angry);
       let tint = null;
       if (dog.flash > 0) tint = 'rgba(255,255,255,' + (0.8 * dog.flash / 6) + ')';
       else if (dog.healT > 0) tint = 'rgba(110,255,150,' + (0.55 * Math.min(1, dog.healT / 20) * (0.6 + 0.4 * Math.sin(frameCount * 0.5))) + ')';
       else if (mode === 'dying') tint = 'rgba(255,40,40,' + (0.12 + 0.3 * Math.max(0, dog.pulse) + 0.2 * Math.min(1, dog.beatN / 14)) + ')';
+      else if (mode === 'rage') tint = 'rgba(255,30,30,' + Math.min(0.55, t / 90 * 0.55) + ')';
+      else if (dog.spirit) tint = 'rgba(255,30,30,' + (0.42 + 0.08 * Math.sin(frameCount * 0.4)) + ')';
       if (tint) { dogCtx.globalCompositeOperation = 'source-atop'; dogCtx.fillStyle = tint; dogCtx.fillRect(0, 0, 104, 92); dogCtx.globalCompositeOperation = 'source-over'; }
       ctx.drawImage(dogCv, Math.round(dog.x - 40 + jx), 51 + jy);
     }
@@ -713,17 +741,20 @@
     let shake = 0, flashA = 0;
     const cat = { hp: LIFE_MAX, healQ: 0, dead: false, y: CAT_REST, vy: 0, jumpBuf: 0, hitFlash: 0, gauge: 0, charge: 0, laserT: 0, glint: 0, nitro: 0, pop: 0,
                   powerFlash: 0, powerFlashMax: 30, powerFlashColor: '110,225,255' };
-    const dog = { x: 270, hp: LIFE_MAX, hits: 0, flash: 0, muzzle: 0, mouth: false, walking: false, healT: 0, hurtT: 0, gone: false,
+    const dog = { x: 270, hp: LIFE_MAX, healQ: 0, spirit: false, angry: false, hits: 0, flash: 0, muzzle: 0, mouth: false, walking: false, healT: 0, hurtT: 0, gone: false,
                   pulse: 0, beatN: 0, beatT: 0, beatInt: 60 };
     let bullets = [], parts = [], rings = [], labels = [], para = null;
     const aim = { y: 99, ty: 99, sl: 0 };   // 🎯 ターゲットマーク（次に撃つ高さ）
     function chooseAim() { aim.sl = [0, 0, 0, 0.2, -0.2, 0.35, -0.35][Math.floor(Math.random() * 7)]; aim.ty = Math.max(24, Math.min(140, 99.25 - aim.sl * (dog.x - 64))); }
     let nextShot = 0, pendingShot = false, pendT = 0, nextDrop = 0;
+    let deathMode = false;   // 2段階目（Death mode）に入ったか
+    const mini = { x: 0, yoff: 0, vy: 0, flip: false, mouth: false, run: false };   // 正体：ミニポリスドッグ
     let stats = { hitsTaken: 0, dodges: 0, heals: 0, time: 0 };
 
     function resetGame() {
       mode = 'intro'; t = 0; fightT = 0; paused = false; shake = 0; flashA = 0;
       cat.hp = LIFE_MAX; cat.healQ = 0; cat.dead = false; cat.y = CAT_REST; cat.vy = 0; cat.jumpBuf = 0; cat.hitFlash = 0; cat.gauge = 0; cat.charge = 0; cat.laserT = 0; cat.glint = 0; cat.nitro = 0; cat.pop = 0; cat.powerFlash = 0;
+      deathMode = false; dog.healQ = 0; dog.spirit = false; dog.angry = false;
       dog.x = 270; dog.hp = LIFE_MAX; dog.hits = 0; dog.flash = 0; dog.muzzle = 0; dog.mouth = false; dog.walking = false; dog.healT = 0; dog.hurtT = 0; dog.gone = false;
       dog.pulse = 0; dog.beatN = 0; dog.beatT = 0; dog.beatInt = 60;
       bullets = []; parts = []; rings = []; labels = []; para = null; aim.sl = 0; aim.y = aim.ty = 99;
@@ -749,7 +780,7 @@
     // ---------- 戦闘ロジック ----------
     function intensity() { return Math.min(1, (LIFE_MAX - dog.hp) / (LIFE_MAX - HIT_DMG)); }   // 発射頻度のみ：ポリスドッグのライフが減るほど上がる（弾速は一定）
     function fireBullet() {
-      const sp = BULLET_SPEED;
+      const sp = deathMode ? 4.5 + Math.random() * 4.0 : BULLET_SPEED;   // Death mode：弾速ランダム
       const sl = aim.sl;   // ターゲットマークが示していた高さに撃つ
       const mx = dog.x - 24, my = 61 + 25.5 * 1.5;
       bullets.push({ x: mx, y: my, vx: -sp, vy: -sp * sl, counted: false });
@@ -789,6 +820,7 @@
     }
     function startDying() {
       mode = 'dying'; t = 0; bullets.length = 0; pendingShot = false; para = null; cat.charge = 0;
+      dog.spirit = false; dog.angry = false; dog.mouth = false; dog.beatN = 0; dog.beatT = 0; dog.beatInt = 60; dog.pulse = 0;
       stopBgm();
     }
     function pickType() {
@@ -817,6 +849,48 @@
       }
     }
 
+    // ---------- Death mode（怒りの2段階目）と、ミニポリスドッグの正体バレ ----------
+    function startRage() {
+      mode = 'rage'; t = 0; deathMode = true; dog.angry = false; dog.spirit = false; dog.pulse = 0;
+      bullets.length = 0; pendingShot = false; para = null;
+      nextDrop = DROP_MIN + Math.floor(Math.random() * (DROP_MAX - DROP_MIN));
+    }
+    function spawnSpirit() {   // 闘志のオーラ（体から立ち上る炎）
+      for (let i = 0; i < 2; i++) parts.push({ x: dog.x + Math.random() * 54, y: 126 - Math.random() * 12, vx: (Math.random() - 0.5) * 0.5, vy: -1.2 - Math.random() * 1.6, g: -0.01, life: 26 + Math.random() * 20, size: 2 + Math.random() * 3, color: ['#ef4444', '#f97316', '#fde047', '#fecaca'][Math.floor(Math.random() * 4)] });
+    }
+    function stepRage() {
+      dog.mouth = t < 170;
+      if (t === 1) sfxRoar();
+      if (t >= 1 && t < 170) shake = Math.max(shake, 4 + 2 * Math.sin(t * 0.5));
+      if (t === 25) dog.angry = true;
+      if (t >= 30) { dog.spirit = true; spawnSpirit(); }
+      if (t === 100) dog.healQ = LIFE_MAX;   // ゲージ全開（ティリリリ…）
+      if (t === 165) { sfxDeathStart(); flashA = 1; shake = 12; }
+      if (t >= 245) {
+        mode = 'fight'; t = 0; dog.mouth = false; pendingShot = false; nextShot = fightT + 70;
+        startBgm(); if (bgmSource) bgmSource.playbackRate.value = 1.1;
+      }
+    }
+    function startReveal() { mode = 'reveal'; t = 0; mini.x = dog.x + 20; mini.yoff = 0; mini.vy = -7; mini.flip = false; mini.mouth = false; mini.run = false; }
+    function stepReveal() {
+      mini.vy += 0.55; mini.yoff += mini.vy; if (mini.yoff > 0) { mini.yoff = 0; mini.vy = 0; }
+      if (t === 8) { sfxPyon(); mini.vy = -4.5; }
+      if (t === 55) { mini.flip = true; mini.mouth = true; sfxCry(); }
+      if (t === 100) sfxCry();
+      if (t >= 95) { mini.run = true; mini.x += 0.8 + (t - 95) * 0.12; }
+      if (t >= 55 && t % 2 === 0) {
+        const ex = mini.flip ? mini.x + 1 : mini.x + 11, ey = 106 + mini.yoff + 4.5;
+        parts.push({ x: ex, y: ey, vx: mini.run ? -(0.8 + Math.random() * 1.5) : (Math.random() - 0.5) * 2.4, vy: -1.2 - Math.random(), g: 0.18, life: 28, size: 2, color: '#7dd3fc' });
+      }
+      if (mini.x > 250 || t > 400) { mode = 'clear'; t = 0; stats.time = fightT / 60; sfxKirarin(); setTimeout(sfxKirarin, 220); }
+    }
+    function drawMini() {
+      const tx = (t >= 55 && t < 95) ? Math.sin(t * 2.2) * 1.2 : 0, bob = mini.run ? (Math.floor(frameCount / 4) % 2) : 0;
+      drawPoliceDog(ctx, Math.round(mini.x + tx), Math.round(106 + mini.yoff - bob), 0.56, frameCount, mini.run, 0, mini.mouth, mini.flip, false);
+      if (t >= 8 && t < 55) outlineText('!', Math.round(mini.x + 6), Math.round(98 + mini.yoff), Math.round(10 + 8 * Math.min(1, (t - 8) / 5)), '#ef4444', 'center');
+      if (t >= 55) jpText('びえーん', Math.round(mini.x + 6), Math.round(96 + mini.yoff - bob), 9, '#7dd3fc', 'center');
+    }
+
     // ---------- 1フレーム更新 ----------
     function step() {
       frameCount++;
@@ -837,6 +911,10 @@
       if (dog.muzzle > 0) dog.muzzle--;
       if (dog.hurtT > 0) dog.hurtT--;
       if (dog.healT > 0) dog.healT--;
+      if (dog.healQ > 0 && frameCount % 2 === 0) {
+        const add = Math.min(5, dog.healQ, LIFE_MAX - dog.hp);
+        if (add <= 0) dog.healQ = 0; else { dog.hp += add; dog.healQ -= add; sfxChargeTick(); }
+      }
       if (dog.pulse > 0) dog.pulse -= 0.08;
       if (flashA > 0) flashA -= 0.05;
       if (shake > 0) shake -= 0.5;
@@ -850,7 +928,9 @@
       else if (mode === 'fight') stepFight();
       else if (mode === 'dying') stepDying();
       else if (mode === 'catdie') { if (t >= 100) { mode = 'gameover'; t = 0; } }
-      else if (mode === 'boom') { if (t >= 100) { mode = 'clear'; t = 0; stats.time = fightT / 60; sfxKirarin(); setTimeout(sfxKirarin, 220); } }
+      else if (mode === 'rage') stepRage();
+      else if (mode === 'reveal') stepReveal();
+      else if (mode === 'boom') { if (t >= 70) startReveal(); }
 
       // パーティクル・リング・ラベル
       for (let i = parts.length - 1; i >= 0; i--) {
@@ -873,15 +953,16 @@
     function stepFight() {
       fightT++;
       const k = intensity();
+      if (dog.spirit) { spawnSpirit(); dog.mouth = pendingShot || dog.muzzle > 0; }
       aim.y += Math.max(-2.5, Math.min(2.5, aim.ty - aim.y));
       // ポリスDOGの射撃：だんだん速く・頻繁に
-      if (!pendingShot && fightT >= nextShot && Math.abs(aim.ty - aim.y) < 1.5) { pendingShot = true; pendT = 0; }
-      if (pendingShot) { pendT++; if (pendT === 1) sfxPi(false); if (pendT === 10) sfxPi(true); }
-      if (pendingShot && pendT >= 20) {
+      if (!pendingShot && fightT >= nextShot && (deathMode || Math.abs(aim.ty - aim.y) < 1.5)) { pendingShot = true; pendT = 0; }
+      if (pendingShot) { pendT++; if (!deathMode) { if (pendT === 1) sfxPi(false); if (pendT === 10) sfxPi(true); } }
+      if (pendingShot && pendT >= (deathMode ? 8 : 20)) {
         pendingShot = false; fireBullet();
         const wait = SHOT_WAIT_START + (SHOT_WAIT_END - SHOT_WAIT_START) * k;
         const jitter = (45 - 30 * k) * Math.random();
-        nextShot = fightT + Math.round(wait + jitter);
+        nextShot = fightT + (deathMode ? 28 + Math.floor(Math.random() * 95) : Math.round(wait + jitter));
       }
       // 弾の移動・判定
       const top = cat.y - 14, bottom = cat.y + 18;
@@ -935,6 +1016,7 @@
         dog.beatT = 0; dog.beatN++; sfxDokun(); dog.pulse = 1; shake = Math.min(7, 1 + dog.beatN * 0.5);
         dog.beatInt = Math.max(6, dog.beatInt * 0.8);
         if (dog.beatN >= 14) {
+          if (!deathMode) { startRage(); return; }
           mode = 'boom'; t = 0; dog.gone = true; flashA = 1; shake = 18; sfxExplosion();
           burst(dog.x + 30, 100, 130, ['#fff', '#fde047', '#fb923c', '#ef4444', '#7f1d1d', '#1e3a8a'], 8);
           rings.push({ cx: dog.x + 30, cy: 100, r: 5, a: 1, w: 4, c: '255,120,60', grow: 3.5, ell: 1 });
@@ -948,6 +1030,11 @@
     function outlineText(str, x, y, size, color, align) {
       ctx.font = "bold " + size + "px 'Courier New'"; ctx.textAlign = align || 'left'; ctx.lineJoin = 'round';
       ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.strokeText(str, x, y);
+      ctx.fillStyle = color; ctx.fillText(str, x, y); ctx.textAlign = 'left';
+    }
+    function jpText(str, x, y, size, color, align) {
+      ctx.font = "bold " + size + "px 'Hiragino Kaku Gothic ProN','Noto Sans JP','Yu Gothic',sans-serif"; ctx.textAlign = align || 'left'; ctx.lineJoin = 'round';
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.9)'; ctx.strokeText(str, x, y);
       ctx.fillStyle = color; ctx.fillText(str, x, y); ctx.textAlign = 'left';
     }
     function drawBullet(bl) {
@@ -1015,6 +1102,10 @@
       // ポリスDOG
       if (!dog.gone && (mode !== 'intro' || dog.x < 268)) {
         let jx = 0, jy = 0;
+        if (mode === 'rage' || dog.spirit) {
+          glow(ctx, dog.x + 26, 100, 56 + 5 * Math.sin(frameCount * 0.35), 'rgba(255,40,30,' + (0.38 + 0.08 * Math.sin(frameCount * 0.5)) + ')', 'rgba(255,40,30,0)');
+          jx = (Math.random() - 0.5) * (mode === 'rage' ? 3.5 : 1.2);
+        }
         if (mode === 'dying') {
           const cx = dog.x + 30, r = 50 + Math.max(0, dog.pulse) * 30, al = 0.25 + 0.15 * Math.min(1, dog.beatN / 14) + 0.45 * Math.max(0, dog.pulse);
           glow(ctx, cx, 100, r, 'rgba(255,40,40,' + al + ')', 'rgba(255,40,40,0)');
@@ -1026,6 +1117,7 @@
       }
       // パラシュート
       if (para) drawParachute(para);
+      if (mode === 'reveal') drawMini();
       // ガンジャキャット
       if (mode !== 'title' && !cat.dead) {
         if (cat.hitFlash > 0 && Math.floor(cat.hitFlash / 3) % 2 === 0) ctx.globalAlpha = 0.4;
@@ -1035,7 +1127,7 @@
       }
       // 弾丸
       bullets.forEach(drawBullet);
-      if (mode === 'fight') drawAim();
+      if (mode === 'fight' && !deathMode) drawAim();
       // レーザー
       if (cat.laserT > 0 && !(mode === 'boom' && dog.gone)) {
         const c = dogCenter(), ox = 49, oy = cat.y - 5, w = 1 + cat.laserT / 12 * 4;
@@ -1070,6 +1162,19 @@
         ctx.save(); ctx.translate(120, 74); ctx.scale(sc, sc);
         outlineText('FIGHT!!', 0, 0, 20, '#ffffff', 'center');
         ctx.restore();
+      }
+      if ((mode === 'rage' && t >= 20) || (mode === 'fight' && dog.spirit)) { ctx.fillStyle = 'rgba(255,0,0,' + (mode === 'rage' ? 0.09 + 0.06 * Math.sin(t * 0.5) : 0.06) + ')'; ctx.fillRect(0, 0, W, H); }
+      if (mode === 'rage') {
+        if (t >= 20 && t < 170) {
+          const sc = 1 + 0.1 * Math.sin(t * 0.9);
+          ctx.save(); ctx.translate(120 + (Math.random() - 0.5) * 5, 52 + (Math.random() - 0.5) * 5); ctx.scale(sc, sc);
+          jpText('ぐおおおおおおおお!!!!', 0, 0, 16, '#ff2a2a', 'center'); ctx.restore();
+        }
+        if (t >= 165) {
+          ctx.fillStyle = 'rgba(100,0,0,0.5)'; ctx.fillRect(0, 62, W, 48);
+          outlineText('DEATH MODE', 120, 90, 22, Math.floor(t / 5) % 2 ? '#ffffff' : '#ff3030', 'center');
+          outlineText('START!!', 120, 105, 12, '#fde047', 'center');
+        }
       }
       if (flashA > 0) { ctx.fillStyle = 'rgba(255,255,255,' + Math.min(1, flashA) + ')'; ctx.fillRect(0, 0, W, H); }
 
