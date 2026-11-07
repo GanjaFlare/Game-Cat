@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>GCR ADMIN</title>
+  <title>GANJA CAT RUN 2</title>
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われる名前(titleより優先される) -->
   <meta name="apple-mobile-web-app-title" content="GanjaCatRun">
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われるアイコン -->
@@ -99,15 +99,18 @@
       100% { transform: translateY(0) scale(1.02); filter: brightness(1.3); }
     }
     /* 🛒 アイテム選択（STARTの下） */
-    .item-area { width: 100%; }
-    .item-head { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 6px; text-align: left; }
-    .item-row { display: flex; gap: 8px; }
+    .item-area { width: 118%; align-self: center; }
+    .item-head { display: flex; justify-content: space-between; align-items: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 6px; text-align: left; }
+    .wallet-btn { background: transparent; color: #94a3b8; border: 1px solid #475569; padding: 3px 8px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.5px; cursor: pointer; touch-action: manipulation; }
+    .wallet-btn.on { color: #6ee7b7; border-color: #34d399; }
+    .item-note.err { color: #fca5a5; }
+    .item-row { display: flex; gap: 6px; }
     .item-card { flex: 1; position: relative; box-sizing: border-box; border: 1px solid rgba(148, 163, 184, 0.35); padding: 8px 4px 6px; text-align: center; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: border-color 0.15s, box-shadow 0.15s; }
     .item-card.sel { border-color: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, 0.45), inset 0 0 8px rgba(52, 211, 153, 0.12); }
     .item-card.sel::after { content: '\2713'; position: absolute; top: 3px; right: 6px; color: #6ee7b7; font-size: 12px; font-weight: 800; }
-    .item-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 11px; color: #e2e8f0; }
-    .item-img { width: 64px; height: 64px; image-rendering: pixelated; display: block; margin: 4px auto; }
-    .item-desc { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 10px; line-height: 1.3; color: #cbd5e1; min-height: 26px; }
+    .item-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 10px; white-space: nowrap; color: #e2e8f0; }
+    .item-img { width: 56px; height: 56px; image-rendering: pixelated; display: block; margin: 4px auto; }
+    .item-desc { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9.5px; line-height: 1.3; color: #cbd5e1; min-height: 38px; }
     .item-price { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; color: #6ee7b7; margin-top: 2px; }
     .item-note { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9px; color: #94a3b8; margin-top: 6px; text-align: center; }
     .dpad { position: absolute; left: 35px; bottom: 180px; width: 80px; height: 80px; cursor: pointer; z-index: 5; }
@@ -270,7 +273,7 @@
           <div class="mode-buttons">
             <button id="btnNormal" class="start-btn normal-btn">START</button>
             <div class="item-area">
-              <div class="item-head">ITEMS</div>
+              <div class="item-head"><span>ITEMS</span><button id="btnWallet" class="wallet-btn" type="button">CONNECT WALLET</button></div>
               <div class="item-row">
                 <div id="itemLifeCard" class="item-card" role="button" aria-pressed="false">
                   <div class="item-name">Life Boost</div>
@@ -284,8 +287,14 @@
                   <div class="item-desc">Enables double jump</div>
                   <div class="item-price">222 GANJA</div>
                 </div>
+                <div id="itemMagnetCard" class="item-card" role="button" aria-pressed="false">
+                  <div class="item-name">Magnet</div>
+                  <canvas id="imgMagnet" class="item-img" width="32" height="32"></canvas>
+                  <div class="item-desc">Pulls in nearby coins, diamonds &amp; nitro</div>
+                  <div class="item-price">222 GANJA</div>
+                </div>
               </div>
-              <div class="item-note">TEST MODE: items are free for now</div>
+              <div id="walletMsg" class="item-note"></div>
             </div>
             <button id="btnBackSelect" class="start-btn" style="background:#334155;color:#e2e8f0;box-shadow:0 4px 0 #1e293b;font-size:12px;">&lt; BACK TO GAME SELECT</button>
           </div>
@@ -376,12 +385,11 @@
     let twitterId="", isPlaying=false, gameOver=false, score=0, hiScore=0, playerY=115, playerVelocityY=0, isJumping=false, obstacles=[], coins=[], gameSpeed=4.5, frameCount=0;
     let isSaving = false;
     let hellLives = 3;
-    let itemLife = false, itemPizza = false, maxLives = 3, airJumpUsed = false, lastJumpFrame = -99;   // 🛒 アイテム：ライフブースト／ジャンピングピザ
+    let itemLife = false, itemPizza = false, itemMagnet = false, maxLives = 3, airJumpUsed = false, lastJumpFrame = -99;   // 🛒 アイテム：ライフブースト／ジャンピングピザ
     let hitFlashFrames = 0;
     let gameMode = 'NORMAL';
     let visualMode = 'NORMAL'; // 見た目だけ NORMAL → BOOST(LV3) → HELL(LV6) と変化
     function bgColor() { return visualMode === 'HELL' ? "#450c0c" : visualMode === 'ZOMBIE' ? "#6a5590" : visualMode === 'GOLD' ? "#a07f12" : "#8b956d"; }
-    const ADMIN_MODE = true; // 運営専用：ライフ無限（公開禁止）
     let smokeParts = [];
     let nitroFrames = 0, nitroNodes = []; const NITRO_TOTAL = 240; // 4秒
     let powerFlash = 0, powerFlashMax = 30, powerFlashColor = '110,225,255';
@@ -390,6 +398,7 @@
     let obstacleSpawnChance = 0.009;
     const speedMap = [0, 3.5, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.5, 13.0, 14.0];
     let isPaused = false;
+    let confirmTitle = false;   // 「タイトル画面に戻りますか？」の確認中
     let pauseFrame = null;
     let showLeaderboard = false;
     let isLoadingLeaderboard = false;
@@ -683,7 +692,10 @@
           btn.classList.remove("pressed"); void btn.offsetWidth; btn.classList.add("pressed");  // ボタンが押された演出
           playBoing();   // 「ぴょいん！」
           bgmOn();       // BGMはSTARTを押した瞬間から開始（指を離した瞬間の操作の中で音の許可を取る）
-          setTimeout(function() { initAudioAndStart(modeStr); }, 380);
+          Promise.resolve(purchaseItems()).then(function(ok) {   // 選んだアイテムがあれば、先に$GANJAをバーンして支払う
+            if (!ok) { startPressed = false; btn.classList.remove("pressed"); return; }
+            setTimeout(function() { initAudioAndStart(modeStr); }, 380);
+          });
         };
         btn.addEventListener("click", press);
         btn.addEventListener("touchend", press, {passive: false});
@@ -711,6 +723,13 @@
       }
 
       // 🎯 ボタン周りの判定エリアのイベント登録（A/Bどこを押してもジャンプ）
+      // 確認中は、AボタンがYES、BボタンがNO（確認中でなければ、これまでどおりジャンプ）
+      [["btnA", true], ["btnB", false]].forEach(function(pr) {
+        const el = document.getElementById(pr[0]);
+        if (!el) return;
+        const h = function(e) { if (!confirmTitle) return; e.preventDefault(); e.stopPropagation(); answerTitleConfirm(pr[1]); };
+        el.addEventListener("mousedown", h); el.addEventListener("touchstart", h, {passive: false});
+      });
       const btnArea = document.getElementById("btnArea");
       if (btnArea) {
         btnArea.addEventListener("mousedown", function(e) {
@@ -1462,7 +1481,8 @@
     }
     
     function returnToTitle() {
-      itemLife = false; itemPizza = false; if (typeof refreshItemUI === 'function') refreshItemUI();
+      confirmTitle = false;
+      itemLife = false; itemPizza = false; itemMagnet = false; if (typeof refreshItemUI === 'function') refreshItemUI();
       bgmOff(); startPressed = false;   // タイトル画面に戻ったらBGMを消し、STARTボタンの状態も戻す
       const sbtn = document.getElementById("btnNormal"); if (sbtn) sbtn.classList.remove("pressed");
       const overlay = document.getElementById("setupOverlay");
@@ -1549,6 +1569,7 @@
     
     // 🚀 先行入力および跳躍処理を適用した triggerJump
     function triggerJump() { 
+      if (confirmTitle) return;
       if (!isPlaying || isPaused || isReviving) return; 
       if (gameOver) { 
         if (isSaving) return;
@@ -1596,7 +1617,7 @@
 
     function togglePause() {
       if (!isPlaying || gameOver || isReviving) return;
-      isPaused = !isPaused;
+      isPaused = !isPaused; confirmTitle = false;
       if (isPaused) {
         lastFrameTimestamp = null;
         showLeaderboard = false; 
@@ -1613,6 +1634,10 @@
         if (isSaving) return;
         returnToTitle();
         return;
+      }
+      if (confirmTitle) return;
+      if (isPaused && showLeaderboard && !isReviving) {   // レジェンドボードでもう一度SELECT → 確認
+        confirmTitle = true; drawPauseScreen(); return;
       }
       if (!isPaused || showLeaderboard || isReviving) return;
       showLeaderboard = true; 
@@ -1696,7 +1721,22 @@
         ctx.fillStyle = "#ccc";
         ctx.textAlign = "center"; ctx.font = "bold 8px 'Courier New'"; ctx.fillText("Press START to resume", 120, 150);
       }
+      if (confirmTitle) {
+        ctx.fillStyle = "rgba(0,0,0,0.75)"; ctx.fillRect(0, 0, 240, 160);
+        ctx.fillStyle = "#0f172a"; ctx.fillRect(30, 48, 180, 66);
+        ctx.strokeStyle = "#34d399"; ctx.lineWidth = 2; ctx.strokeRect(30, 48, 180, 66);
+        ctx.textAlign = "center"; ctx.font = "bold 12px 'Courier New'";
+        ctx.fillStyle = "#ffffff"; ctx.fillText("RETURN TO TITLE?", 120, 74);
+        ctx.fillStyle = "#6ee7b7"; ctx.fillText("A : YES", 78, 100);
+        ctx.fillStyle = "#fca5a5"; ctx.fillText("B : NO", 162, 100);
+      }
       ctx.textAlign = "left";
+    }
+
+    function answerTitleConfirm(yes) {
+      if (!confirmTitle) return;
+      confirmTitle = false;
+      if (yes) { returnToTitle(); } else { drawPauseScreen(); }   // NOならレジェンドボードに戻る
     }
 
     function startRevivalRitual() {
@@ -1859,7 +1899,17 @@
       c.fillStyle = '#dc2626'; [[12, 13], [18, 14], [13, 19], [19, 19]].forEach(function(q) { c.fillRect(q[0], q[1], 3, 3); });
       c.fillStyle = '#16a34a'; c.fillRect(16, 17, 2, 2); c.fillRect(11, 17, 2, 1);
     }
+    function drawItemMagnet(cv) {   // 磁石（赤い馬蹄形、先端は銀色）
+      const c = cv.getContext('2d'); c.clearRect(0, 0, 32, 32);
+      c.fillStyle = '#dc2626'; c.fillRect(7, 8, 6, 13); c.fillRect(19, 8, 6, 13); c.fillRect(9, 5, 14, 6); c.fillRect(8, 6, 2, 3); c.fillRect(22, 6, 2, 3);
+      c.fillStyle = '#f87171'; c.fillRect(8, 10, 2, 9); c.fillRect(20, 10, 2, 9); c.fillRect(11, 6, 10, 2);
+      c.fillStyle = '#e5e7eb'; c.fillRect(7, 21, 6, 6); c.fillRect(19, 21, 6, 6);
+      c.fillStyle = '#9ca3af'; c.fillRect(7, 25, 6, 2); c.fillRect(19, 25, 6, 2);
+      c.fillStyle = '#fde047'; c.fillRect(14, 22, 1, 2); c.fillRect(16, 21, 2, 1); c.fillRect(17, 23, 1, 2); c.fillRect(15, 25, 2, 1);
+    }
     function refreshItemUI() {
+      const m = document.getElementById('itemMagnetCard');
+      if (m) { m.classList.toggle('sel', itemMagnet); m.setAttribute('aria-pressed', String(itemMagnet)); }
       const a = document.getElementById('itemLifeCard'), b = document.getElementById('itemPizzaCard');
       if (a) { a.classList.toggle('sel', itemLife); a.setAttribute('aria-pressed', String(itemLife)); }
       if (b) { b.classList.toggle('sel', itemPizza); b.setAttribute('aria-pressed', String(itemPizza)); }
@@ -1867,9 +1917,106 @@
     (function() {
       const a = document.getElementById('itemLifeCard'), b = document.getElementById('itemPizzaCard');
       const il = document.getElementById('imgLife'), ip = document.getElementById('imgPizza');
-      if (il) drawItemBattery(il); if (ip) drawItemPizza(ip);
+      const mc = document.getElementById('itemMagnetCard'), im = document.getElementById('imgMagnet');
+      if (il) drawItemBattery(il); if (ip) drawItemPizza(ip); if (im) drawItemMagnet(im);
+      if (mc) mc.addEventListener('click', function() { itemMagnet = !itemMagnet; refreshItemUI(); bossTone('square', 880, 1320, 0.06, 0.08); });
       if (a) a.addEventListener('click', function() { itemLife = !itemLife; refreshItemUI(); bossTone('square', 880, 1320, 0.06, 0.08); });
       if (b) b.addEventListener('click', function() { itemPizza = !itemPizza; refreshItemUI(); bossTone('square', 880, 1320, 0.06, 0.08); });
+    })();
+
+    // ================= 🛒 課金（ウォレット接続・$GANJAバーン送金・確認） =================
+    const BILLING_ENABLED = false;   // false＝無課金テスト（アイテムは無料）／true＝STARTで、選んだアイテムの代金を$GANJAでバーン
+    const GANJA_TOKEN = "0x9aA42de5eC6f3B3BbF252bf8ac81ACB338D888b7";
+    const BURN_ADDRESS = "0x000000000000000000000000000000000000dEaD";
+    const ITEM_PRICE = 222;          // 1アイテムあたり（$GANJA）
+    const FLARE_CHAIN = { chainId: "0xe", chainName: "Flare Mainnet", nativeCurrency: { name: "Flare", symbol: "FLR", decimals: 18 }, rpcUrls: ["https://flare-api.flare.network/ext/bc/C/rpc"], blockExplorerUrls: ["https://flare-explorer.flare.network"] };
+    let walletAddress = "";
+    function eth() { return window.ethereum || null; }
+    function walletMsg(text, isErr) { const el = document.getElementById("walletMsg"); if (el) { el.textContent = text || ""; el.classList.toggle("err", !!isErr); } }
+    function shortAddr(a) { return a ? a.slice(0, 6) + "…" + a.slice(-4) : ""; }
+    function updateWalletUI() {
+      const b = document.getElementById("btnWallet");
+      if (b) { b.textContent = walletAddress ? shortAddr(walletAddress) + " ✓" : (eth() ? "CONNECT WALLET" : "WALLET BROWSER NEEDED"); b.classList.toggle("on", !!walletAddress); }
+    }
+    async function ensureFlare() {
+      const id = await eth().request({ method: "eth_chainId" });
+      if (id === FLARE_CHAIN.chainId) return;
+      try { await eth().request({ method: "wallet_switchEthereumChain", params: [{ chainId: FLARE_CHAIN.chainId }] }); }
+      catch (e) {
+        if (e && (e.code === 4902 || /Unrecognized chain/i.test(e.message || ""))) await eth().request({ method: "wallet_addEthereumChain", params: [FLARE_CHAIN] });
+        else throw e;
+      }
+    }
+    async function connectWallet() {
+      if (!eth()) { walletMsg("Open this page in a wallet browser (e.g. MetaMask app).", true); return false; }
+      try {
+        const acc = await eth().request({ method: "eth_requestAccounts" });
+        walletAddress = (acc && acc[0]) || "";
+        await ensureFlare();
+        updateWalletUI(); walletMsg(BILLING_ENABLED ? "Items are paid with $GANJA (burned)." : "TEST MODE: items are free for now");
+        return !!walletAddress;
+      } catch (e) { walletMsg("Wallet connection cancelled.", true); return false; }
+    }
+    function encodeTransfer(to, amount) {   // ERC-20 transfer(to, amount×10^18)
+      return "0xa9059cbb" + to.toLowerCase().replace("0x", "").padStart(64, "0") + (BigInt(amount) * 10n ** 18n).toString(16).padStart(64, "0");
+    }
+    async function ganjaBalance(addr) {
+      const r = await eth().request({ method: "eth_call", params: [{ to: GANJA_TOKEN, data: "0x70a08231" + addr.toLowerCase().replace("0x", "").padStart(64, "0") }, "latest"] });
+      return BigInt(r || "0x0") / (10n ** 18n);
+    }
+    async function waitReceipt(hash, timeoutMs) {
+      const t0 = Date.now();
+      while (Date.now() - t0 < timeoutMs) {
+        const rc = await eth().request({ method: "eth_getTransactionReceipt", params: [hash] });
+        if (rc) return rc;
+        await new Promise(function(r) { setTimeout(r, 2000); });
+      }
+      return null;
+    }
+    function selectedItemIds() { const a = []; if (itemLife) a.push("life"); if (itemPizza) a.push("pizza"); if (itemMagnet) a.push("magnet"); return a; }
+    async function verifyOnServer(hash, ids) {   // サーバー（GAS）が、ブロックチェーン上の取引内容を確かめて記録する
+      for (let i = 0; i < 3; i++) {
+        try {
+          const res = await Promise.race([callGasApi("verifyPurchase", { wallet: walletAddress, txHash: hash, items: ids.join(",") }), new Promise(function(_, rej) { setTimeout(function() { rej(new Error("timeout")); }, 20000); })]);
+          if (res && res.status === "success") return { ok: true };
+          if (res && res.reason && res.reason !== "not_found") return { ok: false, message: res.message || "Payment could not be verified." };
+        } catch (e) {}
+        await new Promise(function(r) { setTimeout(r, 3000); });
+      }
+      return { ok: true, unverified: true };   // サーバーに届かない場合は、支払い済みなので、そのまま遊べる
+    }
+    async function purchaseItems() {
+      const ids = selectedItemIds();
+      if (!BILLING_ENABLED || !ids.length) return true;
+      try {
+        if (!walletAddress && !(await connectWallet())) return false;
+        await ensureFlare();
+        const total = ITEM_PRICE * ids.length;
+        if ((await ganjaBalance(walletAddress)) < BigInt(total)) { walletMsg("Not enough $GANJA (" + total + " needed).", true); return false; }
+        walletMsg("Confirm the payment in your wallet... (" + total + " GANJA)");
+        let hash;
+        try { hash = await eth().request({ method: "eth_sendTransaction", params: [{ from: walletAddress, to: GANJA_TOKEN, data: encodeTransfer(BURN_ADDRESS, total) }] }); }
+        catch (e) { walletMsg("Payment cancelled.", true); return false; }
+        walletMsg("Waiting for confirmation...");
+        const rc = await waitReceipt(hash, 90000);
+        if (!rc) { walletMsg("Confirmation timed out. Check your wallet, then try again.", true); return false; }
+        if (rc.status !== "0x1") { walletMsg("The payment failed. Nothing was burned.", true); return false; }
+        walletMsg("Verifying payment...");
+        const v = await verifyOnServer(hash, ids);
+        if (!v.ok) { walletMsg(v.message, true); return false; }
+        walletMsg("Payment complete! Starting...");
+        return true;
+      } catch (e) { walletMsg("Something went wrong. Please try again.", true); return false; }
+    }
+    (function() {
+      const b = document.getElementById("btnWallet");
+      if (b) b.addEventListener("click", function() { if (!walletAddress) connectWallet(); });
+      walletMsg(BILLING_ENABLED ? "Items are paid with $GANJA (burned)." : "TEST MODE: items are free for now");
+      updateWalletUI();
+      if (eth()) {
+        eth().request({ method: "eth_accounts" }).then(function(a) { if (a && a[0]) { walletAddress = a[0]; updateWalletUI(); } }).catch(function() {});
+        if (eth().on) eth().on("accountsChanged", function(a) { walletAddress = (a && a[0]) || ""; updateWalletUI(); });
+      }
     })();
 
     // ================= 👮 ボス戦（ポリスDOG） =================
@@ -1988,7 +2135,7 @@
     }
     function bossHurt() {
       if (hitFlashFrames > 0) return false;
-      if (hellLives > 1 || ADMIN_MODE) { if (!ADMIN_MODE) hellLives--; hitFlashFrames = 30; playSound('deflect'); return false; }
+      if (hellLives > 1) { hellLives--; hitFlashFrames = 30; playSound('deflect'); return false; }
       hellLives = 0; bossRobotDie(); return true;
     }
     function bossTestClear() {
@@ -2349,8 +2496,8 @@
         
         if (o.x < 20+22 && o.x+o.width > 20+2 && playerY+14 > o.y && playerY < o.y+o.height) { 
           if (hitFlashFrames > 0 || nitroFrames > 0) {
-          } else if (hellLives > 1 || ADMIN_MODE) {
-            if (!ADMIN_MODE) hellLives--;
+          } else if (hellLives > 1) {
+            hellLives--;
             hitFlashFrames = 30; // 被弾後0.5秒の無敵 
             playSound('deflect');
           } else {
@@ -2365,6 +2512,10 @@
         let c = coins[i];
         if(!c.collected){
           c.x -= gameSpeed; 
+          if (itemMagnet) {   // 🧲 磁石：近くのコイン・ダイヤ・ニトロを引き寄せる
+            const mdx = 32 - c.x, mdy = (playerY + 2) - c.y, md = Math.hypot(mdx, mdy);
+            if (md < 35) { const mk = md < 20 ? 0.45 : 0.2; c.x += mdx * mk; c.y += mdy * mk; }
+          }
           
           if (c.isNitro) {
             drawNitro(c.x, c.y);
@@ -2498,6 +2649,7 @@
     }
 
     function showGameOverUI(isClear) {
+      itemLife = false; itemPizza = false; itemMagnet = false; refreshItemUI();   // 死亡・クリアでアイテムはリセット（再購入が必要）
       if (isClear) {
         const rewardOverlay = document.getElementById("rewardOverlay");
         if (rewardOverlay) {
@@ -2674,7 +2826,7 @@
       ctx.textAlign = "center";
       ctx.fillStyle = "#ccc"; ctx.font = "bold 10px 'Courier New'";
       ctx.fillText("A / SPACE : REPLAY", 120, 118);
-      ctx.fillText("SELECT    : MODE MENU", 120, 133);
+      ctx.fillText("SELECT    : RETURN TO TITLE", 120, 133);
       ctx.restore();
       
       const sBtn = document.getElementById("shareButton");
@@ -2694,6 +2846,12 @@
         if (e.code === "Space" || e.code === "Enter") e.preventDefault();
         return;
       }
+      if (confirmTitle) {
+        e.preventDefault();
+        if (e.code === "KeyA" || e.code === "KeyZ") answerTitleConfirm(true);
+        else if (e.code === "KeyB" || e.code === "KeyX" || e.code === "Escape") answerTitleConfirm(false);
+        return;
+      }
       if (e.code === "Space" || e.code === "ArrowUp") {
           e.preventDefault(); 
           if (!showLeaderboard) triggerJump(); 
@@ -2708,7 +2866,7 @@
     });
 
     function handleCanvasInteraction(e) {
-        if (isReviving) return; 
+        if (isReviving || confirmTitle) return; 
         if (showLeaderboard) {
             const rect = canvas.getBoundingClientRect();
             let clientX = e.clientX;
