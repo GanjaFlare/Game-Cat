@@ -101,9 +101,20 @@
     /* 🛒 アイテム選択（STARTの下） */
     .item-area { width: 118%; align-self: center; }
     .item-head { display: flex; justify-content: space-between; align-items: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 6px; text-align: left; }
-    .wallet-btn { background: transparent; color: #94a3b8; border: 1px solid #475569; padding: 3px 8px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.5px; cursor: pointer; touch-action: manipulation; }
-    .wallet-btn.on { color: #6ee7b7; border-color: #34d399; }
     .item-note.err { color: #fca5a5; }
+    .wallet-top { position: absolute; top: 14px; right: 14px; z-index: 20; }
+    .wallet-top-btn { display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #6ee7b7, #34d399); color: #052e16; border: 2px solid #052e16; border-radius: 10px; padding: 8px 16px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: 0.5px; cursor: pointer; touch-action: manipulation; box-shadow: 0 3px 0 #065f46, 0 0 14px rgba(52, 211, 153, 0.45); }
+    .wallet-top-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #065f46; }
+    .wallet-top-btn.on { background: #0f172a; color: #e2e8f0; border-color: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, 0.35); }
+    .wallet-top-btn.on::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #34d399; }
+    .wallet-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; background: rgba(2, 6, 23, 0.82); display: flex; justify-content: center; align-items: center; border-radius: 10px 10px 40px 10px; }
+    .wallet-box { width: 78%; box-sizing: border-box; background: #0f172a; border: 2px solid #34d399; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 0 24px rgba(52, 211, 153, 0.35); }
+    .wallet-box-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 1px; color: #6ee7b7; margin-bottom: 4px; }
+    .wallet-item { display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; margin-top: 8px; padding: 10px 12px; background: #1e293b; color: #ffffff; border: 1px solid #475569; border-radius: 8px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; text-align: left; touch-action: manipulation; }
+    .wallet-item img { width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0; }
+    .wallet-hint { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; line-height: 1.5; color: #94a3b8; margin-top: 8px; }
+    .wallet-addr { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px; color: #e2e8f0; margin: 8px 0; word-break: break-all; }
+    .wallet-close { margin-top: 12px; background: transparent; color: #94a3b8; border: 1px solid #475569; padding: 6px 16px; border-radius: 8px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 12px; cursor: pointer; touch-action: manipulation; }
     .item-row { display: flex; gap: 6px; }
     .item-card { flex: 1; position: relative; box-sizing: border-box; border: 1px solid rgba(148, 163, 184, 0.35); padding: 8px 4px 6px; text-align: center; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: border-color 0.15s, box-shadow 0.15s; }
     .item-card.sel { border-color: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, 0.45), inset 0 0 8px rgba(52, 211, 153, 0.12); }
@@ -253,6 +264,14 @@
         </div>
 
         <div id="setupOverlay" class="overlay">
+          <div class="wallet-top"><button id="btnWallet" class="wallet-top-btn" type="button">CONNECT</button></div>
+          <div id="walletModal" class="wallet-modal" style="display: none;">
+            <div class="wallet-box">
+              <div id="walletTitle" class="wallet-box-title">CONNECT WALLET</div>
+              <div id="walletList"></div>
+              <button id="walletClose" class="wallet-close" type="button">CLOSE</button>
+            </div>
+          </div>
           <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:0;">
             <h1 class="title-glow" style="font-size: 26px; margin-bottom: 5px;">GANJA CAT RUN 2</h1>
           </div>
@@ -273,7 +292,7 @@
           <div class="mode-buttons">
             <button id="btnNormal" class="start-btn normal-btn">START</button>
             <div class="item-area">
-              <div class="item-head"><span>ITEMS</span><button id="btnWallet" class="wallet-btn" type="button">CONNECT WALLET</button></div>
+              <div class="item-head"><span>ITEMS</span></div>
               <div class="item-row">
                 <div id="itemLifeCard" class="item-card" role="button" aria-pressed="false">
                   <div class="item-name">Life Boost</div>
@@ -1925,19 +1944,69 @@
     })();
 
     // ================= 🛒 課金（ウォレット接続・$GANJAバーン送金・確認） =================
-    const BILLING_ENABLED = false;   // false＝無課金テスト（アイテムは無料）／true＝STARTで、選んだアイテムの代金を$GANJAでバーン
+    const BILLING_ENABLED = true;    // true＝STARTで、選んだアイテムの代金を$GANJAでバーン／false＝無課金テスト
     const GANJA_TOKEN = "0x9aA42de5eC6f3B3BbF252bf8ac81ACB338D888b7";
     const BURN_ADDRESS = "0x000000000000000000000000000000000000dEaD";
-    const ITEM_PRICE = 222;          // 1アイテムあたり（$GANJA）
+    const ITEM_PRICE = 222;          // 1アイテムあたり（$GANJA）。GAS側の ITEM_PRICE_GANJA と同じ数にする
     const FLARE_CHAIN = { chainId: "0xe", chainName: "Flare Mainnet", nativeCurrency: { name: "Flare", symbol: "FLR", decimals: 18 }, rpcUrls: ["https://flare-api.flare.network/ext/bc/C/rpc"], blockExplorerUrls: ["https://flare-explorer.flare.network"] };
-    let walletAddress = "";
-    function eth() { return window.ethereum || null; }
+    const DEFAULT_NOTE = BILLING_ENABLED ? "Items are paid with $GANJA (burned). Use a wallet browser." : "TEST MODE: items are free for now";
+    let walletAddress = "", ethProv = null, walletResolve = null;
+    const discovered = [];           // EIP-6963：端末にあるウォレットの一覧
+    window.addEventListener("eip6963:announceProvider", function(ev) {
+      const d = ev && ev.detail;
+      if (!d || !d.provider || !d.info) return;
+      if (!discovered.some(function(w) { return w.provider === d.provider; })) discovered.push({ name: d.info.name, icon: d.info.icon, provider: d.provider });
+    });
+    function discoverWallets() { try { window.dispatchEvent(new Event("eip6963:requestProvider")); } catch (e) {} }
+    discoverWallets();
+    function eth() { return ethProv || window.ethereum || null; }
     function walletMsg(text, isErr) { const el = document.getElementById("walletMsg"); if (el) { el.textContent = text || ""; el.classList.toggle("err", !!isErr); } }
     function shortAddr(a) { return a ? a.slice(0, 6) + "…" + a.slice(-4) : ""; }
     function updateWalletUI() {
       const b = document.getElementById("btnWallet");
-      if (b) { b.textContent = walletAddress ? shortAddr(walletAddress) + " ✓" : (eth() ? "CONNECT WALLET" : "WALLET BROWSER NEEDED"); b.classList.toggle("on", !!walletAddress); }
+      if (b) { b.textContent = walletAddress ? shortAddr(walletAddress) : "CONNECT"; b.classList.toggle("on", !!walletAddress); }
     }
+    function hookProvider(p) {
+      if (!p || !p.on || p.__gcHooked) return;
+      p.__gcHooked = true;
+      p.on("accountsChanged", function(a) { walletAddress = (a && a[0]) || ""; if (!walletAddress) ethProv = null; updateWalletUI(); });
+    }
+    function closeWalletModal(connected) {
+      const m = document.getElementById("walletModal");
+      if (m) m.style.display = "none";
+      if (walletResolve) { const r = walletResolve; walletResolve = null; r(!!connected); }
+    }
+    function renderWalletModal() {
+      const list = document.getElementById("walletList"), title = document.getElementById("walletTitle");
+      if (!list || !title) return;
+      list.textContent = "";
+      const add = function(tag, cls, text) { const el = document.createElement(tag); el.className = cls; el.textContent = text; list.appendChild(el); return el; };
+      if (walletAddress) {
+        title.textContent = "WALLET";
+        add("div", "wallet-addr", walletAddress);
+        add("button", "wallet-item", "Disconnect").addEventListener("click", function() { walletAddress = ""; ethProv = null; updateWalletUI(); closeWalletModal(false); });
+        return;
+      }
+      title.textContent = "CONNECT WALLET";
+      const wallets = discovered.slice();
+      if (window.ethereum && !wallets.some(function(w) { return w.provider === window.ethereum; })) wallets.push({ name: "Browser Wallet", icon: "", provider: window.ethereum });
+      if (!wallets.length) { add("div", "wallet-hint", "No wallet found. Please open this page in your wallet app's browser (MetaMask, Bifrost Wallet, etc.)."); return; }
+      wallets.forEach(function(w) {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "wallet-item";
+        if (w.icon) { const im = document.createElement("img"); im.src = w.icon; im.alt = ""; b.appendChild(im); }
+        const sp = document.createElement("span"); sp.textContent = w.name; b.appendChild(sp);
+        b.addEventListener("click", function() { connectWith(w.provider); });
+        list.appendChild(b);
+      });
+    }
+    function openWalletModal() {
+      discoverWallets();
+      renderWalletModal();
+      const m = document.getElementById("walletModal");
+      if (m) m.style.display = "flex";
+    }
+    function connectWallet() { return new Promise(function(resolve) { walletResolve = resolve; openWalletModal(); }); }
     async function ensureFlare() {
       const id = await eth().request({ method: "eth_chainId" });
       if (id === FLARE_CHAIN.chainId) return;
@@ -1947,15 +2016,17 @@
         else throw e;
       }
     }
-    async function connectWallet() {
-      if (!eth()) { walletMsg("Open this page in a wallet browser (e.g. MetaMask app).", true); return false; }
+    async function connectWith(provider) {
       try {
-        const acc = await eth().request({ method: "eth_requestAccounts" });
-        walletAddress = (acc && acc[0]) || "";
+        const acc = await provider.request({ method: "eth_requestAccounts" });
+        if (!acc || !acc[0]) throw new Error("no account");
+        ethProv = provider; walletAddress = acc[0];
         await ensureFlare();
-        updateWalletUI(); walletMsg(BILLING_ENABLED ? "Items are paid with $GANJA (burned)." : "TEST MODE: items are free for now");
-        return !!walletAddress;
-      } catch (e) { walletMsg("Wallet connection cancelled.", true); return false; }
+        hookProvider(provider); updateWalletUI(); walletMsg(DEFAULT_NOTE);
+        closeWalletModal(true);
+      } catch (e) {
+        ethProv = null; walletAddress = ""; updateWalletUI(); walletMsg("Wallet connection cancelled.", true);
+      }
     }
     function encodeTransfer(to, amount) {   // ERC-20 transfer(to, amount×10^18)
       return "0xa9059cbb" + to.toLowerCase().replace("0x", "").padStart(64, "0") + (BigInt(amount) * 10n ** 18n).toString(16).padStart(64, "0");
@@ -1989,7 +2060,7 @@
       const ids = selectedItemIds();
       if (!BILLING_ENABLED || !ids.length) return true;
       try {
-        if (!walletAddress && !(await connectWallet())) return false;
+        if (!walletAddress && !(await connectWallet())) { walletMsg("Connect a wallet to buy items.", true); return false; }
         await ensureFlare();
         const total = ITEM_PRICE * ids.length;
         if ((await ganjaBalance(walletAddress)) < BigInt(total)) { walletMsg("Not enough $GANJA (" + total + " needed).", true); return false; }
@@ -2009,13 +2080,13 @@
       } catch (e) { walletMsg("Something went wrong. Please try again.", true); return false; }
     }
     (function() {
-      const b = document.getElementById("btnWallet");
-      if (b) b.addEventListener("click", function() { if (!walletAddress) connectWallet(); });
-      walletMsg(BILLING_ENABLED ? "Items are paid with $GANJA (burned)." : "TEST MODE: items are free for now");
+      const b = document.getElementById("btnWallet"), c = document.getElementById("walletClose");
+      if (b) b.addEventListener("click", function() { openWalletModal(); });
+      if (c) c.addEventListener("click", function() { closeWalletModal(!!walletAddress); });
+      walletMsg(DEFAULT_NOTE);
       updateWalletUI();
-      if (eth()) {
-        eth().request({ method: "eth_accounts" }).then(function(a) { if (a && a[0]) { walletAddress = a[0]; updateWalletUI(); } }).catch(function() {});
-        if (eth().on) eth().on("accountsChanged", function(a) { walletAddress = (a && a[0]) || ""; updateWalletUI(); });
+      if (window.ethereum && window.ethereum.request) {   // 以前つないだウォレットは、確認なしで接続状態を戻す
+        window.ethereum.request({ method: "eth_accounts" }).then(function(a) { if (a && a[0]) { ethProv = window.ethereum; walletAddress = a[0]; hookProvider(ethProv); updateWalletUI(); } }).catch(function() {});
       }
     })();
 
