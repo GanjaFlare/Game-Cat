@@ -1985,6 +1985,7 @@
       if (!wi.value.trim() || wi.value.trim() === autoFilledAddr) { wi.value = walletAddress; autoFilledAddr = walletAddress; }
     }
     function saveWalletChoice(provider) {   // 選んだウォレットを覚える
+      if (provider && provider.isWalletConnect) { lsSet("gcr2Wallet", JSON.stringify({ wc: true })); lsDel("gcr2WalletOff"); return; }
       let rdns = "", name = "";
       discovered.forEach(function(w) { if (w.provider === provider) { rdns = w.rdns || ""; name = w.name || ""; } });
       lsSet("gcr2Wallet", JSON.stringify({ rdns: rdns, name: name, injected: !rdns }));
@@ -1993,6 +1994,7 @@
     function hookProvider(p) {
       if (!p || !p.on || p.__gcHooked) return;
       p.__gcHooked = true;
+      if (p.isWalletConnect) p.on("disconnect", function() { walletAddress = ""; ethProv = null; updateWalletUI(); });
       p.on("accountsChanged", function(a) { walletAddress = (a && a[0]) || ""; if (!walletAddress) ethProv = null; updateWalletUI(); fillRewardWallet(); });
     }
     function closeWalletModal(connected) {
@@ -2000,6 +2002,7 @@
       if (m) m.style.display = "none";
       if (walletResolve) { const r = walletResolve; walletResolve = null; r(!!connected); }
     }
+    let wcError = "";
     function renderWalletModal() {
       const list = document.getElementById("walletList"), title = document.getElementById("walletTitle");
       if (!list || !title) return;
@@ -2008,29 +2011,13 @@
       if (walletAddress) {
         title.textContent = "WALLET";
         add("div", "wallet-addr", walletAddress);
-        add("button", "wallet-item", "Disconnect").addEventListener("click", function() { walletAddress = ""; ethProv = null; lsDel("gcr2Wallet"); lsSet("gcr2WalletOff", "1"); updateWalletUI(); closeWalletModal(false); });
+        add("button", "wallet-item", "Disconnect").addEventListener("click", function() { if (ethProv && ethProv.isWalletConnect) { try { ethProv.disconnect(); } catch (e) {} } walletAddress = ""; ethProv = null; lsDel("gcr2Wallet"); lsSet("gcr2WalletOff", "1"); updateWalletUI(); closeWalletModal(false); });
         return;
       }
       title.textContent = "CONNECT WALLET";
       const wallets = discovered.slice();
       if (window.ethereum && !wallets.some(function(w) { return w.provider === window.ethereum; })) wallets.push({ name: "Browser Wallet", icon: "", provider: window.ethereum });
-      if (!wallets.length) {
-        add("div", "wallet-hint", "No wallet found. Please open this page in your wallet app's browser (MetaMask, Bifrost Wallet, etc.).");
-        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "")) {
-          const here = location.host + location.pathname + location.search, full = location.href.split("#")[0];
-          const link = function(label, href) { const a = add("a", "wallet-item", label); a.href = href; };
-          link("Open in MetaMask", "https://metamask.app.link/dapp/" + here);
-          link("Open in Trust Wallet", "https://link.trustwallet.com/open_url?coin_id=60&url=" + encodeURIComponent(full));
-          link("Open in Coinbase Wallet", "https://go.cb-w.com/dapp?cb_url=" + encodeURIComponent(full));
-          const cp = add("button", "wallet-item", "Copy page URL (for Bifrost etc.)");
-          cp.addEventListener("click", function() {
-            const done = function() { cp.textContent = "Copied! Paste it in your wallet's browser"; };
-            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(full).then(done).catch(function() { window.prompt("Copy this URL:", full); });
-            else window.prompt("Copy this URL:", full);
-          });
-        }
-        return;
-      }
+      if (!wallets.length) add("div", "wallet-hint", "No wallet found in this browser. Choose WalletConnect below (Bifrost, MetaMask, etc.), or open this page in your wallet app's browser.");
       wallets.forEach(function(w) {
         const b = document.createElement("button");
         b.type = "button"; b.className = "wallet-item";
@@ -2039,6 +2026,13 @@
         b.addEventListener("click", function() { connectWith(w.provider); });
         list.appendChild(b);
       });
+      const wc = add("button", "wallet-item", "WalletConnect (Bifrost, MetaMask...)");
+      wc.addEventListener("click", function() { connectWithWC(); });
+      if (!wallets.length && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "")) {
+        const a = add("a", "wallet-item", "Open in MetaMask app");
+        a.href = "https://metamask.app.link/dapp/" + location.host + location.pathname + location.search;
+      }
+      if (wcError) add("div", "wallet-hint", wcError);
     }
     function openWalletModal() {
       discoverWallets();
@@ -2054,6 +2048,44 @@
       catch (e) {
         if (e && (e.code === 4902 || /Unrecognized chain/i.test(e.message || ""))) await eth().request({ method: "wallet_addEthereumChain", params: [FLARE_CHAIN] });
         else throw e;
+      }
+    }
+    // 🔗 WalletConnect（スマホの普通のブラウザから、Bifrost等のウォレットアプリで接続する）
+    const WC_PROJECT_ID = "824989a895bef4378cf37b0518a22e88";   // Reown Project ID（公開されても問題ないID。許可ドメインで保護）
+    const WC_MODULE_URL = "https://esm.sh/@walletconnect/ethereum-provider@2.26.0";
+    let wcPromise = null;
+    function getWcProvider() {   // 押されたときだけ読み込む（ふだんのページ表示は重くしない）
+      if (wcPromise) return wcPromise;
+      wcPromise = (async function() {
+        const mod = await import(WC_MODULE_URL);
+        const EP = mod.EthereumProvider || (mod.default && (mod.default.EthereumProvider || mod.default));
+        return await EP.init({
+          projectId: WC_PROJECT_ID,
+          optionalChains: [14],
+          rpcMap: { 14: FLARE_CHAIN.rpcUrls[0] },
+          showQrModal: true,
+          metadata: { name: "Ganja Cat Run 2", description: "GanjaFlare GAME CAT", url: location.origin, icons: [] }
+        });
+      })().catch(function(e) { wcPromise = null; throw e; });
+      return wcPromise;
+    }
+    async function connectWithWC() {
+      wcError = "";
+      try {
+        walletMsg("Loading WalletConnect...");
+        const p = await getWcProvider();
+        if (!p.session) await p.connect();
+        const a = p.accounts && p.accounts[0];
+        if (!a) throw new Error("no account");
+        ethProv = p; walletAddress = a;
+        hookProvider(p); updateWalletUI(); walletMsg(DEFAULT_NOTE);
+        saveWalletChoice(p); fillRewardWallet();
+        closeWalletModal(true);
+      } catch (e) {
+        ethProv = null; walletAddress = ""; updateWalletUI();
+        wcError = "WalletConnect failed or was cancelled. Please try again.";
+        walletMsg(DEFAULT_NOTE);
+        renderWalletModal();
       }
     }
     async function connectWith(provider) {
@@ -2105,7 +2137,7 @@
         await ensureFlare();
         const total = ITEM_PRICE * ids.length;
         if ((await ganjaBalance(walletAddress)) < BigInt(total)) { walletMsg("Not enough $GANJA (" + total + " needed).", true); return false; }
-        walletMsg("Confirm the payment in your wallet... (" + total + " GANJA)");
+        walletMsg("Confirm the payment in your wallet" + (eth().isWalletConnect ? " app (open it if no request appears)" : "") + "... (" + total + " GANJA)");
         let hash;
         try { hash = await eth().request({ method: "eth_sendTransaction", params: [{ from: walletAddress, to: GANJA_TOKEN, data: encodeTransfer(BURN_ADDRESS, total) }] }); }
         catch (e) { walletMsg("Payment cancelled.", true); return false; }
@@ -2143,6 +2175,15 @@
     }
     async function tryRestoreWallet() {
       if (walletAddress) return true;
+      let sv = null;
+      try { sv = JSON.parse(lsGet("gcr2Wallet") || "null"); } catch (e) {}
+      if (sv && sv.wc) {   // WalletConnectで接続していた場合：保存されたセッションから戻す
+        try {
+          const w = await getWcProvider();
+          if (!walletAddress && w.session && w.accounts && w.accounts[0]) { ethProv = w; walletAddress = w.accounts[0]; hookProvider(w); updateWalletUI(); fillRewardWallet(); return true; }
+        } catch (e) {}
+        return false;
+      }
       const p = pickSavedProvider();
       if (!p || !p.request) return false;
       try {
