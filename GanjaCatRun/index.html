@@ -190,29 +190,6 @@
 
     #statusMessage { position: absolute; color: #333; font-size: 11px; bottom: 20px; font-weight: bold; width: 80%; text-align: center; z-index: 200; pointer-events: none;}
 
-    .share-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.6);
-      color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.7);
-      padding: 6px;
-      font-size: 0;
-      cursor: pointer;
-      z-index: 120;
-      border-radius: 4px;
-      display: none;
-      box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-      line-height: 0;
-      transition: background 0.2s;
-    }
-    .share-btn:active {
-      transform: translateY(1px);
-      box-shadow: 0px 0px 0px rgba(0,0,0,0);
-      background: rgba(0, 0, 0, 0.8);
-    }
-
     /* 🌿 タイトル文字：白→エメラルドグリーンのグラデーション + ネオン風の光彩 */
     .title-glow {
       font-family: 'Plus Jakarta Sans', sans-serif;
@@ -235,13 +212,6 @@
 
         <div class="gb-screen-border">
           <canvas id="gameCanvas" width="240" height="160"></canvas>
-          <button id="shareButton" class="share-btn" title="Share">
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-              <polyline points="16 6 12 2 8 6"></polyline>
-              <line x1="12" y1="2" x2="12" y2="15"></line>
-            </svg>
-          </button>
         </div>
         
         <div class="gb-title">Ganja Cat Run 2</div>
@@ -305,7 +275,7 @@
                 <div id="itemMagnetCard" class="item-card" role="button" aria-pressed="false">
                   <div class="item-name">Magnet</div>
                   <canvas id="imgMagnet" class="item-img" width="32" height="32"></canvas>
-                  <div class="item-desc">Pulls in nearby coins, diamonds &amp; nitro</div>
+                  <div class="item-desc">Attracts nearby items</div>
                   <div class="item-price">222 GANJA</div>
                 </div>
               </div>
@@ -780,11 +750,6 @@
       const startBtn = document.getElementById("btnStart");
       if (startBtn) { startBtn.addEventListener("click", togglePause); startBtn.addEventListener("touchstart", function(e){ e.preventDefault(); togglePause(); }, {passive: false}); }
 
-      const shareBtn = document.getElementById("shareButton");
-      if (shareBtn) {
-        shareBtn.addEventListener("click", shareOnX);
-      }
-      
       const btnMusicToggle = document.getElementById("btnMusicToggle");
       if (btnMusicToggle) {
         btnMusicToggle.addEventListener("click", function(e) {
@@ -1007,40 +972,6 @@
           osc2.start(audioCtx.currentTime + 0.3); osc2.stop(audioCtx.currentTime + 0.55);
         }
       } catch (e) {
-      }
-    }
-
-    function shareOnX(e) {
-      e.stopPropagation(); 
-      const lines = [
-        "Played Ganja Cat Run 2 and earned points! 🔥🐈",
-        "",
-        "Let's aim for victory together! 🏆",
-        "https://ganjaflare.github.io/Game-Cat/",
-        "",
-        "$GANJA $FLR #FlareNetwork"
-      ];
-      const tweetText = lines.join("\n");
-      
-      const dataUrl = canvas.toDataURL('image/png');
-      try {
-        fetch(dataUrl).then(function(response) {
-          return response.blob();
-        }).then(function(blob) {
-          const file = new File([blob], 'ganjacat_score.png', { type: 'image/png' });
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            navigator.share({ text: tweetText, files: [file] }).catch(function(err){});
-          } else {
-            const twUrl = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(tweetText);
-            window.open(twUrl, '_blank');
-          }
-        }).catch(function(err) {
-          const twUrl = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(tweetText);
-          window.open(twUrl, '_blank');
-        });
-      } catch (err) {
-        const twUrl = "https://twitter.com/intent/tweet?text=" + encodeURIComponent(tweetText);
-        window.open(twUrl, '_blank');
       }
     }
 
@@ -1521,8 +1452,6 @@
         statusMsg.style.color = "#333";
       }
       
-      const sBtn = document.getElementById("shareButton");
-      if (sBtn) sBtn.style.display = "none";
       
       const rewardOverlay = document.getElementById("rewardOverlay");
       if (rewardOverlay) rewardOverlay.style.display = "none";
@@ -2911,9 +2840,6 @@
       ctx.fillText("A / SPACE : REPLAY", 120, 118);
       ctx.fillText("SELECT    : RETURN TO TITLE", 120, 133);
       ctx.restore();
-      
-      const sBtn = document.getElementById("shareButton");
-      if (sBtn) sBtn.style.display = "block";
     }
 
     function resizeGame() {
