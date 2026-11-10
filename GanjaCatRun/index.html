@@ -124,6 +124,15 @@
     .item-img { width: 56px; height: 56px; image-rendering: pixelated; display: block; margin: 4px auto; }
     .item-desc { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9.5px; line-height: 1.3; color: #cbd5e1; min-height: 38px; }
     .item-price { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; color: #6ee7b7; margin-top: 2px; }
+    #setupOverlay { overflow-y: auto; justify-content: safe center; }
+    .lb-panel { width: 118%; align-self: center; }
+    .lb-tabs { display: flex; gap: 6px; margin-bottom: 6px; }
+    .lb-tab { flex: 1; background: #0f172a; color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; padding: 7px 4px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.8px; cursor: pointer; touch-action: manipulation; }
+    .lb-tab.on { color: #6ee7b7; border-color: #34d399; box-shadow: 0 0 10px rgba(52, 211, 153, 0.35); }
+    .lb-rows { border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; padding: 6px 10px; min-height: 150px; box-sizing: border-box; text-align: left; }
+    .lb-row { display: flex; justify-content: space-between; gap: 8px; font-family: 'Courier New', monospace; font-weight: 700; font-size: 11px; line-height: 15px; color: #fff; }
+    .lb-row .v { color: #ffd700; white-space: nowrap; }
+    .lb-empty { text-align: center; color: #94a3b8; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; padding-top: 60px; }
     .item-note { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9px; color: #94a3b8; margin-top: 6px; text-align: center; }
     .dpad { position: absolute; left: 35px; bottom: 180px; width: 80px; height: 80px; cursor: pointer; z-index: 5; }
     .dpad-axis { position: absolute; background: #2b2b2b; border-radius: 3px; box-shadow: 0 4px 0 #111; }
@@ -277,19 +286,6 @@
             <h1 class="title-glow" style="font-size: 26px; margin-bottom: 5px;">GANJA CAT RUN 2</h1>
           </div>
           <canvas id="titleWalkCanvas" width="200" height="50" style="image-rendering: pixelated; margin: 2px 0 8px;"></canvas>
-          <p style="font-size: 11px; margin-bottom: 15px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; letter-spacing: 0.3px; color: #a7f3d0;">Enter X (Twitter) ID to Start</p>
-          
-          <div class="input-wrapper">
-            <span class="input-at">@</span>
-            <input type="text" id="twitterInput" placeholder="YourUsername">
-            <span id="btnClearId" class="clear-btn" title="Clear ID">×</span>
-          </div>
-          
-          <div class="remember-wrapper">
-            <input type="checkbox" id="rememberId" checked>
-            <label for="rememberId">IDを記憶する</label>
-          </div>
-
           <div class="mode-buttons">
             <div class="item-area">
               <div class="item-head"><span>ITEMS</span></div>
@@ -316,6 +312,13 @@
               <div id="walletMsg" class="item-note"></div>
             </div>
             <button id="btnNormal" class="start-btn normal-btn">FREE PLAY</button>
+            <div class="lb-panel">
+              <div class="lb-tabs">
+                <button id="lbTabScore" class="lb-tab on" type="button">2WEEKS SCORE</button>
+                <button id="lbTabLegend" class="lb-tab" type="button">LEGEND</button>
+              </div>
+              <div id="lbRows" class="lb-rows"></div>
+            </div>
             <button id="btnBackSelect" class="start-btn" style="background:#334155;color:#e2e8f0;box-shadow:0 4px 0 #1e293b;font-size:12px;">&lt; BACK TO GAME SELECT</button>
           </div>
         </div>
@@ -400,9 +403,9 @@
       });
     }
 
-    let activePlayTime = 0;      // 累積アクティブプレイ時間（ミリ秒）
     let lastFrameTimestamp = null;
-    let twitterId="", isPlaying=false, gameOver=false, score=0, hiScore=0, playerY=115, playerVelocityY=0, isJumping=false, obstacles=[], coins=[], gameSpeed=4.5, frameCount=0;
+    function playerIdentity() { return (typeof walletAddress === "string" && walletAddress) ? walletAddress.toLowerCase() : "Guest"; }   // ランキングに記録する名前＝接続中のウォレットアドレス
+    let isPlaying=false, gameOver=false, score=0, hiScore=0, playerY=115, playerVelocityY=0, isJumping=false, obstacles=[], coins=[], gameSpeed=4.5, frameCount=0;
     let isSaving = false;
     let hellLives = 3;
     let itemLife = false, itemPizza = false, itemMagnet = false, maxLives = 3, airJumpUsed = false, lastJumpFrame = -99;   // 🛒 アイテム：ライフブースト／ジャンピングピザ
@@ -678,6 +681,30 @@
       lfo.start(t); lfo.stop(t + d); ns.start(t); ns.stop(t + d);
     }
 
+    // 🏆 タイトル画面のボード：2WEEKS SCORE と LEGEND（上位10名）
+    let lbTab = "score";
+    const lbData = { score: null, legend: null };
+    function lbName(t) { return String(t).replace(/0x[0-9a-fA-F]{40}/g, function(a) { return a.slice(0, 6) + "\u2026" + a.slice(-4); }); }
+    function renderTitleBoard() {
+      const box = document.getElementById("lbRows"); if (!box) return;
+      box.textContent = "";
+      const t1 = document.getElementById("lbTabScore"), t2 = document.getElementById("lbTabLegend");
+      if (t1) t1.classList.toggle("on", lbTab === "score");
+      if (t2) t2.classList.toggle("on", lbTab === "legend");
+      const d = lbData[lbTab];
+      if (!d || !d.length) { const e = document.createElement("div"); e.className = "lb-empty"; e.textContent = d ? "No data yet" : "Loading..."; box.appendChild(e); return; }
+      d.slice(0, 10).forEach(function(r) {
+        const row = document.createElement("div"); row.className = "lb-row";
+        const l = document.createElement("span"); l.textContent = lbName(r[0]);
+        const v = document.createElement("span"); v.className = "v"; v.textContent = r[1] + (r[2] ? " (" + r[2] + ")" : "");
+        row.appendChild(l); row.appendChild(v); box.appendChild(row);
+      });
+    }
+    function loadTitleBoard() {
+      lbData.score = null; lbData.legend = null; renderTitleBoard();
+      callGasApi("getWinnerData").then(function(res) { lbData.score = (res && res.data) || []; renderTitleBoard(); }).catch(function() { lbData.score = []; renderTitleBoard(); });
+      callGasApi("getLegendData").then(function(res) { lbData.legend = (res && res.data) || []; renderTitleBoard(); }).catch(function() { lbData.legend = []; renderTitleBoard(); });
+    }
     function initializeEvents() {
       // 🔥 ページを開いた瞬間に、GASを軽く1回呼んで「起こして」おく
       //    (GASはしばらく使われないと次のリクエストが遅くなることがあるため、
@@ -685,20 +712,6 @@
       callGasApi("startSession").catch(function() {
         // 結果は使わない(実際のプレイ開始時に、resetGame()側で改めて取得し直すため)
       });
-
-      try {
-        if (typeof window.localStorage !== 'undefined' && window.localStorage) {
-          const savedId = window.localStorage.getItem('ganjaCatRunId');
-          if (savedId) {
-            const tInput = document.getElementById('twitterInput');
-            const rId = document.getElementById('rememberId');
-            if (tInput) tInput.value = savedId;
-            if (rId) rId.checked = true;
-          }
-        }
-      } catch (e) {
-        console.warn("localStorage is blocked or not available");
-      }
 
       resizeGame();
 
@@ -711,7 +724,7 @@
           startPressed = true;
           btn.classList.remove("pressed"); void btn.offsetWidth; btn.classList.add("pressed");  // ボタンが押された演出
           playBoing();   // 「ぴょいん！」
-          bgmOn();       // BGMはSTARTを押した瞬間から開始（指を離した瞬間の操作の中で音の許可を取る）
+          unlockAudio();   // 音の許可だけ取っておく（指を離した瞬間の操作の中で）。BGMは、支払いが済んでゲーム本編が始まってから
           Promise.resolve(purchaseItems()).then(function(ok) {   // 選んだアイテムがあれば、先に$GANJAをバーンして支払う
             if (!ok) { startPressed = false; btn.classList.remove("pressed"); return; }
             setTimeout(function() { initAudioAndStart(modeStr); }, 380);
@@ -729,12 +742,11 @@
         btnBack.addEventListener("touchstart", goBack, {passive: false});
       }
       preloadBgm(); // タイトル画面は無音。音楽ファイルだけ先に読み込んでおく
-
-      const btnClearId = document.getElementById("btnClearId");
-      if (btnClearId) {
-        btnClearId.addEventListener("click", clearSavedId);
-        btnClearId.addEventListener("touchstart", function(e){ e.preventDefault(); clearSavedId(); }, {passive: false});
-      }
+      [["lbTabScore", "score"], ["lbTabLegend", "legend"]].forEach(function(pr) {
+        const el = document.getElementById(pr[0]);
+        if (el) el.addEventListener("click", function() { lbTab = pr[1]; renderTitleBoard(); });
+      });
+      loadTitleBoard();
 
       const dpad = document.getElementById("dpadControl");
       if (dpad) {
@@ -815,7 +827,7 @@
           
           isSaving = true;
           startSavingAnimation();
-          sendScoreToGAS(twitterId, score, gameMode, walletAddress, activePlayTime);
+          sendScoreToGAS(walletAddress.toLowerCase(), score, gameMode, walletAddress);
         };
         btnClaim.addEventListener("click", claimHandler);
       }
@@ -826,16 +838,6 @@
     } else {
       window.addEventListener('DOMContentLoaded', initializeEvents);
       window.addEventListener('load', initializeEvents);
-    }
-
-    function clearSavedId() {
-      try {
-        if (typeof window.localStorage !== 'undefined' && window.localStorage) {
-           window.localStorage.removeItem('ganjaCatRunId');
-        }
-      } catch (e) {}
-      const tInput = document.getElementById('twitterInput');
-      if (tInput) tInput.value = '';
     }
 
     function initAudioAndStart(mode) {
@@ -854,25 +856,6 @@
         obstacleSpawnChance = 0.007;
       }
       
-      const tInput = document.getElementById("twitterInput");
-      let rawInput = tInput ? tInput.value.trim() : "";
-      if (rawInput.startsWith('@')) { rawInput = rawInput.slice(1); }
-      
-      try {
-        if (typeof window.localStorage !== 'undefined' && window.localStorage) {
-           const rId = document.getElementById('rememberId');
-           if (rId && rId.checked && rawInput) {
-              window.localStorage.setItem('ganjaCatRunId', rawInput);
-           } else if (rId && !rId.checked) {
-              window.localStorage.removeItem('ganjaCatRunId');
-           }
-        }
-      } catch (e) {
-        console.warn("localStorage access denied.");
-      }
-
-      twitterId = rawInput ? "@" + rawInput : "@Guest";
-
       try {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
         if (AudioContextClass && !audioCtx) {
@@ -1504,6 +1487,7 @@
       confirmTitle = false;
       itemLife = false; itemPizza = false; itemMagnet = false; if (typeof refreshItemUI === 'function') refreshItemUI();
       bgmOff(); startPressed = false;   // タイトル画面に戻ったらBGMを消し、STARTボタンの状態も戻す
+      try { loadTitleBoard(); } catch (e) {}
       const sbtn = document.getElementById("btnNormal"); if (sbtn) sbtn.classList.remove("pressed");
       const overlay = document.getElementById("setupOverlay");
       if (overlay) overlay.style.display = "flex";
@@ -1524,7 +1508,6 @@
       score = 0; currentLevel = 1; playerY = 115; obstacles = [];
       coins = []; 
       frameCount = 0; gameSpeed = speedMap[1]; 
-      activePlayTime = 0;
       lastFrameTimestamp = null;
 
       // 🔑 ゲームが(再)スタートするたびに、新しいセッショントークンを発行してもらう
@@ -1552,6 +1535,7 @@
       isReviving = false;
       particles = [];
 
+      maxStamina = itemPizza ? 8 : 4;   // 🍕 ジャンピングピザ：ジャンプゲージが2倍（1目盛りの幅は半分、全体の幅は同じ）
       currentStamina = maxStamina; 
       jumpBufferCounter = 0;
 
@@ -1649,45 +1633,15 @@
       }
     }
 
-    function showLeaderboardScreen() {
+    function showLeaderboardScreen() {   // SELECTボタン：ポーズ中ならタイトルに戻る確認／ゲームオーバー画面ならタイトルへ
       if (gameOver) {
         if (isSaving) return;
         returnToTitle();
         return;
       }
       if (confirmTitle) return;
-      if (isPaused && showLeaderboard && !isReviving) {   // レジェンドボードでもう一度SELECT → 確認
-        confirmTitle = true; drawPauseScreen(); return;
-      }
-      if (!isPaused || showLeaderboard || isReviving) return;
-      showLeaderboard = true; 
-      isLoadingLeaderboard = true;
-      leaderboardCurrentPage = 0; 
-      leaderboardData = [null, null, null]; 
-      drawPauseScreen();
-      
-      callGasApi("getWinnerData").then(function(res) { 
-        leaderboardData[0] = (res && res.data) || []; checkLeaderboardLoad(); 
-      }).catch(function(e) { 
-        leaderboardData[0] = []; checkLeaderboardLoad(); 
-      });
-      
-      callGasApi("getPlayCountData").then(function(res) { 
-        leaderboardData[1] = (res && res.data) || []; checkLeaderboardLoad(); 
-      }).catch(function(e) { 
-        leaderboardData[1] = []; checkLeaderboardLoad(); 
-      });
-      
-      callGasApi("getLegendData").then(function(res) { 
-        leaderboardData[2] = (res && res.data) || []; checkLeaderboardLoad(); 
-      }).catch(function(e) { 
-        leaderboardData[2] = []; checkLeaderboardLoad(); 
-      });
-    }
-    
-    function checkLeaderboardLoad() {
-      isLoadingLeaderboard = false; 
-      drawPauseScreen();
+      if (!isPaused || isReviving) return;
+      confirmTitle = true; drawPauseScreen();
     }
 
     function drawPauseScreen() {
@@ -1695,52 +1649,11 @@
       ctx.putImageData(pauseFrame, 0, 0);
       ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, 0, 240, 160);
       
-      if (!showLeaderboard) {
-        ctx.fillStyle = "#fff";
-        ctx.font = "bold 22px 'Courier New'"; ctx.textAlign = "center"; ctx.fillText("PAUSE", 120, 75);
-        ctx.font = "bold 9px 'Courier New'";
-        ctx.fillText("Press SELECT for LEADERBOARD", 120, 105);
-      } else {
-        ctx.fillStyle = "#ccc";
-        ctx.font = "bold 12px 'Courier New'"; ctx.textAlign = "center"; 
-        ctx.fillText("<", 15, 85); ctx.fillText(">", 225, 85);
-        
-        let titles = ["--- 2WEEKS SCORE ---", "--- 2WEEKS PLAYS ---", "--- LEGEND ---"];
-        ctx.fillStyle = (leaderboardCurrentPage === 2) ? "#FFD700" : "#10b981";
-        ctx.font = "bold 11px 'Courier New'"; ctx.fillText(titles[leaderboardCurrentPage], 120, 25);
-        
-        ctx.textAlign = "left";
-        ctx.font = "bold 9px 'Courier New'";
-        
-        let currentData = leaderboardData[leaderboardCurrentPage];
-        
-        if (isLoadingLeaderboard && !currentData) { 
-          ctx.fillStyle = "#fff";
-          ctx.font = "bold 14px 'Courier New'"; ctx.textAlign = "center"; ctx.fillText("Loading...", 120, 85);
-        } else if (currentData && currentData.length > 0) {
-          for (let i = 0; i < Math.min(10, currentData.length); i++) { 
-            if (currentData[i]) { 
-              let yPos = 40 + (i * 11); 
-              
-              ctx.textAlign = "left";
-              ctx.fillStyle = "#fff";
-              ctx.fillText(currentData[i][0], 15, yPos); 
-              
-              ctx.textAlign = "right";
-              ctx.fillStyle = "#ffd700";
-              let valStr = currentData[i][1];
-              if (currentData[i][2]) valStr += " (" + currentData[i][2] + ")";
-              ctx.fillText(valStr, 225, yPos);
-            } 
-          }
-        } else {
-          ctx.fillStyle = "#fff";
-          ctx.fillText("No Data / Loading...", 25, 85);
-        }
-        
-        ctx.fillStyle = "#ccc";
-        ctx.textAlign = "center"; ctx.font = "bold 8px 'Courier New'"; ctx.fillText("Press START to resume", 120, 150);
-      }
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 22px 'Courier New'"; ctx.textAlign = "center"; ctx.fillText("PAUSE", 120, 70);
+      ctx.font = "bold 9px 'Courier New'";
+      ctx.fillText("START : RESUME", 120, 100);
+      ctx.fillText("SELECT : BACK TO TITLE", 120, 114);
       if (confirmTitle) {
         ctx.fillStyle = "rgba(0,0,0,0.75)"; ctx.fillRect(0, 0, 240, 160);
         ctx.fillStyle = "#0f172a"; ctx.fillRect(30, 48, 180, 66);
@@ -1756,7 +1669,7 @@
     function answerTitleConfirm(yes) {
       if (!confirmTitle) return;
       confirmTitle = false;
-      if (yes) { returnToTitle(); } else { drawPauseScreen(); }   // NOならレジェンドボードに戻る
+      if (yes) { returnToTitle(); } else { drawPauseScreen(); }   // NOならポーズ画面に戻る
     }
 
     function startRevivalRitual() {
@@ -2569,13 +2482,6 @@
     function gameLoop() {
       if (gameOver || isPaused || isReviving) return;
 
-      // ⏱️ 実際に動いているフレームだけ経過時間を積算する
-      const nowTs = performance.now();
-      if (lastFrameTimestamp !== null) {
-        activePlayTime += nowTs - lastFrameTimestamp;
-      }
-      lastFrameTimestamp = nowTs;
-
       frameCount++;
       if (boss.active) { bossFrame(); requestAnimationFrame(gameLoop); return; }
 
@@ -2867,7 +2773,7 @@
       ctx.textAlign = "left"; 
       
       startSavingAnimation();
-      sendScoreToGAS(twitterId, score, gameMode, "", activePlayTime);
+      sendScoreToGAS(playerIdentity(), score, gameMode, "");
     }
 
     // 🐱 「NOW SAVING SCORE...」の右側で、小さいキャラクターをテクテク歩かせる
@@ -2912,7 +2818,7 @@
       }
     }
 
-    function sendScoreToGAS(tId, sc, mode, wallet, playTime, retriesLeft) {
+    function sendScoreToGAS(tId, sc, mode, wallet, retriesLeft) {
       isSaving = true;
 
       // 🕐 ゲーム開始直後の一瞬など、sessionTokenがまだ届いていない場合は
@@ -2921,7 +2827,7 @@
       if (!sessionToken && retriesLeft === undefined) retriesLeft = 50;
       if (!sessionToken && retriesLeft > 0) {
         setTimeout(function() {
-          sendScoreToGAS(tId, sc, mode, wallet, playTime, retriesLeft - 1);
+          sendScoreToGAS(tId, sc, mode, wallet, retriesLeft - 1);
         }, 100);
         return;
       }
@@ -2940,12 +2846,12 @@
       console.log("[DEBUG] submitScoreFromGame リクエスト送信。使用するtoken:", sessionToken, new Date().toISOString());
 
       callGasApi("submitScoreFromGame", {
-        twitterId: tId,
+        playerId: tId,
+        twitterId: tId,   // 古いGASとも通じるよう、同じ値を両方の名前で送る
         score: sc,
         mode: mode,
         walletAddress: wallet,
-        sessionToken: sessionToken,
-        playTime: playTime
+        sessionToken: sessionToken
       }).then(function(response){
         clearTimeout(safetyTimer);
         console.log("[DEBUG] submitScoreFromGame 応答受信:", JSON.stringify(response), new Date().toISOString());
