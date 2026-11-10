@@ -111,6 +111,7 @@
     .wallet-box { width: 78%; box-sizing: border-box; background: #0f172a; border: 2px solid #34d399; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 0 24px rgba(52, 211, 153, 0.35); }
     .wallet-box-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 1px; color: #6ee7b7; margin-bottom: 4px; }
     .wallet-item { display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; margin-top: 8px; padding: 10px 12px; background: #1e293b; color: #ffffff; border: 1px solid #475569; border-radius: 8px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; text-align: left; touch-action: manipulation; }
+    a.wallet-item { text-decoration: none; }
     .wallet-item img { width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0; }
     .wallet-hint { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; line-height: 1.5; color: #94a3b8; margin-top: 8px; }
     .wallet-addr { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px; color: #e2e8f0; margin: 8px 0; word-break: break-all; }
@@ -290,7 +291,6 @@
           </div>
 
           <div class="mode-buttons">
-            <button id="btnNormal" class="start-btn normal-btn">START</button>
             <div class="item-area">
               <div class="item-head"><span>ITEMS</span></div>
               <div class="item-row">
@@ -315,6 +315,7 @@
               </div>
               <div id="walletMsg" class="item-note"></div>
             </div>
+            <button id="btnNormal" class="start-btn normal-btn">FREE PLAY</button>
             <button id="btnBackSelect" class="start-btn" style="background:#334155;color:#e2e8f0;box-shadow:0 4px 0 #1e293b;font-size:12px;">&lt; BACK TO GAME SELECT</button>
           </div>
         </div>
@@ -1926,7 +1927,15 @@
       c.fillStyle = '#9ca3af'; c.fillRect(7, 25, 6, 2); c.fillRect(19, 25, 6, 2);
       c.fillStyle = '#fde047'; c.fillRect(14, 22, 1, 2); c.fillRect(16, 21, 2, 1); c.fillRect(17, 23, 1, 2); c.fillRect(15, 25, 2, 1);
     }
+    function updateStartLabel() {   // STARTボタンの文字：アイテム無し＝FREE PLAY／有り＝START · 合計金額 GANJA
+      const sb = document.getElementById('btnNormal'); if (!sb) return;
+      const n = (itemLife ? 1 : 0) + (itemPizza ? 1 : 0) + (itemMagnet ? 1 : 0);
+      let t = 'FREE PLAY';
+      if (n > 0) t = (typeof BILLING_ENABLED !== 'undefined' && BILLING_ENABLED) ? ('START \u00B7 ' + (ITEM_PRICE * n) + ' GANJA') : 'START';
+      if (sb.textContent !== t) sb.textContent = t;
+    }
     function refreshItemUI() {
+      try { updateStartLabel(); } catch (e) {}
       const m = document.getElementById('itemMagnetCard');
       if (m) { m.classList.toggle('sel', itemMagnet); m.setAttribute('aria-pressed', String(itemMagnet)); }
       const a = document.getElementById('itemLifeCard'), b = document.getElementById('itemPizzaCard');
@@ -1955,7 +1964,7 @@
     window.addEventListener("eip6963:announceProvider", function(ev) {
       const d = ev && ev.detail;
       if (!d || !d.provider || !d.info) return;
-      if (!discovered.some(function(w) { return w.provider === d.provider; })) discovered.push({ name: d.info.name, icon: d.info.icon, provider: d.provider });
+      if (!discovered.some(function(w) { return w.provider === d.provider; })) discovered.push({ name: d.info.name, icon: d.info.icon, rdns: d.info.rdns || "", provider: d.provider });
     });
     function discoverWallets() { try { window.dispatchEvent(new Event("eip6963:requestProvider")); } catch (e) {} }
     discoverWallets();
@@ -1966,10 +1975,25 @@
       const b = document.getElementById("btnWallet");
       if (b) { b.textContent = walletAddress ? shortAddr(walletAddress) : "CONNECT"; b.classList.toggle("on", !!walletAddress); }
     }
+    function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+    function lsSet(k, v) { try { window.localStorage.setItem(k, v); } catch (e) {} }
+    function lsDel(k) { try { window.localStorage.removeItem(k); } catch (e) {} }
+    let autoFilledAddr = "";
+    function fillRewardWallet() {   // 報酬アドレス欄に、接続中のアドレスを最初から入れる（書き換え可能）
+      const wi = document.getElementById("walletInput");
+      if (!wi || !walletAddress) return;
+      if (!wi.value.trim() || wi.value.trim() === autoFilledAddr) { wi.value = walletAddress; autoFilledAddr = walletAddress; }
+    }
+    function saveWalletChoice(provider) {   // 選んだウォレットを覚える
+      let rdns = "", name = "";
+      discovered.forEach(function(w) { if (w.provider === provider) { rdns = w.rdns || ""; name = w.name || ""; } });
+      lsSet("gcr2Wallet", JSON.stringify({ rdns: rdns, name: name, injected: !rdns }));
+      lsDel("gcr2WalletOff");
+    }
     function hookProvider(p) {
       if (!p || !p.on || p.__gcHooked) return;
       p.__gcHooked = true;
-      p.on("accountsChanged", function(a) { walletAddress = (a && a[0]) || ""; if (!walletAddress) ethProv = null; updateWalletUI(); });
+      p.on("accountsChanged", function(a) { walletAddress = (a && a[0]) || ""; if (!walletAddress) ethProv = null; updateWalletUI(); fillRewardWallet(); });
     }
     function closeWalletModal(connected) {
       const m = document.getElementById("walletModal");
@@ -1984,13 +2008,29 @@
       if (walletAddress) {
         title.textContent = "WALLET";
         add("div", "wallet-addr", walletAddress);
-        add("button", "wallet-item", "Disconnect").addEventListener("click", function() { walletAddress = ""; ethProv = null; updateWalletUI(); closeWalletModal(false); });
+        add("button", "wallet-item", "Disconnect").addEventListener("click", function() { walletAddress = ""; ethProv = null; lsDel("gcr2Wallet"); lsSet("gcr2WalletOff", "1"); updateWalletUI(); closeWalletModal(false); });
         return;
       }
       title.textContent = "CONNECT WALLET";
       const wallets = discovered.slice();
       if (window.ethereum && !wallets.some(function(w) { return w.provider === window.ethereum; })) wallets.push({ name: "Browser Wallet", icon: "", provider: window.ethereum });
-      if (!wallets.length) { add("div", "wallet-hint", "No wallet found. Please open this page in your wallet app's browser (MetaMask, Bifrost Wallet, etc.)."); return; }
+      if (!wallets.length) {
+        add("div", "wallet-hint", "No wallet found. Please open this page in your wallet app's browser (MetaMask, Bifrost Wallet, etc.).");
+        if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "")) {
+          const here = location.host + location.pathname + location.search, full = location.href.split("#")[0];
+          const link = function(label, href) { const a = add("a", "wallet-item", label); a.href = href; };
+          link("Open in MetaMask", "https://metamask.app.link/dapp/" + here);
+          link("Open in Trust Wallet", "https://link.trustwallet.com/open_url?coin_id=60&url=" + encodeURIComponent(full));
+          link("Open in Coinbase Wallet", "https://go.cb-w.com/dapp?cb_url=" + encodeURIComponent(full));
+          const cp = add("button", "wallet-item", "Copy page URL (for Bifrost etc.)");
+          cp.addEventListener("click", function() {
+            const done = function() { cp.textContent = "Copied! Paste it in your wallet's browser"; };
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(full).then(done).catch(function() { window.prompt("Copy this URL:", full); });
+            else window.prompt("Copy this URL:", full);
+          });
+        }
+        return;
+      }
       wallets.forEach(function(w) {
         const b = document.createElement("button");
         b.type = "button"; b.className = "wallet-item";
@@ -2023,6 +2063,7 @@
         ethProv = provider; walletAddress = acc[0];
         await ensureFlare();
         hookProvider(provider); updateWalletUI(); walletMsg(DEFAULT_NOTE);
+        saveWalletChoice(provider); fillRewardWallet();
         closeWalletModal(true);
       } catch (e) {
         ethProv = null; walletAddress = ""; updateWalletUI(); walletMsg("Wallet connection cancelled.", true);
@@ -2085,10 +2126,33 @@
       if (c) c.addEventListener("click", function() { closeWalletModal(!!walletAddress); });
       walletMsg(DEFAULT_NOTE);
       updateWalletUI();
-      if (window.ethereum && window.ethereum.request) {   // 以前つないだウォレットは、確認なしで接続状態を戻す
-        window.ethereum.request({ method: "eth_accounts" }).then(function(a) { if (a && a[0]) { ethProv = window.ethereum; walletAddress = a[0]; hookProvider(ethProv); updateWalletUI(); } }).catch(function() {});
-      }
     })();
+    // 🔁 以前つないだウォレットを、確認なしで自動的に再接続する（選んだウォレットも覚えている）
+    function pickSavedProvider() {
+      discoverWallets();
+      let saved = null;
+      try { saved = JSON.parse(lsGet("gcr2Wallet") || "null"); } catch (e) {}
+      if (saved) {
+        const m = discovered.filter(function(w) { return saved.rdns ? w.rdns === saved.rdns : (saved.name && w.name === saved.name); })[0];
+        if (m) return m.provider;
+        if (saved.injected && window.ethereum) return window.ethereum;
+        return null;
+      }
+      if (!lsGet("gcr2WalletOff") && window.ethereum) return window.ethereum;   // ウォレットアプリ内ブラウザ（以前の動作）
+      return null;
+    }
+    async function tryRestoreWallet() {
+      if (walletAddress) return true;
+      const p = pickSavedProvider();
+      if (!p || !p.request) return false;
+      try {
+        const a = await p.request({ method: "eth_accounts" });
+        if (a && a[0] && !walletAddress) { ethProv = p; walletAddress = a[0]; hookProvider(p); updateWalletUI(); saveWalletChoice(p); fillRewardWallet(); return true; }
+      } catch (e) {}
+      return false;
+    }
+    [0, 400, 1200, 2500, 4500].forEach(function(ms) { setTimeout(function() { tryRestoreWallet(); }, ms); });   // ウォレットの検出が遅れる場合に備え、数回試す
+    try { updateStartLabel(); } catch (e) {}
 
     // ================= 👮 ボス戦（ポリスDOG） =================
     const CLEAR_SCORE = 100;
@@ -2725,6 +2789,7 @@
         const rewardOverlay = document.getElementById("rewardOverlay");
         if (rewardOverlay) {
           rewardOverlay.style.display = "flex";
+          try { fillRewardWallet(); } catch (e) {}
           return; 
         }
       }
