@@ -263,22 +263,22 @@
             <div class="item-area">
               <div class="item-head"><span>ITEMS</span></div>
               <div class="item-row">
+                <div id="itemGiantCard" class="item-card" role="button" aria-pressed="false">
+                  <div class="item-name">Giant Potion</div>
+                  <canvas id="imgGiant" class="item-img" width="32" height="32"></canvas>
+                  <div class="item-desc">1.5x Power</div>
+                  <div class="item-price">200 GANJA</div>
+                </div>
+                <div id="itemRocketCard" class="item-card" role="button" aria-pressed="false">
+                  <div class="item-name">Rocket Launcher</div>
+                  <canvas id="imgRocket" class="item-img" width="32" height="32"></canvas>
+                  <div class="item-desc">2.5x Power</div>
+                  <div class="item-price">400 GANJA</div>
+                </div>
                 <div id="itemSsjCard" class="item-card" role="button" aria-pressed="false">
                   <div class="item-name">Super Saiyan</div>
                   <canvas id="imgSsj" class="item-img" width="32" height="32"></canvas>
-                  <div class="item-desc">2x Power</div>
-                  <div class="item-price">200 GANJA</div>
-                </div>
-                <div id="itemSsj3Card" class="item-card" role="button" aria-pressed="false">
-                  <div class="item-name">Super Saiyan 3</div>
-                  <canvas id="imgSsj3" class="item-img" width="32" height="32"></canvas>
                   <div class="item-desc">3x Power</div>
-                  <div class="item-price">400 GANJA</div>
-                </div>
-                <div id="itemSsbCard" class="item-card" role="button" aria-pressed="false">
-                  <div class="item-name">Super Saiyan Blue</div>
-                  <canvas id="imgSsb" class="item-img" width="32" height="32"></canvas>
-                  <div class="item-desc">5x Power</div>
                   <div class="item-price">1000 GANJA</div>
                 </div>
               </div>
@@ -696,7 +696,7 @@ function tap(){
     const m=iv.reduce((a,b)=>a+b)/iv.length,sd=Math.sqrt(iv.reduce((a,b)=>a+(b-m)**2,0)/iv.length);
     if(sd<3.5&&m<120){stun=180;rock={y:-12,v:6};taps=[];return}
   }
-  cp+=3.5*MULT[act];playClick();spark(CX+6,GY-24,3);
+  cp+=3.5*TAPM[act];playClick();spark(CX+6,GY-24,3);
 }
 function press(e){
   if(e&&e.repeat)return; // キー長押しは無視
@@ -712,20 +712,40 @@ function press(e){
 const $=id=>document.getElementById(id),ov=$('setupOverlay');
 // 🛒 アイテム：1つだけ選べる（選び直すと前の選択は解除）。使えるのは1回きり（死亡・クリアで消える）
 let isPaused=false,confirmTitle=false,pauseFrame=null,sel=0,act=0;   // sel=選択中(0なし 1〜3) act=この挑戦で有効なアイテム
-const MULT=[1,2,3,5],ITEM_PRICES=[0,200,400,1000];
-const AUC=[['#7efff5','#fff','#bff'],['#ffe14a','#fff6b0','#ffe98a'],['#ffe14a','#fff6b0','#ffe98a'],['#4ac8ff','#d8f6ff','#9fe3ff']],ASC=[1,1,2,4];
-function drawWig(cv,k){   // スーパーサイヤ人のカツラ（0=金髪 1=長髪 2=水色）
+const TAPM=[1,1.5,2.5,3],THK=[1,2,1,3],ITEM_PRICES=[0,200,400,1000];   // 連打の効果／ビームの太さ／価格（act: 1=巨大化の薬 2=ロケットランチャー 3=スーパーサイヤ人）
+const AUC=[['#7efff5','#fff','#bff'],['#7efff5','#fff','#bff'],['#7efff5','#fff','#bff'],['#ffe14a','#fff6b0','#ffe98a']],ASC=[1,2,1,2];   // オーラの色／大きさ
+function drawSyringe(cv){   // 巨大化の薬：注射器
   const c=cv.getContext('2d');c.clearRect(0,0,32,32);
-  const Q=k===2?['#4ac8ff','#1e8fd6','#d8f6ff']:['#ffd93a','#e0a800','#fff6b0'];
   const px=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h)};
-  const up=function(cx,top,h,hw){for(let r=0;r<=h;r++){const w=Math.round(hw*r/h);px(cx-w,top+r,w*2+1,1,Q[0]);if(w>0)px(cx+Math.ceil(w*.35),top+r,Math.floor(w*.65)+1,1,Q[1])}};
-  const down=function(cx,top,h,hw){for(let r=0;r<=h;r++){const w=Math.round(hw*(h-r)/h);px(cx-w,top+r,w*2+1,1,Q[0]);if(w>0)px(cx+Math.ceil(w*.35),top+r,Math.floor(w*.65)+1,1,Q[1])}};
-  if(k===1){down(4,16,13,2);down(8,19,11,2);down(27,16,13,2);down(23,19,11,2)}   // 長髪（左右に流れる）
-  up(16,0,14,4);up(10,3,12,3);up(22,3,12,3);up(5,9,9,3);up(27,9,9,3);
-  [[10,10,21],[11,8,23],[12,7,24],[13,6,25],[14,6,25],[15,6,25],[16,6,25],[17,6,25],[18,6,25],[19,6,25],[20,7,24],[21,8,23]].forEach(function(r){
-    const w=r[2]-r[1]+1,s=r[1]+Math.round(w*.6);px(r[1],r[0],w,1,Q[0]);px(s,r[0],r[2]-s+1,1,Q[1])});
-  down(10,21,6,3);down(16,21,7,3);down(22,21,6,3);   // 前髪
-  px(9,13,3,1,Q[2]);px(8,14,1,4,Q[2]);px(14,4,2,4,Q[2]);px(17,12,1,4,Q[2]);
+  px(1,9,2,14,'#9ca3af');px(3,14,5,4,'#cbd5e1');px(3,15,5,1,'#f1f5f9');
+  px(7,9,2,14,'#9ca3af');px(8,11,15,10,'#e5e7eb');px(8,11,15,1,'#9ca3af');px(8,20,15,1,'#9ca3af');
+  px(9,12,3,8,'#111827');
+  px(12,13,10,6,'#22c55e');px(12,13,10,1,'#86efac');px(12,18,10,1,'#15803d');px(15,15,2,2,'#bbf7d0');px(19,16,1,1,'#bbf7d0');
+  [14,17,20].forEach(function(x){px(x,11,1,2,'#6b7280')});
+  px(23,12,3,8,'#9ca3af');px(23,12,3,1,'#d1d5db');px(26,15,5,2,'#d1d5db');px(30,15,2,1,'#9ca3af');
+  px(24,6,1,3,'#22c55e');px(22,4,1,2,'#86efac');px(27,5,1,2,'#22c55e');
+}
+function drawLauncher(cv){   // ロケットランチャー
+  const c=cv.getContext('2d');c.clearRect(0,0,32,32);
+  const px=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h)};
+  px(4,11,22,7,'#556b2f');px(4,15,22,3,'#3b4a1f');px(5,12,20,1,'#7a9142');
+  px(10,11,2,7,'#3a3a3a');px(20,11,2,7,'#3a3a3a');
+  px(25,10,4,9,'#2b2b2b');px(1,10,4,9,'#2b2b2b');px(2,12,2,5,'#0b0b0b');
+  px(28,12,3,5,'#c0c0c0');px(30,13,2,3,'#dc2626');
+  px(12,18,4,7,'#2b2b2b');px(11,18,6,2,'#3f3f3f');px(17,18,1,4,'#2b2b2b');
+  px(15,8,5,3,'#2b2b2b');px(17,6,1,2,'#9ca3af');
+  px(6,13,2,1,'#fde047');
+}
+function drawDragonBall(cv){   // 四星球（星4つのオレンジの玉）
+  const c=cv.getContext('2d');c.clearRect(0,0,32,32);
+  for(let y=0;y<32;y++)for(let x=0;x<32;x++){
+    const d=Math.hypot(x-15.5,y-15.5);
+    if(d<=12.5){c.fillStyle=d>10.6?'#b45309':(x+y>34?'#ea8a0c':'#f59e0b');c.fillRect(x,y,1,1)}
+  }
+  c.fillStyle='#fde68a';[[9,8,4,2],[8,10,2,3],[12,7,2,1]].forEach(function(r){c.fillRect(r[0],r[1],r[2],r[3])});
+  const star=['00100','01110','11111','01110','01010'];
+  c.fillStyle='#dc2626';
+  [[8,10],[19,10],[8,17],[19,17]].forEach(function(p){star.forEach(function(row,j){for(let i=0;i<5;i++)if(row[i]==='1')c.fillRect(p[0]+i,p[1]+j,1,1)})});
 }
 function updateStartLabel(){   // STARTボタンの文字：アイテム無し＝FREE PLAY／有り＝START · 金額 GANJA
   const sb=$('btnNormal');if(!sb)return;
@@ -735,11 +755,11 @@ function updateStartLabel(){   // STARTボタンの文字：アイテム無し�
 }
 function refreshItemUI(){
   try{updateStartLabel()}catch(e){}
-  ['itemSsjCard','itemSsj3Card','itemSsbCard'].forEach(function(id,i){const el=$(id);if(el){el.classList.toggle('sel',sel===i+1);el.setAttribute('aria-pressed',String(sel===i+1))}});
+  ['itemGiantCard','itemRocketCard','itemSsjCard'].forEach(function(id,i){const el=$(id);if(el){el.classList.toggle('sel',sel===i+1);el.setAttribute('aria-pressed',String(sel===i+1))}});
 }
 (function(){
-  [['imgSsj',0],['imgSsj3',1],['imgSsb',2]].forEach(function(p){drawWig($(p[0]),p[1])});
-  [['itemSsjCard',1],['itemSsj3Card',2],['itemSsbCard',3]].forEach(function(p){
+  drawSyringe($('imgGiant'));drawLauncher($('imgRocket'));drawDragonBall($('imgSsj'));
+  [['itemGiantCard',1],['itemRocketCard',2],['itemSsjCard',3]].forEach(function(p){
     $(p[0]).addEventListener('click',function(){sel=(sel===p[1])?0:p[1];refreshItemUI();bossTone('square',880,1320,0.06,0.08)});
   });
 })();
@@ -1101,10 +1121,12 @@ function upd(){
 }
 
 /* ---------- キャラ描画 ---------- */
-function cat(){ // GCRのLv3（ブースト）の見た目をそのまま移植
+function catBody(){ // GCRのLv3（ブースト）の見た目をそのまま移植
   const sk=stun>0?((af>>1)%3)-1:0,x=16+sk,y=GY-20,hx=x+5,hy=y-14,B='#87CEEB',S='#4169E1',hit=stun>0;
   R(x+7,y-2,10,16,B);R(x+7,y+2,10,3,S);R(x+7,y+9,10,3,S);
   R(hx,hy,12,12,B);R(hx+4,hy,2,4,S);R(hx+2,hy-3,3,3,B);R(hx+9,hy-3,3,3,B);
+  if(act===3){const Y='#ffd93a',Y2='#e0a800',up=(cx,top,h,hw)=>{for(let r=0;r<=h;r++){const w=Math.round(hw*r/h);R(cx-w,top+r,w*2+1,1,Y);if(w>0)R(cx+Math.ceil(w*.4),top+r,Math.floor(w*.6)+1,1,Y2)}};
+    R(hx-1,hy-3,14,5,Y);R(hx+7,hy-3,6,5,Y2);up(hx+6,hy-12,10,3);up(hx+1,hy-9,7,2);up(hx+11,hy-9,7,2);up(hx-2,hy-5,5,1);up(hx+14,hy-5,5,1);R(hx+2,hy-1,2,2,'#fff6b0')}   // スーパーサイヤ人のカツラ
   if(hit){
     [3,8].forEach(o=>{R(hx+o,hy+3,2,1,'#fff');R(hx+o+1,hy+4,1,1,'#fff');R(hx+o,hy+5,2,1,'#fff')});
     R(hx+5,hy+8,4,3,'#fff');R(hx+6,hy+9,2,1,S);
@@ -1112,11 +1134,18 @@ function cat(){ // GCRのLv3（ブースト）の見た目をそのまま移植
   }else{
     [2,7].forEach(o=>{R(hx+o,hy+2,4,4,'#fff');R(hx+o,hy+2,2,1,'#FF69B4');R(hx+o,hy+3,1,2,'#FF69B4');
       R(hx+o+2,hy+2,2,1,'#FFD700');R(hx+o+3,hy+3,1,2,'#FFD700');R(hx+o+1,hy+4,2,1,'#00FFFF');R(hx+o+2,hy+5,1,1,'#00FFFF');R(hx+o+1,hy+3,1,1,'#9370DB')});
+    if(act===1){const A='#8b1a1a';R(hx+3,hy+2,3,1,A);R(hx+5,hy+3,1,1,A);R(hx+7,hy+2,3,1,A);R(hx+7,hy+3,1,1,A);R(hx+2,hy+1,2,1,A);R(hx+8,hy+1,2,1,A)}   // 怒った目
     R(hx+10,hy+8,6,2,'#fff');R(hx+15,hy+8,1,2,'#ff0000');
     R(x+7,y+14,3,6,B);R(x+14,y+14,3,6,B);
   }
-  R(x+17,y+6,5,2,B);R(x+21,y+4,3,6,'#e6f6ff'); // ビームを撃つ腕
+  if(act===2){R(x+8,y+3,15,6,'#556b2f');R(x+8,y+7,15,2,'#3b4a1f');R(x+9,y+4,12,1,'#7a9142');R(x+21,y+2,3,8,'#2b2b2b');R(x+6,y+2,3,8,'#2b2b2b');R(x+13,y+9,3,4,'#2b2b2b');R(x+12,y+8,5,3,'#e6f6ff');R(x+14,y+0,4,3,'#2b2b2b')}   // ロケットランチャーを構える
+  else{R(x+17,y+6,5,2,B);R(x+21,y+4,3,6,'#e6f6ff')} // ビームを撃つ腕
   if(stun>0){const a=af*.2;R(x+10+Math.cos(a)*9,y-24+Math.sin(a)*2,2,2,'#ffee00');R(x+10-Math.cos(a)*9,y-24-Math.sin(a)*2,2,2,'#ffee00');T('CHEATER!',CX,GY-52,'#ff3030')}
+}
+function cat(){
+  g.save();if(act===1){g.translate(HL,BY);g.scale(2,2);g.translate(-HL,-BY)}   // 巨大化：ビームの出る手を中心に2倍
+  catBody();
+  g.restore();
 }
 const K=1.3;
 function dog(){
@@ -1133,11 +1162,20 @@ function dog(){
 
 /* ---------- ビーム ---------- */
 const PAL=[['#2468ff','#27a8ff','#8ef6ff'],['#c42a2a','#ff6a2a','#ffc25a']];
+function rockets(x1,x2){   // ロケット弾の連射（ビームの代わり）
+  const sp=26,w=x2-x1;g.globalAlpha=.3;R(x1,BY-1,w,3,'#d1d5db');g.globalAlpha=1;
+  for(let x=x1+(af*6)%sp;x+16<=x2;x+=sp){
+    R(x-18,BY-1,10,3,'#9ca3af');R(x-8,BY-2,5,5,'#f97316');R(x-4,BY-1,4,3,'#fbbf24');   // 煙と炎
+    R(x,BY-3,11,7,'#cbd5e1');R(x,BY+1,11,3,'#94a3b8');R(x,BY-3,11,1,'#f1f5f9');       // 弾体
+    R(x+11,BY-3,3,7,'#dc2626');R(x+14,BY-2,2,5,'#ef4444');                            // 先端
+    R(x,BY-6,4,3,'#dc2626');R(x,BY+4,4,3,'#dc2626')}                                  // 羽
+}
 const exOf=t=>t?Math.round((rd-1)/29*5):(st==='FIN'||st==='WIN'||st==='LOSE'||st==='CLEAR'?fExt:pExt); // ビームの太さ追加量（自分=連打の速さ、敵=ラウンド）
 function bar(x1,x2,t){
   x1=Math.floor(x1);x2=Math.floor(x2);const w=x2-x1;if(w<=0)return;
+  if(!t&&act===2){rockets(x1,x2);return}
   const p=PAL[t],o=(af>>2)&1,s=t?E[rd-1].s:'s',ex=exOf(t),hx=ex>>1;
-  const m=t?1:MULT[act],L=(hh,c)=>{hh*=m;R(x1,BY-hh,w,2*hh+1,c)};
+  const m=t?1:THK[act],L=(hh,c)=>{hh*=m;R(x1,BY-hh,w,2*hh+1,c)};
   if(s==='s'){L(5+ex-o,p[0]);L(4+ex,p[1]);L(2+hx,p[2]);L(1+(hx>>1),'#fff');return}
   if(s==='t'){L(2+hx,p[0]);L(1+hx,p[1]);L(hx>>1,'#fff');return}
   if(s==='p'){const sh=2+(ex>>2);['#ff4a4a','#ffa040','#ffee55','#6aff6a','#4ac8ff','#a06aff'].forEach((c,i)=>R(x1,BY-3*sh+i*sh,w,sh,c));R(x1,BY-1,w,sh,'#fff');return}
@@ -1147,7 +1185,9 @@ function bar(x1,x2,t){
     const q=s==='z'?((x*7+(af>>1)*13)%7)-3:Math.round(Math.sin(x*.15+af*.25)*3);
     R(x,BY-5-ex+q,sw,11+2*ex,k?p[2]:p[0]);R(x,BY-3-ex+q,sw,7+2*ex,k?p[0]:p[1]);R(x,BY-1-hx+q,sw,3+2*hx,p[2])}
 }
-function orb(x,t){const p=PAL[t],r=Math.round((7+(exOf(t)>>1))*(t?1:1+(MULT[act]-1)*.2));disc(g,x,BY,r,p[0]);disc(g,x,BY,r-2,p[1]);disc(g,x,BY,r-4,'#fff')}
+function orb(x,t){
+  if(!t&&act===2){const f=(af>>1)&1;disc(g,x,BY,4+f*2,'#ffb020');disc(g,x,BY,2+f,'#fff');return}   // ロケットの発射炎
+  const p=PAL[t],r=Math.round((7+(exOf(t)>>1))*(t?1:1+(THK[act]-1)*.2));disc(g,x,BY,r,p[0]);disc(g,x,BY,r-2,p[1]);disc(g,x,BY,r-4,'#fff')}
 function clash(x){
   const w=Math.round(Math.sin(af*.3)*1.5),o=(af>>2)&1;
   disc(g,Math.floor(x),BY,6+w,'#fff');disc(g,Math.floor(x),BY,4,'#ffe9a8');
