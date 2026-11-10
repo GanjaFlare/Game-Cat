@@ -98,6 +98,42 @@
       55% { transform: translateY(-4px) scale(1.06, 1.08); filter: brightness(1.7); }
       100% { transform: translateY(0) scale(1.02); filter: brightness(1.3); }
     }
+    /* 🛒 アイテム選択（STARTの下） */
+    .item-area { width: 100%; }
+    .item-head { display: flex; justify-content: space-between; align-items: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 6px; text-align: left; }
+    .item-note.err { color: #fca5a5; }
+    .wallet-top { position: absolute; top: 14px; right: 14px; z-index: 20; }
+    .wallet-top-btn { display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #6ee7b7, #34d399); color: #052e16; border: 2px solid #052e16; border-radius: 10px; padding: 8px 16px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: 0.5px; cursor: pointer; touch-action: manipulation; box-shadow: 0 3px 0 #065f46, 0 0 14px rgba(52, 211, 153, 0.45); }
+    .wallet-top-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #065f46; }
+    .wallet-top-btn.on { background: #0f172a; color: #e2e8f0; border-color: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, 0.35); }
+    .wallet-top-btn.on::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #34d399; }
+    .wallet-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; background: rgba(2, 6, 23, 0.82); display: flex; justify-content: center; align-items: center; border-radius: 10px 10px 40px 10px; }
+    .wallet-box { width: 78%; box-sizing: border-box; background: #0f172a; border: 2px solid #34d399; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 0 24px rgba(52, 211, 153, 0.35); }
+    .wallet-box-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 1px; color: #6ee7b7; margin-bottom: 4px; }
+    .wallet-item { display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; margin-top: 8px; padding: 10px 12px; background: #1e293b; color: #ffffff; border: 1px solid #475569; border-radius: 8px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; text-align: left; touch-action: manipulation; }
+    a.wallet-item { text-decoration: none; }
+    .wallet-item img { width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0; }
+    .wallet-hint { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; line-height: 1.5; color: #94a3b8; margin-top: 8px; }
+    .wallet-addr { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px; color: #e2e8f0; margin: 8px 0; word-break: break-all; }
+    .wallet-close { margin-top: 12px; background: transparent; color: #94a3b8; border: 1px solid #475569; padding: 6px 16px; border-radius: 8px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 12px; cursor: pointer; touch-action: manipulation; }
+    .item-row { display: flex; gap: 6px; }
+    .item-card { flex: 1; position: relative; box-sizing: border-box; border: 1px solid rgba(148, 163, 184, 0.35); padding: 8px 4px 6px; text-align: center; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: border-color 0.15s, box-shadow 0.15s; }
+    .item-card.sel { border-color: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, 0.45), inset 0 0 8px rgba(52, 211, 153, 0.12); }
+    .item-card.sel::after { content: '\2713'; position: absolute; top: 3px; right: 6px; color: #6ee7b7; font-size: 12px; font-weight: 800; }
+    .item-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 10px; white-space: nowrap; color: #e2e8f0; }
+    .item-img { width: 56px; height: 56px; image-rendering: pixelated; display: block; margin: 4px auto; }
+    .item-desc { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9.5px; line-height: 1.3; color: #cbd5e1; min-height: 40px; }
+    .item-price { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; color: #6ee7b7; margin-top: 2px; }
+    #setupOverlay { overflow-y: auto; justify-content: safe center; }
+    .lb-panel { width: 100%; }
+    .lb-tabs { display: flex; gap: 6px; margin-bottom: 6px; }
+    .lb-tab { flex: 1; background: #0f172a; color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; padding: 7px 4px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.8px; cursor: pointer; touch-action: manipulation; }
+    .lb-tab.on { color: #6ee7b7; border-color: #34d399; box-shadow: 0 0 10px rgba(52, 211, 153, 0.35); }
+    .lb-rows { border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; padding: 6px 10px; min-height: 90px; box-sizing: border-box; text-align: left; }
+    .lb-row { display: flex; justify-content: space-between; gap: 8px; font-family: 'Courier New', monospace; font-weight: 700; font-size: 11px; line-height: 15px; color: #fff; }
+    .lb-row .v { color: #ffd700; white-space: nowrap; }
+    .lb-empty { text-align: center; color: #94a3b8; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; padding-top: 30px; }
+    .item-note { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9px; color: #94a3b8; margin-top: 6px; text-align: center; }
     .dpad { position: absolute; left: 35px; bottom: 180px; width: 80px; height: 80px; cursor: pointer; z-index: 5; }
     .dpad-axis { position: absolute; background: #2b2b2b; border-radius: 3px; box-shadow: 0 4px 0 #111; }
     .dpad-h { top: 27px; left: 0; width: 80px; height: 26px; }
@@ -154,29 +190,6 @@
 
     #statusMessage { position: absolute; color: #333; font-size: 11px; bottom: 20px; font-weight: bold; width: 80%; text-align: center; z-index: 200; pointer-events: none;}
 
-    .share-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.6);
-      color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.7);
-      padding: 6px;
-      font-size: 0;
-      cursor: pointer;
-      z-index: 120;
-      border-radius: 4px;
-      display: none;
-      box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-      line-height: 0;
-      transition: background 0.2s;
-    }
-    .share-btn:active {
-      transform: translateY(1px);
-      box-shadow: 0px 0px 0px rgba(0,0,0,0);
-      background: rgba(0, 0, 0, 0.8);
-    }
-
     /* 🌿 タイトル文字：白→エメラルドグリーンのグラデーション + ネオン風の光彩 */
     .title-glow {
       font-family: 'Plus Jakarta Sans', sans-serif;
@@ -190,8 +203,8 @@
     }
   
     .pd-title {
-      font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 32px; letter-spacing: 1px;
-      margin: 0 0 6px; text-align: center;
+      font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; letter-spacing: 1px;
+      margin: 0; text-align: center;
       background: linear-gradient(135deg, #ffffff 0%, #60a5fa 100%);
       -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
       text-shadow: 0 0 20px rgba(96, 165, 250, 0.35);
@@ -207,13 +220,6 @@
 
         <div class="gb-screen-border">
           <canvas id="gameCanvas" width="240" height="160"></canvas>
-          <button id="shareButton" class="share-btn" title="Share">
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-              <polyline points="16 6 12 2 8 6"></polyline>
-              <line x1="12" y1="2" x2="12" y2="15"></line>
-            </svg>
-          </button>
         </div>
         
         <div class="gb-title">Police Dog</div>
@@ -246,10 +252,44 @@
         </div>
 
                 <div id="setupOverlay" class="overlay">
-          <h1 class="pd-title">POLICE DOG</h1>
-          <canvas id="titleWalkCanvas" width="200" height="50" style="image-rendering: pixelated; margin: 4px 0 8px;"></canvas>
+          <div class="wallet-top"><button id="btnWallet" class="wallet-top-btn" type="button">CONNECT</button></div>
+          <div id="walletModal" class="wallet-modal" style="display: none;">
+            <div class="wallet-box">
+              <div id="walletTitle" class="wallet-box-title">CONNECT WALLET</div>
+              <div id="walletList"></div>
+              <button id="walletClose" class="wallet-close" type="button">CLOSE</button>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:0;">
+            <h1 class="pd-title" style="font-size: 30px; margin-bottom: 5px;">POLICE DOG</h1>
+          </div>
+          <canvas id="titleWalkCanvas" width="200" height="50" style="image-rendering: pixelated; margin: 2px 0 8px;"></canvas>
           <div class="mode-buttons">
-            <button id="btnNormal" class="start-btn normal-btn">START</button>
+            <div class="item-area">
+              <div class="item-head"><span>ITEMS</span></div>
+              <div class="item-row">
+                <div id="itemSpringCard" class="item-card" role="button" aria-pressed="false">
+                  <div class="item-name">Spring</div>
+                  <canvas id="imgSpring" class="item-img" width="32" height="32"></canvas>
+                  <div class="item-desc">Jump power x2</div>
+                  <div class="item-price">222 GANJA</div>
+                </div>
+                <div id="itemCloverCard" class="item-card" role="button" aria-pressed="false">
+                  <div class="item-name">Clover</div>
+                  <canvas id="imgClover" class="item-img" width="32" height="32"></canvas>
+                  <div class="item-desc">Item drops x2</div>
+                  <div class="item-price">222 GANJA</div>
+                </div>
+                <div id="itemRoboCard" class="item-card" role="button" aria-pressed="false">
+                  <div class="item-name" style="font-size:9px;">Ganja Cat Robo</div>
+                  <canvas id="imgRobo" class="item-img" width="32" height="32"></canvas>
+                  <div class="item-desc">Life x2</div>
+                  <div class="item-price">222 GANJA</div>
+                </div>
+              </div>
+              <div id="walletMsg" class="item-note"></div>
+            </div>
+            <button id="btnNormal" class="start-btn normal-btn">FREE PLAY</button>
             <button id="btnBackSelect" class="start-btn" style="background:#334155;color:#e2e8f0;box-shadow:0 4px 0 #1e293b;font-size:12px;">&lt; BACK TO GAME SELECT</button>
           </div>
         </div>
@@ -267,6 +307,43 @@
     // =====================================================================
     //  POLICE DOG  (GAME CAT / GanjaCatRun 2 のボス戦スピンオフ)
     // =====================================================================
+    window.addEventListener('unhandledrejection', function(e) {
+      const m = document.getElementById('statusMessage');
+      if (m) { m.innerText = 'Promise Err: ' + e.reason; m.style.color = '#ff4444'; }
+    });
+    // 🌐 ブラウザ → Cloudflare Worker(中継) → GAS（課金の確認用。GCR2と同じ）
+    //  クロスオリジンの二段階リダイレクト(exec→echo)がモバイル回線等で不安定になる
+    //  問題が確認されたため、サーバー間fetch()で中継するこちらの方式に戻した)
+    const WORKER_API_URL = "https://gcr2-proxy.ganjaflare.workers.dev";
+
+    // GASへ action 付きのリクエストを送り、JSON形式で結果を受け取る共通関数
+    function callGasApi(action, payload) {
+      var body = Object.assign({ action: action }, payload || {});
+
+      var controller = new AbortController();
+      // 🕐 20秒で諦めるタイムアウト(モバイル回線での遅延に余裕を持たせる)
+      var timeoutId = setTimeout(function() { controller.abort(); }, 20000);
+
+      return fetch(WORKER_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal
+      }).then(function(response) {
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+          throw new Error("通信に失敗しました (HTTP " + response.status + ")");
+        }
+        return response.json();
+      }).catch(function(error) {
+        clearTimeout(timeoutId);
+        if (error && error.name === "AbortError") {
+          throw new Error("通信がタイムアウトしました");
+        }
+        throw error;
+      });
+    }
+
     const BGM_URL = "../iwashiro_yanagi_bocho.mp3";   // ← GCRと同じ階層構成（ゲームフォルダの1つ上＝GitHubルート）
     const BACK_URL = "../";                            // ← GAME SELECTへ戻るリンク先
 
@@ -278,7 +355,8 @@
     const BULLET_SPEED = 5.0;          // 弾速（ずっと一定）※遅すぎるとジャンプしても着弾するので注意
     const LIFE_ROWS = 28, LIFE_MAX = 140;   // ライフゲージは28行（1行=5）
     const HIT_DMG = 28;                // 1回のダメージ＝ゲージの5分の1（5回で死亡）
-    const HEAL_AMOUNT = 84;            // ハート：3段階（5分の3）回復
+    const HEAL_AMOUNT = 84;
+    const SPRING_V = -15.0;            // バネ：ジャンプ初速（通常は-12.3。2倍の高さだと画面外に出るので約1.5倍の高さ）            // ハート：3段階（5分の3）回復
         const SHOT_WAIT_START = 105;       // 発射間隔（ポリスドッグのライフ満タン時, フレーム）
     const SHOT_WAIT_END = 42;          // 発射間隔（最大難度時）
     const DROP_MIN = 1200, DROP_MAX = 2400;   // パラシュート出現間隔（20〜40秒）
@@ -321,7 +399,7 @@
       if (bgmSource) return;
       if (!bgmBuffer) { preloadBgm(); return; }
       bgmSource = c.createBufferSource(); bgmSource.buffer = bgmBuffer; bgmSource.loop = true;
-      bgmGain = c.createGain(); bgmGain.gain.value = paused ? 0 : 0.22;
+      bgmGain = c.createGain(); bgmGain.gain.value = 0.2;
       bgmSource.connect(bgmGain); bgmGain.connect(c.destination); bgmSource.start(0);
     }
     function stopBgm() {
@@ -429,6 +507,21 @@
     }
     function sfxPyon() { tone('sine', 500, 1500, 0.14, 0.2); }
     function sfxCry() { [0, 0.45].forEach(function(d) { tone('sine', 1000, 640, 0.4, 0.14, d); tone('triangle', 2000, 1280, 0.4, 0.05, d); }); }
+    function sfxBoyon() {   // 「ボヨヨーン！」
+      const c = ensureAudioCtx(); if (!c) return;
+      if (c.state !== 'running') c.resume().catch(function(){});
+      const t0 = c.currentTime, o = c.createOscillator(), gn = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(190, t0);
+      o.frequency.exponentialRampToValueAtTime(1050, t0 + 0.09);
+      o.frequency.exponentialRampToValueAtTime(430, t0 + 0.2);
+      o.frequency.exponentialRampToValueAtTime(900, t0 + 0.32);
+      o.frequency.exponentialRampToValueAtTime(320, t0 + 0.56);
+      lfo.frequency.value = 24; lg.gain.value = 55; lfo.connect(lg); lg.connect(o.frequency);
+      gn.gain.setValueAtTime(0.0001, t0); gn.gain.exponentialRampToValueAtTime(0.22, t0 + 0.01); gn.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.58);
+      o.connect(gn); gn.connect(c.destination);
+      o.start(t0); o.stop(t0 + 0.6); lfo.start(t0); lfo.stop(t0 + 0.6);
+    }
     function sfxCount() { tone('square', 660, 660, 0.12, 0.12); }
     // ⚔️ 「しゃきーん！」：刃物を抜くような金属音（ノイズの擦過音 → 高音の響き）
     function sfxShakiin() {
@@ -615,7 +708,7 @@
         const k = 1 - cat.charge / CHARGE_FRAMES;
         glow(ctx, cx + 8, cy - 4, 14 + 16 * k + 2 * Math.sin(frameCount * 0.8), 'rgba(140,240,255,' + (0.35 + 0.4 * k) + ')', 'rgba(34,211,238,0)');
       }
-      drawCatBase(ctx, x, y, state, frameCount, bob);
+      if (run.robo) drawRobotSprite(ctx, x, y + 18, frameCount, state === 'jump', 2); else drawCatBase(ctx, x, y, state, frameCount, bob);
       // ニトロの粒（※前進していないので、左側の流れる軌跡は無し）
       if (cat.nitro > 0) {
         const s = cat.nitro < 30 ? cat.nitro / 30 : 1, cols = ['#22c55e', '#86efac', '#bbf7d0'];
@@ -627,7 +720,7 @@
       }
       // 「しゃきーん！」目のきらめき
       if (cat.glint > 0) {
-        const k = cat.glint / 16, L = Math.round(2 + 9 * Math.sin(Math.PI * (1 - k))), gx = x + 16 + 4, gy = y - 10 + 4 + bob;
+        const k = cat.glint / 16, L = Math.round(2 + 9 * Math.sin(Math.PI * (1 - k))), gx = run.robo ? x + 10 : x + 16 + 4, gy = run.robo ? y - 12 : y - 10 + 4 + bob;
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(gx - L, gy, L * 2 + 1, 1); ctx.fillRect(gx, gy - L, 1, L * 2 + 1);
         ctx.fillStyle = 'rgba(180,250,255,0.9)';
@@ -688,6 +781,27 @@
       ctx.drawImage(dogCv, Math.round(dog.x - 40 + jx), 51 + jy);
     }
 
+    // 🤖 GANJA CAT ロボ（GCRのボス戦と同じ姿）
+    function drawRobotSprite(a, x, feetY, fr, air, U) {
+      const oy = feetY - 19 * U;
+      const p = function(c, gx, gy, gw, gh) { a.fillStyle = c; a.fillRect(Math.round(x + gx * U), Math.round(oy + gy * U), Math.max(1, Math.round(gw * U)), Math.max(1, Math.round(gh * U))); };
+      p('#94a3b8', -1, 14, 1, 1); p('#94a3b8', -2, 13, 1, 1); p('#94a3b8', -3, 11, 1, 2);
+      if (air) { p((fr % 4 < 2) ? '#fb923c' : '#fde047', 2, 19, 3, 2 + (fr % 2)); p('#fff', 3, 19, 1, 1); }
+      p('#475569', 2, 14, 2, 4); p('#475569', 6, 14, 2, 4);
+      p('#e2e8f0', 1, 18, 4, 1); p('#e2e8f0', 6, 18, 4, 1);
+      p('#cbd5e1', 1, 9, 8, 5); p('#94a3b8', 1, 13, 8, 1);
+      p('#2563eb', -1, 9, 2, 4); p('#2563eb', 8, 9, 2, 4);
+      p('rgba(34,211,238,' + (0.7 + 0.3 * Math.sin(fr * 0.3)) + ')', 4, 10, 2, 2); p('#fff', 4, 10, 1, 1);
+      p('#64748b', 4, 7, 2, 2);
+      p('#e2e8f0', 1, 2, 8, 5); p('#94a3b8', 1, 6, 8, 1);
+      p('#64748b', 1, 0, 2, 2); p('#64748b', 7, 0, 2, 2); p('#22d3ee', 1, 1, 1, 1); p('#22d3ee', 8, 1, 1, 1);
+      p('#0f172a', 1, 3, 8, 2);
+      p('#22d3ee', 2, 3, 2, 2); p('#22d3ee', 6, 3, 2, 2); p('#fff', 2, 3, 1, 1); p('#fff', 6, 3, 1, 1);
+      const gr = a.createRadialGradient(x + 5 * U, oy + 4 * U, 0, x + 5 * U, oy + 4 * U, 10 * U);
+      gr.addColorStop(0, 'rgba(34,211,238,0.35)'); gr.addColorStop(1, 'rgba(34,211,238,0)');
+      a.fillStyle = gr; a.fillRect(x - 5 * U, oy - 5 * U, 20 * U, 20 * U);
+      p('#64748b', 8, 10, 2, 2); p('#334155', 9, 10, 6, 3); p('#22d3ee', 12, 10, 3, 1); p('#1e293b', 10, 13, 2, 2); p('#67e8f9', 15, 10, 1, 2);
+    }
     function drawGanjaCoin(a, x, y) {
       a.fillStyle = "#ffd700"; a.beginPath(); a.arc(x, y, 9, 0, Math.PI * 2); a.fill();
       a.strokeStyle = "#b8860b"; a.lineWidth = 1; a.stroke();
@@ -739,7 +853,7 @@
     let mode = 'title';            // title / intro / fight / dying / boom / clear
     let t = 0, frameCount = 0, fightT = 0, paused = false;
     let shake = 0, flashA = 0;
-    const cat = { hp: LIFE_MAX, healQ: 0, dead: false, y: CAT_REST, vy: 0, jumpBuf: 0, hitFlash: 0, gauge: 0, charge: 0, laserT: 0, glint: 0, nitro: 0, pop: 0,
+    const cat = { hp: LIFE_MAX, hpMax: LIFE_MAX, healQ: 0, dead: false, y: CAT_REST, vy: 0, jumpBuf: 0, hitFlash: 0, gauge: 0, charge: 0, laserT: 0, glint: 0, nitro: 0, pop: 0,
                   powerFlash: 0, powerFlashMax: 30, powerFlashColor: '110,225,255' };
     const dog = { x: 270, hp: LIFE_MAX, healQ: 0, spirit: false, angry: false, hits: 0, flash: 0, muzzle: 0, mouth: false, walking: false, healT: 0, hurtT: 0, gone: false,
                   pulse: 0, beatN: 0, beatT: 0, beatInt: 60 };
@@ -747,18 +861,24 @@
     const aim = { y: 99, ty: 99, sl: 0 };   // 🎯 ターゲットマーク（次に撃つ高さ）
     function chooseAim() { aim.sl = [0, 0, 0, 0.2, -0.2, 0.35, -0.35][Math.floor(Math.random() * 7)]; aim.ty = Math.max(24, Math.min(140, 99.25 - aim.sl * (dog.x - 64))); }
     let nextShot = 0, pendingShot = false, pendT = 0, nextDrop = 0;
+    let itemSpring = false, itemClover = false, itemRobo = false;   // タイトルで選んだアイテム（1回きり）
+    const run = { spring: false, clover: false, robo: false };       // 今回のプレイで有効なアイテム
+    let confirmTitle = false;   // 「タイトルに戻る？」確認中
     let deathMode = false;   // 2段階目（Death mode）に入ったか
     const mini = { x: 0, yoff: 0, vy: 0, flip: false, mouth: false, run: false };   // 正体：ミニポリスドッグ
     let stats = { hitsTaken: 0, dodges: 0, heals: 0, time: 0 };
 
     function resetGame() {
       mode = 'intro'; t = 0; fightT = 0; paused = false; shake = 0; flashA = 0;
-      cat.hp = LIFE_MAX; cat.healQ = 0; cat.dead = false; cat.y = CAT_REST; cat.vy = 0; cat.jumpBuf = 0; cat.hitFlash = 0; cat.gauge = 0; cat.charge = 0; cat.laserT = 0; cat.glint = 0; cat.nitro = 0; cat.pop = 0; cat.powerFlash = 0;
+      run.spring = itemSpring; run.clover = itemClover; run.robo = itemRobo;   // アイテムは使い切り：このプレイ限り
+      itemSpring = itemClover = itemRobo = false; try { refreshItemUI(); } catch (e) {}
+      confirmTitle = false;
+      cat.hpMax = run.robo ? LIFE_MAX * 2 : LIFE_MAX; cat.hp = cat.hpMax; cat.healQ = 0; cat.dead = false; cat.y = CAT_REST; cat.vy = 0; cat.jumpBuf = 0; cat.hitFlash = 0; cat.gauge = 0; cat.charge = 0; cat.laserT = 0; cat.glint = 0; cat.nitro = 0; cat.pop = 0; cat.powerFlash = 0;
       deathMode = false; dog.healQ = 0; dog.spirit = false; dog.angry = false;
       dog.x = 270; dog.hp = LIFE_MAX; dog.hits = 0; dog.flash = 0; dog.muzzle = 0; dog.mouth = false; dog.walking = false; dog.healT = 0; dog.hurtT = 0; dog.gone = false;
       dog.pulse = 0; dog.beatN = 0; dog.beatT = 0; dog.beatInt = 60;
       bullets = []; parts = []; rings = []; labels = []; para = null; aim.sl = 0; aim.y = aim.ty = 99;
-      pendingShot = false; pendT = 0; nextShot = 70; nextDrop = DROP_MIN + Math.floor(Math.random() * (DROP_MAX - DROP_MIN));
+      pendingShot = false; pendT = 0; nextShot = 70; nextDrop = dropWait();
       stats = { hitsTaken: 0, dodges: 0, heals: 0, time: 0 };
       stopNitroSound();
     }
@@ -823,9 +943,10 @@
       dog.spirit = false; dog.angry = false; dog.mouth = false; dog.beatN = 0; dog.beatT = 0; dog.beatInt = 60; dog.pulse = 0;
       stopBgm();
     }
+    function dropWait() { return Math.floor((DROP_MIN + Math.random() * (DROP_MAX - DROP_MIN)) * (run.clover ? 0.5 : 1)); }   // クローバー：落下頻度2倍
     function pickType() {
       let ty = ['nitro', 'coin', 'heart'][Math.floor(Math.random() * 3)];
-      if (ty === 'heart' && cat.hp >= LIFE_MAX) ty = Math.random() < 0.5 ? 'nitro' : 'coin';   // ライフ満タンならハートは出さない
+      if (ty === 'heart' && cat.hp >= cat.hpMax) ty = Math.random() < 0.5 ? 'nitro' : 'coin';   // ライフ満タンならハートは出さない
       return ty;
     }
     function collectItem(p) {
@@ -853,7 +974,7 @@
     function startRage() {
       mode = 'rage'; t = 0; deathMode = true; dog.angry = false; dog.spirit = false; dog.pulse = 0;
       bullets.length = 0; pendingShot = false; para = null;
-      nextDrop = DROP_MIN + Math.floor(Math.random() * (DROP_MAX - DROP_MIN));
+      nextDrop = dropWait();
     }
     function spawnSpirit() {   // 闘志のオーラ（体から立ち上る炎）
       for (let i = 0; i < 2; i++) parts.push({ x: dog.x + Math.random() * 54, y: 126 - Math.random() * 12, vx: (Math.random() - 0.5) * 0.5, vy: -1.2 - Math.random() * 1.6, g: -0.01, life: 26 + Math.random() * 20, size: 2 + Math.random() * 3, color: ['#ef4444', '#f97316', '#fde047', '#fecaca'][Math.floor(Math.random() * 4)] });
@@ -902,7 +1023,7 @@
       if (cat.pop > 0) cat.pop--;
       if (cat.laserT > 0) cat.laserT--;
       if (cat.healQ > 0 && !cat.dead && frameCount % 2 === 0) {   // ロックマン式：下から1行ずつ溜まる
-        const add = Math.min(5, cat.healQ, LIFE_MAX - cat.hp);
+        const add = Math.min(5, cat.healQ, cat.hpMax - cat.hp);
         if (add <= 0) cat.healQ = 0; else { cat.hp += add; cat.healQ -= add; sfxChargeTick(); }
       }
       if (cat.nitro > 0) { cat.nitro--; if (cat.nitro === 0) stopNitroSound(); }
@@ -993,9 +1114,9 @@
         const cx = para.x, cy = para.y + 20 + (para.type === 'nitro' ? 11 : 8);
         if (cx > 22 && cx < 54 && cy + 9 > top && cy - 9 < bottom) {
           collectItem(para); para = null;
-          nextDrop = DROP_MIN + Math.floor(Math.random() * (DROP_MAX - DROP_MIN));
+          nextDrop = dropWait();
         } else if (para.y > 170) {
-          para = null; nextDrop = DROP_MIN + Math.floor(Math.random() * (DROP_MAX - DROP_MIN));
+          para = null; nextDrop = dropWait();
         }
       }
       // 回復エフェクト（ポリスDOGの体の周りにヒーリングの光）
@@ -1055,7 +1176,10 @@
     function drawHud() {
       if (mode === 'title') return;
       // 縦のライフゲージ（左：ガンジャキャット / 右：ポリスドッグ）
-      drawLifeBar(3, cat.hp, '#22d3ee', cat.hitFlash > 38 ? 1 : 0);
+      if (run.robo) {   // ロボ：ライフが2倍＝ゲージが横2列（ダメージは外側の列から減る）
+        drawLifeBar(2, Math.min(cat.hp, LIFE_MAX), '#22d3ee', cat.hitFlash > 38 ? 1 : 0);
+        drawLifeBar(11, Math.max(0, cat.hp - LIFE_MAX), '#67e8f9', cat.hitFlash > 38 ? 1 : 0);
+      } else drawLifeBar(3, cat.hp, '#22d3ee', cat.hitFlash > 38 ? 1 : 0);
       if (!(mode === 'intro' && t < 60)) drawLifeBar(229, dog.hp, '#ef4444', dog.flash);
       // レーザーゲージ（ガンジャキャットの下＝左下）
       outlineText('LASER', 5, 156, 8, '#a5f3fc');
@@ -1129,7 +1253,7 @@
       if (mode === 'fight' && !deathMode) drawAim();
       // レーザー
       if (cat.laserT > 0 && !(mode === 'boom' && dog.gone)) {
-        const c = dogCenter(), ox = 49, oy = cat.y - 5, w = 1 + cat.laserT / 12 * 4;
+        const c = dogCenter(), ox = run.robo ? 52 : 49, oy = run.robo ? cat.y + 2 : cat.y - 5, w = 1 + cat.laserT / 12 * 4;
         ctx.save(); ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = 8; ctx.lineCap = 'butt';
         ctx.strokeStyle = '#67e8f9'; ctx.lineWidth = w + 2; ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(c.x, 84); ctx.stroke();
         ctx.strokeStyle = '#ffffff'; ctx.lineWidth = Math.max(1, w - 2); ctx.stroke();
@@ -1195,11 +1319,23 @@
       if (t > 70 && Math.floor(t / 25) % 2 === 0) outlineText('A / TAP : RETRY', 120, 112, 9, '#fff', 'center');
       outlineText('SELECT : TITLE', 120, 130, 8, '#cbd5e1', 'center');
     }
-    function drawPause() {
-      ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, W, H);
-      outlineText('PAUSE', 120, 72, 20, '#fff', 'center');
-      outlineText('START : RESUME', 120, 96, 9, '#cbd5e1', 'center');
-      outlineText('SELECT : TITLE', 120, 110, 9, '#cbd5e1', 'center');
+    function drawPause() {   // GCR2と同じ見た目
+      ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, 0, 240, 160);
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 22px 'Courier New'"; ctx.textAlign = "center"; ctx.fillText("PAUSE", 120, 70);
+      ctx.font = "bold 9px 'Courier New'";
+      ctx.fillText("START : RESUME", 120, 100);
+      ctx.fillText("SELECT : BACK TO TITLE", 120, 114);
+      if (confirmTitle) {
+        ctx.fillStyle = "rgba(0,0,0,0.75)"; ctx.fillRect(0, 0, 240, 160);
+        ctx.fillStyle = "#0f172a"; ctx.fillRect(30, 48, 180, 66);
+        ctx.strokeStyle = "#34d399"; ctx.lineWidth = 2; ctx.strokeRect(30, 48, 180, 66);
+        ctx.textAlign = "center"; ctx.font = "bold 12px 'Courier New'";
+        ctx.fillStyle = "#ffffff"; ctx.fillText("RETURN TO TITLE?", 120, 74);
+        ctx.fillStyle = "#6ee7b7"; ctx.fillText("A : YES", 78, 100);
+        ctx.fillStyle = "#fca5a5"; ctx.fillText("B : NO", 162, 100);
+      }
+      ctx.textAlign = "left";
     }
 
     // =====================================================================
@@ -1234,8 +1370,18 @@
     // =====================================================================
     //  入力・画面切り替え
     // =====================================================================
-    function doJump() { cat.vy = -12.3; cat.jumpBuf = 0; sfxJump(); }
+    function doJump() {
+      cat.jumpBuf = 0;
+      if (run.spring) { cat.vy = SPRING_V; sfxBoyon(); springWave(); }   // バネ：高く跳ぶ＋「ボヨヨーン！」＋足元に衝撃波
+      else { cat.vy = -12.3; sfxJump(); }
+    }
+    function springWave() {
+      rings.push({ cx: 34, cy: GROUND, r: 4, a: 0.95, w: 2, c: '125,211,252', grow: 2.6, ell: 0.22 });
+      rings.push({ cx: 34, cy: GROUND, r: 2, a: 0.8, w: 3, c: '255,255,255', grow: 1.7, ell: 0.22 });
+      for (let i = 0; i < 12; i++) parts.push({ x: 34 + (Math.random() - 0.5) * 10, y: GROUND - 1, vx: (i % 2 ? 1 : -1) * (1 + Math.random() * 2.6), vy: -(0.2 + Math.random() * 1.1), g: 0.05, life: 16 + Math.random() * 8, size: 2, color: ['#bae6fd', '#7dd3fc', '#ffffff'][i % 3] });
+    }
     function triggerJump() {
+      if (confirmTitle) return;
       if (mode === 'title') return;
       if (mode === 'clear' || mode === 'gameover') { if (t > 70) startGame(); return; }
       if (mode === 'catdie') return;
@@ -1245,14 +1391,25 @@
     function setPaused(p) {
       if (mode === 'title' || mode === 'clear' || mode === 'boom' || mode === 'catdie' || mode === 'gameover') return;
       paused = p;
-      if (bgmGain) bgmGain.gain.value = p ? 0 : 0.22;
       if (p) stopNitroSoundSoft();
     }
     function stopNitroSoundSoft() { /* ニトロ音は短いのでそのまま */ }
-    function togglePause() { if (mode === 'title' || mode === 'clear' || mode === 'boom' || mode === 'catdie' || mode === 'gameover') return; setPaused(!paused); }
+    function togglePause() { if (mode === 'title' || mode === 'clear' || mode === 'boom' || mode === 'catdie' || mode === 'gameover') return; setPaused(!paused); confirmTitle = false; }
+    function selectPressed() {   // SELECT：ポーズ中なら「タイトルに戻る？」確認／クリア・ゲームオーバー画面ならタイトルへ
+      if (mode === 'clear' || mode === 'gameover') { showTitle(); return; }
+      if (confirmTitle) return;
+      if (!paused) return;
+      confirmTitle = true;
+    }
+    function answerTitleConfirm(yes) {   // A=YES / B=NO
+      if (!confirmTitle) return;
+      confirmTitle = false;
+      if (yes) showTitle();
+    }
     function showTitle() {
       bgmOff(); stopNitroSound();
-      mode = 'title'; paused = false; startPressed = false;
+      mode = 'title'; paused = false; confirmTitle = false; startPressed = false;
+      itemSpring = itemClover = itemRobo = false; try { refreshItemUI(); } catch (e) {}
       document.getElementById('setupOverlay').style.display = 'flex';
       const sb = document.getElementById('btnNormal'); if (sb) sb.classList.remove('pressed');
     }
@@ -1281,9 +1438,13 @@
         e.preventDefault();
         if (startPressed) return;
         startPressed = true;
-        btn.classList.remove("pressed"); void btn.offsetWidth; btn.classList.add("pressed");
-        sfxBoing(); bgmOn();
-        setTimeout(function() { document.getElementById('setupOverlay').style.display = 'none'; resetGame(); }, 380);
+        btn.classList.remove("pressed"); void btn.offsetWidth; btn.classList.add("pressed");   // ボタンが押された演出
+        sfxBoing();      // 「ぴょいん！」
+        unlockAudio();   // 音の許可だけ先に取る。BGMは、支払いが済んでゲーム本編が始まってから
+        Promise.resolve(purchaseItems()).then(function(ok) {   // 選んだアイテムがあれば、先に$GANJAをバーンして支払う
+          if (!ok) { startPressed = false; btn.classList.remove("pressed"); return; }
+          setTimeout(function() { document.getElementById('setupOverlay').style.display = 'none'; startGame(); }, 380);
+        });
       };
       btn.addEventListener("click", press);
       btn.addEventListener("touchend", press, { passive: false });
@@ -1291,13 +1452,19 @@
       const goBack = function(e) { e.preventDefault(); stopBgmAndClose(); window.location.href = BACK_URL; };
       back.addEventListener("click", goBack);
       back.addEventListener("touchstart", goBack, { passive: false });
-      preloadBgm();
+      preloadBgm();   // タイトル画面は無音。音楽ファイルだけ先に読み込んでおく
 
       bindTap(document.getElementById('dpadControl'), triggerJump);
+      // 確認中は、AボタンがYES、BボタンがNO（確認中でなければ、これまでどおりジャンプ）
+      [["btnA", true], ["btnB", false]].forEach(function(pr) {
+        const el = document.getElementById(pr[0]); if (!el) return;
+        const h = function(e) { if (!confirmTitle) return; e.preventDefault(); e.stopPropagation(); answerTitleConfirm(pr[1]); };
+        el.addEventListener("mousedown", h); el.addEventListener("touchstart", h, { passive: false });
+      });
       bindTap(document.getElementById('btnArea'), triggerJump);
       bindTap(canvas, triggerJump);
       bindTap(document.getElementById('btnStart'), togglePause);
-      bindTap(document.getElementById('btnSelect'), function() { if (mode !== 'title') showTitle(); });
+      bindTap(document.getElementById('btnSelect'), selectPressed);
 
       const mb = document.getElementById('btnMusicToggle');
       if (mb) {
@@ -1306,11 +1473,308 @@
         mb.addEventListener('touchend', tog, { passive: false });
       }
       window.addEventListener("keydown", function(e) {
+        if (confirmTitle) {
+          e.preventDefault();
+          if (e.code === "KeyA" || e.code === "KeyZ") answerTitleConfirm(true);
+          else if (e.code === "KeyB" || e.code === "KeyX" || e.code === "Escape") answerTitleConfirm(false);
+          return;
+        }
         if (e.code === "Space" || e.code === "ArrowUp") { e.preventDefault(); triggerJump(); }
         if (e.code === "Enter") togglePause();
-        if (e.code === "KeyM" || e.code === "Backspace") { if (mode !== 'title') showTitle(); }
+        if (e.code === "KeyM" || e.code === "Backspace") selectPressed();
       });
     }
+
+    // ================= 🛒 アイテム（バネ／クローバー／ロボ） =================
+    function drawItemSpring(cv) {   // 水色のバネ
+      const c = cv.getContext('2d'); c.clearRect(0, 0, 32, 32);
+      c.fillStyle = '#64748b'; c.fillRect(6, 27, 20, 3); c.fillStyle = '#94a3b8'; c.fillRect(6, 27, 20, 1);
+      c.fillStyle = '#64748b'; c.fillRect(6, 2, 20, 3); c.fillStyle = '#94a3b8'; c.fillRect(6, 2, 20, 1);
+      for (let i = 0; i < 5; i++) {
+        const y = 6 + i * 4, x0 = i % 2 ? 9 : 7;
+        c.fillStyle = '#0284c7'; c.fillRect(x0, y + 1, 16, 3);
+        c.fillStyle = '#38bdf8'; c.fillRect(x0, y, 16, 2);
+        c.fillStyle = '#bae6fd'; c.fillRect(x0 + 1, y, 5, 1);
+      }
+    }
+    function drawItemClover(cv) {   // 四つ葉のクローバー
+      const c = cv.getContext('2d'); c.clearRect(0, 0, 32, 32);
+      c.fillStyle = '#15803d'; c.fillRect(15, 20, 2, 10); c.fillRect(17, 27, 3, 2); c.fillRect(19, 25, 2, 3);
+      [[11.5, 11.5], [20.5, 11.5], [11.5, 19.5], [20.5, 19.5]].forEach(function(p) {
+        c.fillStyle = '#16a34a'; c.beginPath(); c.arc(p[0], p[1], 6, 0, Math.PI * 2); c.fill();
+        c.fillStyle = '#22c55e'; c.beginPath(); c.arc(p[0], p[1], 5, 0, Math.PI * 2); c.fill();
+        c.fillStyle = '#86efac'; c.fillRect(Math.round(p[0] - 3), Math.round(p[1] - 3), 2, 2);
+      });
+      c.fillStyle = '#166534'; c.fillRect(15, 14, 2, 3);
+    }
+    function drawItemRobo(cv) {   // ボス戦のロボ姿を流用
+      const c = cv.getContext('2d'); c.clearRect(0, 0, 32, 32);
+      drawRobotSprite(c, 6, 31, 0, false, 1.6);
+    }
+    function updateStartLabel() {   // STARTボタンの文字：アイテム無し＝FREE PLAY／有り＝START · 合計金額 GANJA
+      const sb = document.getElementById('btnNormal'); if (!sb) return;
+      const n = (itemSpring ? 1 : 0) + (itemClover ? 1 : 0) + (itemRobo ? 1 : 0);
+      let tx = 'FREE PLAY';
+      if (n > 0) tx = (typeof BILLING_ENABLED !== 'undefined' && BILLING_ENABLED) ? ('START \u00B7 ' + (ITEM_PRICE * n) + ' GANJA') : 'START';
+      if (sb.textContent !== tx) sb.textContent = tx;
+    }
+    function refreshItemUI() {
+      try { updateStartLabel(); } catch (e) {}
+      [['itemSpringCard', itemSpring], ['itemCloverCard', itemClover], ['itemRoboCard', itemRobo]].forEach(function(pr) {
+        const el = document.getElementById(pr[0]);
+        if (el) { el.classList.toggle('sel', pr[1]); el.setAttribute('aria-pressed', String(pr[1])); }
+      });
+    }
+    (function() {
+      drawItemSpring(document.getElementById('imgSpring')); drawItemClover(document.getElementById('imgClover')); drawItemRobo(document.getElementById('imgRobo'));
+      const tap = function(id, fn) { const el = document.getElementById(id); if (el) el.addEventListener('click', function() { fn(); refreshItemUI(); tone('square', 880, 1320, 0.06, 0.08); }); };
+      tap('itemSpringCard', function() { itemSpring = !itemSpring; });
+      tap('itemCloverCard', function() { itemClover = !itemClover; });
+      tap('itemRoboCard', function() { itemRobo = !itemRobo; });
+    })();
+
+    const BILLING_ENABLED = true;    // true＝STARTで、選んだアイテムの代金を$GANJAでバーン／false＝無課金テスト
+    const GANJA_TOKEN = "0x9aA42de5eC6f3B3BbF252bf8ac81ACB338D888b7";
+    const BURN_ADDRESS = "0x000000000000000000000000000000000000dEaD";
+    const ITEM_PRICE = 222;          // 1アイテムあたり（$GANJA）。GAS側の ITEM_PRICE_GANJA と同じ数にする
+    const FLARE_CHAIN = { chainId: "0xe", chainName: "Flare Mainnet", nativeCurrency: { name: "Flare", symbol: "FLR", decimals: 18 }, rpcUrls: ["https://flare-api.flare.network/ext/bc/C/rpc"], blockExplorerUrls: ["https://flare-explorer.flare.network"] };
+    const DEFAULT_NOTE = BILLING_ENABLED ? "Items are paid with $GANJA (burned). Use a wallet browser." : "TEST MODE: items are free for now";
+    let walletAddress = "", ethProv = null, walletResolve = null;
+    const discovered = [];           // EIP-6963：端末にあるウォレットの一覧
+    window.addEventListener("eip6963:announceProvider", function(ev) {
+      const d = ev && ev.detail;
+      if (!d || !d.provider || !d.info) return;
+      if (!discovered.some(function(w) { return w.provider === d.provider; })) discovered.push({ name: d.info.name, icon: d.info.icon, rdns: d.info.rdns || "", provider: d.provider });
+    });
+    function discoverWallets() { try { window.dispatchEvent(new Event("eip6963:requestProvider")); } catch (e) {} }
+    discoverWallets();
+    function eth() { return ethProv || window.ethereum || null; }
+    function walletMsg(text, isErr) { const el = document.getElementById("walletMsg"); if (el) { el.textContent = text || ""; el.classList.toggle("err", !!isErr); } }
+    function shortAddr(a) { return a ? a.slice(0, 6) + "…" + a.slice(-4) : ""; }
+    function updateWalletUI() {
+      const b = document.getElementById("btnWallet");
+      if (b) { b.textContent = walletAddress ? shortAddr(walletAddress) : "CONNECT"; b.classList.toggle("on", !!walletAddress); }
+    }
+    function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+    function lsSet(k, v) { try { window.localStorage.setItem(k, v); } catch (e) {} }
+    function lsDel(k) { try { window.localStorage.removeItem(k); } catch (e) {} }
+    let autoFilledAddr = "";
+    function fillRewardWallet() {   // 報酬アドレス欄に、接続中のアドレスを最初から入れる（書き換え可能）
+      const wi = document.getElementById("walletInput");
+      if (!wi || !walletAddress) return;
+      if (!wi.value.trim() || wi.value.trim() === autoFilledAddr) { wi.value = walletAddress; autoFilledAddr = walletAddress; }
+    }
+    function saveWalletChoice(provider) {   // 選んだウォレットを覚える
+      if (provider && provider.isWalletConnect) { lsSet("gcr2Wallet", JSON.stringify({ wc: true })); lsDel("gcr2WalletOff"); return; }
+      let rdns = "", name = "";
+      discovered.forEach(function(w) { if (w.provider === provider) { rdns = w.rdns || ""; name = w.name || ""; } });
+      lsSet("gcr2Wallet", JSON.stringify({ rdns: rdns, name: name, injected: !rdns }));
+      lsDel("gcr2WalletOff");
+    }
+    function hookProvider(p) {
+      if (!p || !p.on || p.__gcHooked) return;
+      p.__gcHooked = true;
+      if (p.isWalletConnect) p.on("disconnect", function() { walletAddress = ""; ethProv = null; updateWalletUI(); });
+      p.on("accountsChanged", function(a) { walletAddress = (a && a[0]) || ""; if (!walletAddress) ethProv = null; updateWalletUI(); fillRewardWallet(); });
+    }
+    function closeWalletModal(connected) {
+      const m = document.getElementById("walletModal");
+      if (m) m.style.display = "none";
+      if (walletResolve) { const r = walletResolve; walletResolve = null; r(!!connected); }
+    }
+    let wcError = "";
+    function renderWalletModal() {
+      const list = document.getElementById("walletList"), title = document.getElementById("walletTitle");
+      if (!list || !title) return;
+      list.textContent = "";
+      const add = function(tag, cls, text) { const el = document.createElement(tag); el.className = cls; el.textContent = text; list.appendChild(el); return el; };
+      if (walletAddress) {
+        title.textContent = "WALLET";
+        add("div", "wallet-addr", walletAddress);
+        add("button", "wallet-item", "Disconnect").addEventListener("click", function() { if (ethProv && ethProv.isWalletConnect) { try { ethProv.disconnect(); } catch (e) {} } walletAddress = ""; ethProv = null; lsDel("gcr2Wallet"); lsSet("gcr2WalletOff", "1"); updateWalletUI(); closeWalletModal(false); });
+        return;
+      }
+      title.textContent = "CONNECT WALLET";
+      const wallets = discovered.slice();
+      if (window.ethereum && !wallets.some(function(w) { return w.provider === window.ethereum; })) wallets.push({ name: "Browser Wallet", icon: "", provider: window.ethereum });
+      if (!wallets.length) add("div", "wallet-hint", "No wallet found in this browser. Choose WalletConnect below (Bifrost, MetaMask, etc.), or open this page in your wallet app's browser.");
+      wallets.forEach(function(w) {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "wallet-item";
+        if (w.icon) { const im = document.createElement("img"); im.src = w.icon; im.alt = ""; b.appendChild(im); }
+        const sp = document.createElement("span"); sp.textContent = w.name; b.appendChild(sp);
+        b.addEventListener("click", function() { connectWith(w.provider); });
+        list.appendChild(b);
+      });
+      const wc = add("button", "wallet-item", "WalletConnect (Bifrost, MetaMask...)");
+      wc.addEventListener("click", function() { connectWithWC(); });
+      if (!wallets.length && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "")) {
+        const a = add("a", "wallet-item", "Open in MetaMask app");
+        a.href = "https://metamask.app.link/dapp/" + location.host + location.pathname + location.search;
+      }
+      if (wcError) add("div", "wallet-hint", wcError);
+    }
+    function openWalletModal() {
+      discoverWallets();
+      renderWalletModal();
+      const m = document.getElementById("walletModal");
+      if (m) m.style.display = "flex";
+    }
+    function connectWallet() { return new Promise(function(resolve) { walletResolve = resolve; openWalletModal(); }); }
+    async function ensureFlare() {
+      const id = await eth().request({ method: "eth_chainId" });
+      if (id === FLARE_CHAIN.chainId) return;
+      try { await eth().request({ method: "wallet_switchEthereumChain", params: [{ chainId: FLARE_CHAIN.chainId }] }); }
+      catch (e) {
+        if (e && (e.code === 4902 || /Unrecognized chain/i.test(e.message || ""))) await eth().request({ method: "wallet_addEthereumChain", params: [FLARE_CHAIN] });
+        else throw e;
+      }
+    }
+    // 🔗 WalletConnect（スマホの普通のブラウザから、Bifrost等のウォレットアプリで接続する）
+    const WC_PROJECT_ID = "824989a895bef4378cf37b0518a22e88";   // Reown Project ID（公開されても問題ないID。許可ドメインで保護）
+    const WC_MODULE_URL = "https://esm.sh/@walletconnect/ethereum-provider@2.26.0";
+    let wcPromise = null;
+    function getWcProvider() {   // 押されたときだけ読み込む（ふだんのページ表示は重くしない）
+      if (wcPromise) return wcPromise;
+      wcPromise = (async function() {
+        const mod = await import(WC_MODULE_URL);
+        const EP = mod.EthereumProvider || (mod.default && (mod.default.EthereumProvider || mod.default));
+        return await EP.init({
+          projectId: WC_PROJECT_ID,
+          optionalChains: [14],
+          rpcMap: { 14: FLARE_CHAIN.rpcUrls[0] },
+          showQrModal: true,
+          metadata: { name: "Police Dog", description: "GanjaFlare GAME CAT", url: location.origin, icons: [] }
+        });
+      })().catch(function(e) { wcPromise = null; throw e; });
+      return wcPromise;
+    }
+    async function connectWithWC() {
+      wcError = "";
+      try {
+        walletMsg("Loading WalletConnect...");
+        const p = await getWcProvider();
+        if (!p.session) await p.connect();
+        const a = p.accounts && p.accounts[0];
+        if (!a) throw new Error("no account");
+        ethProv = p; walletAddress = a;
+        hookProvider(p); updateWalletUI(); walletMsg(DEFAULT_NOTE);
+        saveWalletChoice(p); fillRewardWallet();
+        closeWalletModal(true);
+      } catch (e) {
+        ethProv = null; walletAddress = ""; updateWalletUI();
+        wcError = "WalletConnect failed or was cancelled. Please try again.";
+        walletMsg(DEFAULT_NOTE);
+        renderWalletModal();
+      }
+    }
+    async function connectWith(provider) {
+      try {
+        const acc = await provider.request({ method: "eth_requestAccounts" });
+        if (!acc || !acc[0]) throw new Error("no account");
+        ethProv = provider; walletAddress = acc[0];
+        await ensureFlare();
+        hookProvider(provider); updateWalletUI(); walletMsg(DEFAULT_NOTE);
+        saveWalletChoice(provider); fillRewardWallet();
+        closeWalletModal(true);
+      } catch (e) {
+        ethProv = null; walletAddress = ""; updateWalletUI(); walletMsg("Wallet connection cancelled.", true);
+      }
+    }
+    function encodeTransfer(to, amount) {   // ERC-20 transfer(to, amount×10^18)
+      return "0xa9059cbb" + to.toLowerCase().replace("0x", "").padStart(64, "0") + (BigInt(amount) * 10n ** 18n).toString(16).padStart(64, "0");
+    }
+    async function ganjaBalance(addr) {
+      const r = await eth().request({ method: "eth_call", params: [{ to: GANJA_TOKEN, data: "0x70a08231" + addr.toLowerCase().replace("0x", "").padStart(64, "0") }, "latest"] });
+      return BigInt(r || "0x0") / (10n ** 18n);
+    }
+    async function waitReceipt(hash, timeoutMs) {
+      const t0 = Date.now();
+      while (Date.now() - t0 < timeoutMs) {
+        const rc = await eth().request({ method: "eth_getTransactionReceipt", params: [hash] });
+        if (rc) return rc;
+        await new Promise(function(r) { setTimeout(r, 2000); });
+      }
+      return null;
+    }
+    // ※サーバー(GAS)側の品目IDは GCR2 と共通のまま（左=life / 中=pizza / 右=magnet）
+    function selectedItemIds() { const a = []; if (itemSpring) a.push("life"); if (itemClover) a.push("pizza"); if (itemRobo) a.push("magnet"); return a; }
+    async function verifyOnServer(hash, ids) {   // サーバー（GAS）が、ブロックチェーン上の取引内容を確かめて記録する
+      for (let i = 0; i < 3; i++) {
+        try {
+          const res = await Promise.race([callGasApi("verifyPurchase", { wallet: walletAddress, txHash: hash, items: ids.join(",") }), new Promise(function(_, rej) { setTimeout(function() { rej(new Error("timeout")); }, 20000); })]);
+          if (res && res.status === "success") return { ok: true };
+          if (res && res.reason && res.reason !== "not_found") return { ok: false, message: res.message || "Payment could not be verified." };
+        } catch (e) {}
+        await new Promise(function(r) { setTimeout(r, 3000); });
+      }
+      return { ok: true, unverified: true };   // サーバーに届かない場合は、支払い済みなので、そのまま遊べる
+    }
+    async function purchaseItems() {
+      const ids = selectedItemIds();
+      if (!BILLING_ENABLED || !ids.length) return true;
+      try {
+        if (!walletAddress && !(await connectWallet())) { walletMsg("Connect a wallet to buy items.", true); return false; }
+        await ensureFlare();
+        const total = ITEM_PRICE * ids.length;
+        if ((await ganjaBalance(walletAddress)) < BigInt(total)) { walletMsg("Not enough $GANJA (" + total + " needed).", true); return false; }
+        walletMsg("Confirm the payment in your wallet" + (eth().isWalletConnect ? " app (open it if no request appears)" : "") + "... (" + total + " GANJA)");
+        let hash;
+        try { hash = await eth().request({ method: "eth_sendTransaction", params: [{ from: walletAddress, to: GANJA_TOKEN, data: encodeTransfer(BURN_ADDRESS, total) }] }); }
+        catch (e) { walletMsg("Payment cancelled.", true); return false; }
+        walletMsg("Waiting for confirmation...");
+        const rc = await waitReceipt(hash, 90000);
+        if (!rc) { walletMsg("Confirmation timed out. Check your wallet, then try again.", true); return false; }
+        if (rc.status !== "0x1") { walletMsg("The payment failed. Nothing was burned.", true); return false; }
+        walletMsg("Verifying payment...");
+        const v = await verifyOnServer(hash, ids);
+        if (!v.ok) { walletMsg(v.message, true); return false; }
+        walletMsg("Payment complete! Starting...");
+        return true;
+      } catch (e) { walletMsg("Something went wrong. Please try again.", true); return false; }
+    }
+    (function() {
+      const b = document.getElementById("btnWallet"), c = document.getElementById("walletClose");
+      if (b) b.addEventListener("click", function() { openWalletModal(); });
+      if (c) c.addEventListener("click", function() { closeWalletModal(!!walletAddress); });
+      walletMsg(DEFAULT_NOTE);
+      updateWalletUI();
+    })();
+    // 🔁 以前つないだウォレットを、確認なしで自動的に再接続する（選んだウォレットも覚えている）
+    function pickSavedProvider() {
+      discoverWallets();
+      let saved = null;
+      try { saved = JSON.parse(lsGet("gcr2Wallet") || "null"); } catch (e) {}
+      if (saved) {
+        const m = discovered.filter(function(w) { return saved.rdns ? w.rdns === saved.rdns : (saved.name && w.name === saved.name); })[0];
+        if (m) return m.provider;
+        if (saved.injected && window.ethereum) return window.ethereum;
+        return null;
+      }
+      if (!lsGet("gcr2WalletOff") && window.ethereum) return window.ethereum;   // ウォレットアプリ内ブラウザ（以前の動作）
+      return null;
+    }
+    async function tryRestoreWallet() {
+      if (walletAddress) return true;
+      let sv = null;
+      try { sv = JSON.parse(lsGet("gcr2Wallet") || "null"); } catch (e) {}
+      if (sv && sv.wc) {   // WalletConnectで接続していた場合：保存されたセッションから戻す
+        try {
+          const w = await getWcProvider();
+          if (!walletAddress && w.session && w.accounts && w.accounts[0]) { ethProv = w; walletAddress = w.accounts[0]; hookProvider(w); updateWalletUI(); fillRewardWallet(); return true; }
+        } catch (e) {}
+        return false;
+      }
+      const p = pickSavedProvider();
+      if (!p || !p.request) return false;
+      try {
+        const a = await p.request({ method: "eth_accounts" });
+        if (a && a[0] && !walletAddress) { ethProv = p; walletAddress = a[0]; hookProvider(p); updateWalletUI(); saveWalletChoice(p); fillRewardWallet(); return true; }
+      } catch (e) {}
+      return false;
+    }
+    [0, 400, 1200, 2500, 4500].forEach(function(ms) { setTimeout(function() { tryRestoreWallet(); }, ms); });   // ウォレットの検出が遅れる場合に備え、数回試す
+    try { updateStartLabel(); } catch (e) {}
 
     // 60fps固定のメインループ（120Hzスマホでも速くならない）
     let lastTs = performance.now(), acc = 0;
