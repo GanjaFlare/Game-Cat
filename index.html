@@ -16,7 +16,16 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   <meta name="theme-color" content="#0f172a">
+  <script>
+    // 🙈 音声の案内画面とオープニングの間は、下にあるゲーム選択画面を隠す（画面の端から、わずかにはみ出して見えるのを防ぐ）
+    (function() {
+      var seen = false;
+      try { seen = sessionStorage.getItem("gcIntroDone") === "1" && !/[?&]intro/.test(location.search); } catch (e) {}
+      if (!seen) document.documentElement.className += " intro-pending";
+    })();
+  </script>
   <style>
+    .intro-pending #setupOverlay { visibility: hidden; }
     body { 
       margin: 0; 
       padding: 0; 
@@ -471,7 +480,9 @@
       const slides = [].slice.call(car.querySelectorAll(".cart"));
       const N = slides.length, PITCH = 186, DUR = 300;   // PITCH：カートリッジ1つ分の間隔(px)、DUR：スライドの時間(ms)
       const LO = -1, HI = N - 2;                         // 並びの範囲（-1=左隣、0=真ん中、1=右隣、HI=右の画面外）
-      const pos = slides.map(function(_, i) { return i <= HI ? i : i - N; });
+      let start = 0;   // 直前に遊んだゲームを真ん中にする（同じタブの中で覚えている）
+      try { const last = sessionStorage.getItem("gcSelLast"); slides.forEach(function(el, i) { if (last && el.getAttribute("data-href") === last) start = i; }); } catch (e) {}
+      const pos = slides.map(function(_, i) { const o = ((i - start) % N + N) % N; return o <= HI ? o : o - N; });
       let busy = false, chosen = false, swiped = false, queue = [];
       function place(i, anim) {
         const el = slides[i];
@@ -496,6 +507,7 @@
       function pick(el) {
         if (chosen) return;
         chosen = true;
+        try { sessionStorage.setItem("gcSelLast", el.getAttribute("data-href")); } catch (e) {}
         const face = el.querySelector(".cart-face");
         if (face) face.classList.add("picked");
         unlockAudio();
@@ -555,6 +567,7 @@
         if (ov.parentNode) ov.parentNode.removeChild(ov);
         try { sessionStorage.setItem("gcIntroDone", "1"); } catch (e) {}
         introActive = false;
+        document.documentElement.classList.remove("intro-pending");
         BLOCK_EVENTS.forEach(function(ev) { window.removeEventListener(ev, blockInput, { capture: true }); });
         selBegin();   // ここでゲーム選択画面のBGM開始（オープニング中は鳴らさない）
       }
@@ -562,7 +575,7 @@
         letters.forEach(function(el, i) { later(function() { el.classList.add("on"); }, 440 + i * 242); });          // G→A→M→E→C→A→T
         later(function() { title.classList.add("glint"); star.classList.add("go"); glintSound(); }, 2365);          // キラーン
         later(function() { title.classList.add("fade-out"); footer.classList.add("fade-out"); }, 3740);              // 全ての文字がフェードアウト
-        later(function() { ov.style.opacity = "0"; }, 4730);
+        later(function() { document.documentElement.classList.remove("intro-pending"); ov.style.opacity = "0"; }, 4730);   // オープニングが消え始める時に、ゲーム選択画面を見せる
         later(finish, 5445);
       }
 
