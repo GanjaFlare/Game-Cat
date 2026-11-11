@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Mining Rush - GameCat</title>
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われる名前(titleより優先される) -->
-  <meta name="apple-mobile-web-app-title" content="GameCat">
+  <meta name="apple-mobile-web-app-title" content="MiningRush">
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われるアイコン -->
   <link rel="apple-touch-icon" href="../icon.png">
   <!-- 🌐 ブラウザのタブに表示されるアイコン -->
@@ -91,6 +91,49 @@
       text-shadow: 0 0 10px rgba(248, 113, 113, 0.8);
     }
 
+    .start-btn.pressed { animation: startPress 0.38s ease-out both; box-shadow: 0 0 30px rgba(96, 165, 250, 0.95), inset 0 0 20px rgba(255, 255, 255, 0.35); }
+    @keyframes startPress {
+      0% { transform: none; filter: brightness(1); }
+      20% { transform: translateY(5px) scale(0.94, 0.9); filter: brightness(1.5); }
+      55% { transform: translateY(-4px) scale(1.06, 1.08); filter: brightness(1.7); }
+      100% { transform: translateY(0) scale(1.02); filter: brightness(1.3); }
+    }
+    /* 🛒 アイテム選択（STARTの下） */
+    .item-area { width: 100%; }
+    .item-head { display: flex; justify-content: space-between; align-items: center; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 11px; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 6px; text-align: left; }
+    .item-note.err { color: #fca5a5; }
+    .wallet-top { position: absolute; top: 14px; right: 14px; z-index: 20; }
+    .wallet-top-btn { display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #6ee7b7, #34d399); color: #052e16; border: 2px solid #052e16; border-radius: 10px; padding: 8px 16px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 14px; letter-spacing: 0.5px; cursor: pointer; touch-action: manipulation; box-shadow: 0 3px 0 #065f46, 0 0 14px rgba(52, 211, 153, 0.45); }
+    .wallet-top-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #065f46; }
+    .wallet-top-btn.on { background: #0f172a; color: #e2e8f0; border-color: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, 0.35); }
+    .wallet-top-btn.on::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #34d399; }
+    .wallet-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; background: rgba(2, 6, 23, 0.82); display: flex; justify-content: center; align-items: center; border-radius: 10px 10px 40px 10px; }
+    .wallet-box { width: 78%; box-sizing: border-box; background: #0f172a; border: 2px solid #34d399; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 0 24px rgba(52, 211, 153, 0.35); }
+    .wallet-box-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 1px; color: #6ee7b7; margin-bottom: 4px; }
+    .wallet-item { display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; margin-top: 8px; padding: 10px 12px; background: #1e293b; color: #ffffff; border: 1px solid #475569; border-radius: 8px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 14px; cursor: pointer; text-align: left; touch-action: manipulation; }
+    a.wallet-item { text-decoration: none; }
+    .wallet-item img { width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0; }
+    .wallet-hint { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; line-height: 1.5; color: #94a3b8; margin-top: 8px; }
+    .wallet-addr { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 13px; color: #e2e8f0; margin: 8px 0; word-break: break-all; }
+    .wallet-close { margin-top: 12px; background: transparent; color: #94a3b8; border: 1px solid #475569; padding: 6px 16px; border-radius: 8px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 12px; cursor: pointer; touch-action: manipulation; }
+    .item-row { display: flex; gap: 6px; }
+    .item-card { flex: 1; position: relative; box-sizing: border-box; border: 1px solid rgba(148, 163, 184, 0.35); padding: 8px 4px 6px; text-align: center; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: border-color 0.15s, box-shadow 0.15s; }
+    .item-card.sel { border-color: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, 0.45), inset 0 0 8px rgba(52, 211, 153, 0.12); }
+    .item-card.sel::after { content: '\2713'; position: absolute; top: 3px; right: 6px; color: #6ee7b7; font-size: 12px; font-weight: 800; }
+    .item-name { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 10px; white-space: nowrap; color: #e2e8f0; }
+    .item-img { width: 56px; height: 56px; image-rendering: pixelated; display: block; margin: 4px auto; }
+    .item-desc { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9.5px; line-height: 1.3; color: #cbd5e1; min-height: 40px; }
+    .item-price { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; color: #6ee7b7; margin-top: 2px; }
+    #setupOverlay { overflow-y: auto; justify-content: safe center; }
+    .lb-panel { width: 100%; }
+    .lb-tabs { display: flex; gap: 6px; margin-bottom: 6px; }
+    .lb-tab { flex: 1; background: #0f172a; color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; padding: 7px 4px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.8px; cursor: pointer; touch-action: manipulation; }
+    .lb-tab.on { color: #6ee7b7; border-color: #34d399; box-shadow: 0 0 10px rgba(52, 211, 153, 0.35); }
+    .lb-rows { border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; padding: 6px 10px; min-height: 90px; box-sizing: border-box; text-align: left; }
+    .lb-row { display: flex; justify-content: space-between; gap: 8px; font-family: 'Courier New', monospace; font-weight: 700; font-size: 11px; line-height: 15px; color: #fff; }
+    .lb-row .v { color: #ffd700; white-space: nowrap; }
+    .lb-empty { text-align: center; color: #94a3b8; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; padding-top: 30px; }
+    .item-note { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9px; color: #94a3b8; margin-top: 6px; text-align: center; }
     .dpad { position: absolute; left: 35px; bottom: 180px; width: 80px; height: 80px; cursor: pointer; z-index: 5; }
     .dpad-axis { position: absolute; background: #2b2b2b; border-radius: 3px; box-shadow: 0 4px 0 #111; }
     .dpad-h { top: 27px; left: 0; width: 80px; height: 26px; }
@@ -147,29 +190,6 @@
 
     #statusMessage { position: absolute; color: #333; font-size: 11px; bottom: 20px; font-weight: bold; width: 80%; text-align: center; z-index: 200; pointer-events: none;}
 
-    .share-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.6);
-      color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.7);
-      padding: 6px;
-      font-size: 0;
-      cursor: pointer;
-      z-index: 120;
-      border-radius: 4px;
-      display: none;
-      box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
-      line-height: 0;
-      transition: background 0.2s;
-    }
-    .share-btn:active {
-      transform: translateY(1px);
-      box-shadow: 0px 0px 0px rgba(0,0,0,0);
-      background: rgba(0, 0, 0, 0.8);
-    }
-
     /* 🌿 タイトル文字：白→エメラルドグリーンのグラデーション + ネオン風の光彩 */
     .title-glow {
       font-family: 'Plus Jakarta Sans', sans-serif;
@@ -181,13 +201,6 @@
       -webkit-text-fill-color: transparent;
       text-shadow: 0 0 20px rgba(52, 211, 153, 0.3);
     }
-          .start-btn.pressed { animation: startPress 0.38s ease-out both; box-shadow: 0 0 30px rgba(248, 113, 113, 0.95), inset 0 0 20px rgba(255, 255, 255, 0.35); }
-    @keyframes startPress {
-      0% { transform: none; filter: brightness(1); }
-      20% { transform: translateY(5px) scale(0.94, 0.9); filter: brightness(1.5); }
-      55% { transform: translateY(-4px) scale(1.06, 1.08); filter: brightness(1.7); }
-      100% { transform: translateY(0) scale(1.02); filter: brightness(1.3); }
-    }
     * { touch-action: manipulation; -webkit-touch-callout: none; }
     #gameCanvas, #btnArea { touch-action: none; }
   </style>
@@ -196,44 +209,82 @@
 <div class="game-container">
     <div id="gameWrapper" class="game-wrapper">
       <div class="gameboy-body">
+        
+        <button id="btnMusicToggle" class="music-btn is-on">🎵 ON</button>
 
         <div class="gb-screen-border">
           <canvas id="gameCanvas" width="240" height="160"></canvas>
         </div>
-
+        
         <div class="gb-title">Mining Rush</div>
 
+        <div id="statusMessage"></div>
+        
         <div id="dpadControl" class="dpad">
           <div class="dpad-axis dpad-h"></div>
           <div class="dpad-axis dpad-v"></div>
         </div>
-
+        
+        <!-- 🎯 タップ判定エリアを拡張したボタンエリア構造 -->
         <div id="btnArea" class="gb-buttons-area">
           <div class="gb-buttons">
             <div id="btnB" class="gb-btn">B</div>
             <div id="btnA" class="gb-btn">A</div>
           </div>
         </div>
-
+        
         <div class="gb-menu">
           <div id="btnSelect" class="gb-menu-btn"><span class="gb-menu-label">SELECT</span></div>
           <div id="btnStart" class="gb-menu-btn"><span class="gb-menu-label">START</span></div>
         </div>
-
+        
         <div class="gb-speaker">
-          <div class="gb-speaker-line"></div><div class="gb-speaker-line"></div>
-          <div class="gb-speaker-line"></div><div class="gb-speaker-line"></div>
+          <div class="gb-speaker-line"></div>
+          <div class="gb-speaker-line"></div>
+          <div class="gb-speaker-line"></div>
+          <div class="gb-speaker-line"></div>
         </div>
 
-        <button id="btnMusicToggle" class="music-btn is-on">🎵 ON</button>
 
         <div id="setupOverlay" class="overlay">
-          <h1 class="title-glow" style="font-size: 25px; margin-bottom: 4px;">MINING RUSH</h1>
-          <canvas id="titleCanvas" width="206" height="50" style="width:206px;height:50px;image-rendering:pixelated;margin-bottom:12px;"></canvas>
-          <p style="font-size: 11px; margin-bottom: 8px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; letter-spacing: 1px; color: #a7f3d0;">DIG DEEPEST! REACH 100M FIRST!</p>
-          <p style="font-size: 10px; margin-bottom: 18px; font-family: 'Plus Jakarta Sans', sans-serif; color: #94a3b8;">A / B / SPACE / ENTER / TAP = DIG!</p>
+          <div class="wallet-top"><button id="btnWallet" class="wallet-top-btn" type="button">CONNECT</button></div>
+          <div id="walletModal" class="wallet-modal" style="display: none;">
+            <div class="wallet-box">
+              <div id="walletTitle" class="wallet-box-title">CONNECT WALLET</div>
+              <div id="walletList"></div>
+              <button id="walletClose" class="wallet-close" type="button">CLOSE</button>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:0;">
+            <h1 class="title-glow" style="font-size: 26px; margin-bottom: 5px;">MINING RUSH</h1>
+          </div>
+          <canvas id="titleCanvas" width="200" height="50" style="image-rendering: pixelated; margin: 2px 0 8px;"></canvas>
           <div class="mode-buttons">
-            <button id="btnMineStart" class="start-btn boost-btn">START</button>
+            <div class="item-area">
+              <div class="item-head"><span>ITEMS</span></div>
+              <div class="item-row">
+                <div id="itemPotionCard" class="item-card" role="button" aria-pressed="false">
+                  <div class="item-name">Morph Potion</div>
+                  <canvas id="imgPotion" class="item-img" width="32" height="32"></canvas>
+                  <div class="item-desc">Change character</div>
+                  <div class="item-price">222 GANJA</div>
+                </div>
+                <div id="itemPickaxeCard" class="item-card" role="button" aria-pressed="false">
+                  <div class="item-name">Golden Pickaxe</div>
+                  <canvas id="imgPickaxe" class="item-img" width="32" height="32"></canvas>
+                  <div class="item-desc">Mining power x1.5</div>
+                  <div class="item-price">300 GANJA</div>
+                </div>
+                <div id="itemShieldCard" class="item-card" role="button" aria-pressed="false">
+                  <div class="item-name">Shield</div>
+                  <canvas id="imgShield" class="item-img" width="32" height="32"></canvas>
+                  <div class="item-desc">Defense x2</div>
+                  <div class="item-price">400 GANJA</div>
+                </div>
+              </div>
+              <div id="walletMsg" class="item-note"></div>
+            </div>
+            <button id="btnMineStart" class="start-btn normal-btn">FREE PLAY</button>
             <button id="btnBackSelect" class="start-btn" style="background:#334155;color:#e2e8f0;box-shadow:0 4px 0 #1e293b;font-size:12px;">&lt; BACK TO GAME SELECT</button>
           </div>
         </div>
@@ -241,7 +292,8 @@
       </div>
     </div>
   </div>
-<script>
+
+  <script>
 (()=>{
 const W=240,H=160;
 const cv=document.getElementById('gameCanvas');let g=cv.getContext('2d');
@@ -555,12 +607,258 @@ document.addEventListener('visibilitychange',function(){
 
 const au=()=>{const c=ensureAudioCtx();if(c&&c.state==='suspended')c.resume().catch(function(){})};
 
+    // ================= 🛒 課金（ウォレット接続・$GANJAバーン送金・確認） =================
+    const BILLING_ENABLED = true;    // true＝STARTで、選んだアイテムの代金を$GANJAでバーン／false＝無課金テスト
+    const GANJA_TOKEN = "0x9aA42de5eC6f3B3BbF252bf8ac81ACB338D888b7";
+    const BURN_ADDRESS = "0x000000000000000000000000000000000000dEaD";
+    const PRICES = { potion: 222, pickaxe: 300, shield: 400 };   // 各アイテムの価格（$GANJA）
+    function totalPrice(ids) { let t = 0; ids.forEach(function(id) { t += PRICES[id] || 0; }); return t; }
+    const VERIFY_ON_SERVER = false;   // GAS側に新アイテム(potion/pickaxe/shield)の価格を登録したら true に
+    const FLARE_CHAIN = { chainId: "0xe", chainName: "Flare Mainnet", nativeCurrency: { name: "Flare", symbol: "FLR", decimals: 18 }, rpcUrls: ["https://flare-api.flare.network/ext/bc/C/rpc"], blockExplorerUrls: ["https://flare-explorer.flare.network"] };
+    const DEFAULT_NOTE = BILLING_ENABLED ? "Items are paid with $GANJA (burned). Use a wallet browser." : "TEST MODE: items are free for now";
+    let walletAddress = "", ethProv = null, walletResolve = null;
+    const discovered = [];           // EIP-6963：端末にあるウォレットの一覧
+    window.addEventListener("eip6963:announceProvider", function(ev) {
+      const d = ev && ev.detail;
+      if (!d || !d.provider || !d.info) return;
+      if (!discovered.some(function(w) { return w.provider === d.provider; })) discovered.push({ name: d.info.name, icon: d.info.icon, rdns: d.info.rdns || "", provider: d.provider });
+    });
+    function discoverWallets() { try { window.dispatchEvent(new Event("eip6963:requestProvider")); } catch (e) {} }
+    discoverWallets();
+    function eth() { return ethProv || window.ethereum || null; }
+    function walletMsg(text, isErr) { const el = document.getElementById("walletMsg"); if (el) { el.textContent = text || ""; el.classList.toggle("err", !!isErr); } }
+    function shortAddr(a) { return a ? a.slice(0, 6) + "…" + a.slice(-4) : ""; }
+    function updateWalletUI() {
+      const b = document.getElementById("btnWallet");
+      if (b) { b.textContent = walletAddress ? shortAddr(walletAddress) : "CONNECT"; b.classList.toggle("on", !!walletAddress); }
+    }
+    function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+    function lsSet(k, v) { try { window.localStorage.setItem(k, v); } catch (e) {} }
+    function lsDel(k) { try { window.localStorage.removeItem(k); } catch (e) {} }
+    let autoFilledAddr = "";
+    function fillRewardWallet() {   // 報酬アドレス欄に、接続中のアドレスを最初から入れる（書き換え可能）
+      const wi = document.getElementById("walletInput");
+      if (!wi || !walletAddress) return;
+      if (!wi.value.trim() || wi.value.trim() === autoFilledAddr) { wi.value = walletAddress; autoFilledAddr = walletAddress; }
+    }
+    function saveWalletChoice(provider) {   // 選んだウォレットを覚える
+      if (provider && provider.isWalletConnect) { lsSet("gcr2Wallet", JSON.stringify({ wc: true })); lsDel("gcr2WalletOff"); return; }
+      let rdns = "", name = "";
+      discovered.forEach(function(w) { if (w.provider === provider) { rdns = w.rdns || ""; name = w.name || ""; } });
+      lsSet("gcr2Wallet", JSON.stringify({ rdns: rdns, name: name, injected: !rdns }));
+      lsDel("gcr2WalletOff");
+    }
+    function hookProvider(p) {
+      if (!p || !p.on || p.__gcHooked) return;
+      p.__gcHooked = true;
+      if (p.isWalletConnect) p.on("disconnect", function() { walletAddress = ""; ethProv = null; updateWalletUI(); });
+      p.on("accountsChanged", function(a) { walletAddress = (a && a[0]) || ""; if (!walletAddress) ethProv = null; updateWalletUI(); fillRewardWallet(); });
+    }
+    function closeWalletModal(connected) {
+      const m = document.getElementById("walletModal");
+      if (m) m.style.display = "none";
+      if (walletResolve) { const r = walletResolve; walletResolve = null; r(!!connected); }
+    }
+    let wcError = "";
+    function renderWalletModal() {
+      const list = document.getElementById("walletList"), title = document.getElementById("walletTitle");
+      if (!list || !title) return;
+      list.textContent = "";
+      const add = function(tag, cls, text) { const el = document.createElement(tag); el.className = cls; el.textContent = text; list.appendChild(el); return el; };
+      if (walletAddress) {
+        title.textContent = "WALLET";
+        add("div", "wallet-addr", walletAddress);
+        add("button", "wallet-item", "Disconnect").addEventListener("click", function() { if (ethProv && ethProv.isWalletConnect) { try { ethProv.disconnect(); } catch (e) {} } walletAddress = ""; ethProv = null; lsDel("gcr2Wallet"); lsSet("gcr2WalletOff", "1"); updateWalletUI(); closeWalletModal(false); });
+        return;
+      }
+      title.textContent = "CONNECT WALLET";
+      const wallets = discovered.slice();
+      if (window.ethereum && !wallets.some(function(w) { return w.provider === window.ethereum; })) wallets.push({ name: "Browser Wallet", icon: "", provider: window.ethereum });
+      if (!wallets.length) add("div", "wallet-hint", "No wallet found in this browser. Choose WalletConnect below (Bifrost, MetaMask, etc.), or open this page in your wallet app's browser.");
+      wallets.forEach(function(w) {
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "wallet-item";
+        if (w.icon) { const im = document.createElement("img"); im.src = w.icon; im.alt = ""; b.appendChild(im); }
+        const sp = document.createElement("span"); sp.textContent = w.name; b.appendChild(sp);
+        b.addEventListener("click", function() { connectWith(w.provider); });
+        list.appendChild(b);
+      });
+      const wc = add("button", "wallet-item", "WalletConnect (Bifrost, MetaMask...)");
+      wc.addEventListener("click", function() { connectWithWC(); });
+      if (!wallets.length && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "")) {
+        const a = add("a", "wallet-item", "Open in MetaMask app");
+        a.href = "https://metamask.app.link/dapp/" + location.host + location.pathname + location.search;
+      }
+      if (wcError) add("div", "wallet-hint", wcError);
+    }
+    function openWalletModal() {
+      discoverWallets();
+      renderWalletModal();
+      const m = document.getElementById("walletModal");
+      if (m) m.style.display = "flex";
+    }
+    function connectWallet() { return new Promise(function(resolve) { walletResolve = resolve; openWalletModal(); }); }
+    async function ensureFlare() {
+      const id = await eth().request({ method: "eth_chainId" });
+      if (id === FLARE_CHAIN.chainId) return;
+      try { await eth().request({ method: "wallet_switchEthereumChain", params: [{ chainId: FLARE_CHAIN.chainId }] }); }
+      catch (e) {
+        if (e && (e.code === 4902 || /Unrecognized chain/i.test(e.message || ""))) await eth().request({ method: "wallet_addEthereumChain", params: [FLARE_CHAIN] });
+        else throw e;
+      }
+    }
+    // 🔗 WalletConnect（スマホの普通のブラウザから、Bifrost等のウォレットアプリで接続する）
+    const WC_PROJECT_ID = "824989a895bef4378cf37b0518a22e88";   // Reown Project ID（公開されても問題ないID。許可ドメインで保護）
+    const WC_MODULE_URL = "https://esm.sh/@walletconnect/ethereum-provider@2.26.0";
+    let wcPromise = null;
+    function getWcProvider() {   // 押されたときだけ読み込む（ふだんのページ表示は重くしない）
+      if (wcPromise) return wcPromise;
+      wcPromise = (async function() {
+        const mod = await import(WC_MODULE_URL);
+        const EP = mod.EthereumProvider || (mod.default && (mod.default.EthereumProvider || mod.default));
+        return await EP.init({
+          projectId: WC_PROJECT_ID,
+          optionalChains: [14],
+          rpcMap: { 14: FLARE_CHAIN.rpcUrls[0] },
+          showQrModal: true,
+          metadata: { name: "Mining Rush", description: "GanjaFlare GAME CAT", url: location.origin, icons: [] }
+        });
+      })().catch(function(e) { wcPromise = null; throw e; });
+      return wcPromise;
+    }
+    async function connectWithWC() {
+      wcError = "";
+      try {
+        walletMsg("Loading WalletConnect...");
+        const p = await getWcProvider();
+        if (!p.session) await p.connect();
+        const a = p.accounts && p.accounts[0];
+        if (!a) throw new Error("no account");
+        ethProv = p; walletAddress = a;
+        hookProvider(p); updateWalletUI(); walletMsg(DEFAULT_NOTE);
+        saveWalletChoice(p); fillRewardWallet();
+        closeWalletModal(true);
+      } catch (e) {
+        ethProv = null; walletAddress = ""; updateWalletUI();
+        wcError = "WalletConnect failed or was cancelled. Please try again.";
+        walletMsg(DEFAULT_NOTE);
+        renderWalletModal();
+      }
+    }
+    async function connectWith(provider) {
+      try {
+        const acc = await provider.request({ method: "eth_requestAccounts" });
+        if (!acc || !acc[0]) throw new Error("no account");
+        ethProv = provider; walletAddress = acc[0];
+        await ensureFlare();
+        hookProvider(provider); updateWalletUI(); walletMsg(DEFAULT_NOTE);
+        saveWalletChoice(provider); fillRewardWallet();
+        closeWalletModal(true);
+      } catch (e) {
+        ethProv = null; walletAddress = ""; updateWalletUI(); walletMsg("Wallet connection cancelled.", true);
+      }
+    }
+    function encodeTransfer(to, amount) {   // ERC-20 transfer(to, amount×10^18)
+      return "0xa9059cbb" + to.toLowerCase().replace("0x", "").padStart(64, "0") + (BigInt(amount) * 10n ** 18n).toString(16).padStart(64, "0");
+    }
+    async function ganjaBalance(addr) {
+      const r = await eth().request({ method: "eth_call", params: [{ to: GANJA_TOKEN, data: "0x70a08231" + addr.toLowerCase().replace("0x", "").padStart(64, "0") }, "latest"] });
+      return BigInt(r || "0x0") / (10n ** 18n);
+    }
+    async function waitReceipt(hash, timeoutMs) {
+      const t0 = Date.now();
+      while (Date.now() - t0 < timeoutMs) {
+        const rc = await eth().request({ method: "eth_getTransactionReceipt", params: [hash] });
+        if (rc) return rc;
+        await new Promise(function(r) { setTimeout(r, 2000); });
+      }
+      return null;
+    }
+    function selectedItemIds() { const a = []; if (itemPotion) a.push("potion"); if (itemPickaxe) a.push("pickaxe"); if (itemShield) a.push("shield"); return a; }
+    async function verifyOnServer(hash, ids) {   // 支払いはブロックチェーン上で確認済み。サーバー照合は VERIFY_ON_SERVER が true のときだけ
+      if (!VERIFY_ON_SERVER || typeof callGasApi !== "function") return { ok: true };
+      for (let i = 0; i < 3; i++) {
+        try {
+          const res = await Promise.race([callGasApi("verifyPurchase", { wallet: walletAddress, txHash: hash, items: ids.join(",") }), new Promise(function(_, rej) { setTimeout(function() { rej(new Error("timeout")); }, 20000); })]);
+          if (res && res.status === "success") return { ok: true };
+          if (res && res.reason && res.reason !== "not_found") return { ok: false, message: res.message || "Payment could not be verified." };
+        } catch (e) {}
+        await new Promise(function(r) { setTimeout(r, 3000); });
+      }
+      return { ok: true, unverified: true };
+    }
+    async function purchaseItems() {
+      const ids = selectedItemIds();
+      if (!BILLING_ENABLED || !ids.length) return true;
+      try {
+        if (!walletAddress && !(await connectWallet())) { walletMsg("Connect a wallet to buy items.", true); return false; }
+        await ensureFlare();
+        const total = totalPrice(ids);
+        if ((await ganjaBalance(walletAddress)) < BigInt(total)) { walletMsg("Not enough $GANJA (" + total + " needed).", true); return false; }
+        walletMsg("Confirm the payment in your wallet" + (eth().isWalletConnect ? " app (open it if no request appears)" : "") + "... (" + total + " GANJA)");
+        let hash;
+        try { hash = await eth().request({ method: "eth_sendTransaction", params: [{ from: walletAddress, to: GANJA_TOKEN, data: encodeTransfer(BURN_ADDRESS, total) }] }); }
+        catch (e) { walletMsg("Payment cancelled.", true); return false; }
+        walletMsg("Waiting for confirmation...");
+        const rc = await waitReceipt(hash, 90000);
+        if (!rc) { walletMsg("Confirmation timed out. Check your wallet, then try again.", true); return false; }
+        if (rc.status !== "0x1") { walletMsg("The payment failed. Nothing was burned.", true); return false; }
+        walletMsg("Verifying payment...");
+        const v = await verifyOnServer(hash, ids);
+        if (!v.ok) { walletMsg(v.message, true); return false; }
+        walletMsg("Payment complete! Starting...");
+        return true;
+      } catch (e) { walletMsg("Something went wrong. Please try again.", true); return false; }
+    }
+    (function() {
+      const b = document.getElementById("btnWallet"), c = document.getElementById("walletClose");
+      if (b) b.addEventListener("click", function() { openWalletModal(); });
+      if (c) c.addEventListener("click", function() { closeWalletModal(!!walletAddress); });
+      walletMsg(DEFAULT_NOTE);
+      updateWalletUI();
+    })();
+    // 🔁 以前つないだウォレットを、確認なしで自動的に再接続する（選んだウォレットも覚えている）
+    function pickSavedProvider() {
+      discoverWallets();
+      let saved = null;
+      try { saved = JSON.parse(lsGet("gcr2Wallet") || "null"); } catch (e) {}
+      if (saved) {
+        const m = discovered.filter(function(w) { return saved.rdns ? w.rdns === saved.rdns : (saved.name && w.name === saved.name); })[0];
+        if (m) return m.provider;
+        if (saved.injected && window.ethereum) return window.ethereum;
+        return null;
+      }
+      if (!lsGet("gcr2WalletOff") && window.ethereum) return window.ethereum;   // ウォレットアプリ内ブラウザ（以前の動作）
+      return null;
+    }
+    async function tryRestoreWallet() {
+      if (walletAddress) return true;
+      let sv = null;
+      try { sv = JSON.parse(lsGet("gcr2Wallet") || "null"); } catch (e) {}
+      if (sv && sv.wc) {   // WalletConnectで接続していた場合：保存されたセッションから戻す
+        try {
+          const w = await getWcProvider();
+          if (!walletAddress && w.session && w.accounts && w.accounts[0]) { ethProv = w; walletAddress = w.accounts[0]; hookProvider(w); updateWalletUI(); fillRewardWallet(); return true; }
+        } catch (e) {}
+        return false;
+      }
+      const p = pickSavedProvider();
+      if (!p || !p.request) return false;
+      try {
+        const a = await p.request({ method: "eth_accounts" });
+        if (a && a[0] && !walletAddress) { ethProv = p; walletAddress = a[0]; hookProvider(p); updateWalletUI(); saveWalletChoice(p); fillRewardWallet(); return true; }
+      } catch (e) {}
+      return false;
+    }
+    [0, 400, 1200, 2500, 4500].forEach(function(ms) { setTimeout(function() { tryRestoreWallet(); }, ms); });   // ウォレットの検出が遅れる場合に備え、数回試す
 /* ======== MINING RUSH ======== */
 F['+']='000010111010000';
 const $=id=>document.getElementById(id),ov=$('setupOverlay');
 const rnd=(a,b)=>a+Math.random()*(b-a),pick=a=>a[Math.random()*a.length|0];
 const LX=[40,120,200],GX=20,SY=50,K=3.6,COL=['#fff','#7efff5','#ff9a3c','#ffee55','#ff4a4a','#6bff7a','#ff6ad0'];
-let round=1,rc=0,win=false,clear=false,iv0=60,iv1=90,curses=[],cam=0,st='TITLE',af=0,ch=[],P=[],pops=[],lock=0,flash=0,shake=0,msg=null,best=0,order=0,firstAf=0,t0=0,cd=0,cn=3,rank=[],pf=0,goalT=0;
+const ITEM_PER_ROUND=false;   // true にすると、ラウンドをクリアするたびにアイテムが消える（毎ラウンド買い直し）
+const KS=['pico','dragon','hugo','fcat','wick','bull','gully','quantic','billy','smarty'];
+let itemPotion=false,itemPickaxe=false,itemShield=false,runAv=null,shFx=null,paused=false,confirmT=false,pauseImg=null,round=1,rc=0,win=false,clear=false,iv0=60,iv1=90,curses=[],cam=0,st='TITLE',af=0,ch=[],P=[],pops=[],lock=0,flash=0,shake=0,msg=null,best=0,order=0,firstAf=0,t0=0,cd=0,cn=3,rank=[],pf=0,goalT=0;
 let gx=0,gd=1,gs=2,zc=100,zw=36,pcd=0;
 try{best=+localStorage.getItem('gcMiningRushBest')||0}catch(e){}
 
@@ -580,8 +878,8 @@ for(let i=0;i<520;i++)q(rn()*W|0,(rn()*150)|0,1+(rn()*2|0),1,rn()<.5?'#3a2410':'
 
 /* ---------- キャラ（矩形ドット絵） ---------- */
 const WR=[[[5,6]],[[5,6]],[[4,7]],[[2,2],[4,7],[9,9]],[[1,3],[5,7],[9,10]],[[1,10]],[[0,11]],[[0,11]],[[0,11]],[[0,11]],[[0,11]],[[0,11]],[[1,10]],[[2,9]],[[3,8]],[[4,7]]];
-let bk=0,cx0=0,fy0=0;
-const Q=(x,y,w,h,c)=>R(cx0+x*2,fy0+y*2,w*2,h*2,bk?(c==='#fff'?'#555':'#1c1c1c'):c);
+let bk=0,gm=0,cx0=0,fy0=0;
+const Q=(x,y,w,h,c)=>R(cx0+x*2,fy0+y*2,w*2,h*2,bk?(c==='#fff'?'#555':'#1c1c1c'):gm===1?(c==='#fff'||c==='#ddd'?'#fff6b0':'#ffd34a'):gm===2?'#fff2a0':c);
 function body(k){
   const B='#87CEEB',S='#4169E1',sk='#f0c090';
   if(k==='cat'){
@@ -602,10 +900,41 @@ function body(k){
     const P2='#4a1a7a',O='#ff8a1a';
     Q(4,-5,3,2,P2);Q(6,-8,2,4,P2);Q(6,-9,2,2,O);Q(-4,-9,8,6,P2);Q(-1,-8,3,3,'#fff');Q(-5,-17,10,8,P2);Q(-5,-19,3,3,O);Q(2,-19,3,3,O);
     [-3,1].forEach(o=>{Q(o,-14,2,2,'#3aff5a');Q(o+(o<0?1:0),-14,1,2,'#000')});Q(-3,-3,2,3,P2);Q(1,-3,2,3,P2)
-  }else{
+  }else if(k==='wick'){
     const t=(af>>3)&1;
     WR.forEach((r,n)=>r.forEach(v=>Q(v[0]-6,n-17,v[1]-v[0]+1,1,'#fff')));if(t)Q(-1,-18,2,1,'#fff');
     Q(-4,-8,2,4,'#000');Q(0,-9,2,4,'#000')
+  }else if(k==='bull'){
+    Q(-5,-11,10,6,'#2fa04f');Q(-1,-11,2,5,'#fff');Q(-6,-11,1,5,'#2fa04f');Q(5,-11,1,5,'#2fa04f');Q(-6,-6,1,1,'#8a4a1f');Q(5,-6,1,1,'#8a4a1f');
+    Q(-4,-5,8,4,'#222');Q(-5,-1,4,1,'#ddd');Q(1,-1,4,1,'#ddd');
+    Q(-1,-23,2,2,'#eee');Q(-4,-21,8,4,'#555');Q(-4,-19,8,1,'#333');
+    Q(-7,-19,2,2,'#f0e6cc');Q(-6,-21,2,3,'#f0e6cc');Q(-7,-21,1,1,'#222');Q(5,-19,2,2,'#f0e6cc');Q(4,-21,2,3,'#f0e6cc');Q(6,-21,1,1,'#222');
+    Q(-6,-16,2,2,'#8a4a1f');Q(4,-16,2,2,'#8a4a1f');Q(-4,-18,8,7,'#8a4a1f');
+    Q(-4,-17,3,1,'#222');Q(1,-17,3,1,'#222');Q(-3,-16,2,1,'#fff');Q(1,-16,2,1,'#fff');Q(-2,-16,1,1,'#000');Q(2,-16,1,1,'#000');
+    Q(-3,-14,6,3,'#444');Q(-2,-13,1,1,'#000');Q(1,-13,1,1,'#000')
+  }else if(k==='gully'){
+    Q(-7,-8,3,3,'#555');Q(-5,-12,9,8,'#fff');Q(-5,-11,4,6,'#777');Q(-4,-7,3,2,'#555');
+    Q(-3,-19,6,7,'#fff');Q(-3,-20,6,2,'#8a8a94');Q(-2,-22,2,2,'#8a8a94');Q(0,-21,1,1,'#8a8a94');
+    Q(0,-16,3,1,'#555');Q(0,-15,2,1,'#222');Q(3,-15,4,2,'#f6b830');Q(6,-14,1,1,'#f6b830');Q(3,-13,3,1,'#e09820');
+    Q(-2,-4,1,3,'#f6a020');Q(1,-4,1,3,'#f6a020');Q(-3,-1,3,1,'#f6a020');Q(0,-1,3,1,'#f6a020')
+  }else if(k==='quantic'){
+    Q(-7,-10,2,7,'#ff77bb');Q(5,-10,2,7,'#ff77bb');Q(-7,-3,2,2,'#3a3a42');Q(5,-3,2,2,'#3a3a42');
+    Q(-6,-11,12,8,'#ff77bb');Q(-3,-3,3,3,'#3a3a42');Q(1,-3,3,3,'#3a3a42');
+    Q(-3,-20,6,1,'#3a3a42');Q(-4,-19,8,8,'#3a3a42');Q(-3,-14,6,4,'#8a8a92');Q(-1,-12,1,1,'#222');Q(0,-12,1,1,'#222');Q(-2,-11,4,1,'#555');
+    Q(-4,-17,4,3,'#ffe040');Q(0,-17,4,3,'#ffe040');Q(-1,-17,2,1,'#ffe040');Q(-3,-16,2,1,'#2a1a40');Q(1,-16,2,1,'#2a1a40');
+    Q(-4,-11,8,2,'#e05a9f');Q(2,-8,2,2,'#ffe040');Q(-1,-9,1,4,'#fff')
+  }else if(k==='billy'){
+    Q(-5,-10,10,5,'#f2c030');Q(-1,-9,2,2,'#e62058');Q(-6,-9,1,4,'#d8a060');Q(5,-9,1,4,'#d8a060');
+    Q(-4,-5,8,3,'#2a4ac0');Q(-3,-2,2,1,'#d8a060');Q(1,-2,2,1,'#d8a060');Q(-4,-1,3,1,'#d02020');Q(1,-1,3,1,'#d02020');
+    Q(-5,-19,10,4,'#222');Q(-3,-21,2,2,'#222');Q(0,-21,3,1,'#222');Q(3,-20,2,1,'#222');
+    Q(-4,-16,8,6,'#d8a060');Q(-4,-15,4,3,'#fff');Q(0,-15,4,3,'#fff');Q(-4,-15,4,1,'#222');Q(0,-15,4,1,'#222');
+    Q(-3,-14,2,2,'#111');Q(1,-14,2,2,'#111');Q(-1,-11,2,1,'#a06030')
+  }else{
+    Q(-5,-10,10,5,'#1c1c1c');Q(-3,-8,6,1,'#ff6a9a');Q(-6,-9,1,4,'#1c1c1c');Q(5,-9,1,4,'#1c1c1c');Q(-6,-5,1,1,'#c87830');Q(5,-5,1,1,'#c87830');
+    Q(-4,-5,8,3,'#2a2f5a');Q(-4,-1,3,1,'#fff');Q(1,-1,3,1,'#fff');
+    Q(-6,-17,2,10,'#1a1a1a');Q(4,-17,2,10,'#1a1a1a');Q(-5,-19,10,3,'#1a1a1a');
+    Q(-4,-17,8,7,'#c87830');Q(-3,-15,2,2,'#fff');Q(1,-15,2,2,'#fff');Q(-2,-15,1,2,'#3a1a10');Q(2,-15,1,2,'#3a1a10');
+    Q(-3,-16,2,1,'#1a1a1a');Q(1,-16,2,1,'#1a1a1a');Q(-1,-12,2,1,'#e87a9a');Q(-5,-14,1,1,'#fff')
   }
 }
 function tool(k,ph){
@@ -613,18 +942,32 @@ function tool(k,ph){
   else if(k==='dragon'){if(ph){Q(-2,-9,4,6,'#f60');Q(-1,-4,3,8,'#fa2');Q(0,0,2,6,'#ff8')}else Q(-1,-10,2,3,'#f60')}
   else if(k==='hugo'){if(ph){Q(6,-7,3,4,'#ff8ac0');Q(5,-3,4,4,'#f0c090');Q(4,3,6,1,'#fff');Q(6,2,2,3,'#fff')}else{Q(6,-14,4,4,'#f0c090');Q(6,-10,3,2,'#ff8ac0')}}
   else if(k==='fcat'){const s=(af>>1)&1;Q(-3,0,6,2,'#9aa');Q(-2,2,4,2,'#ccd');Q(-1,4,2,2,'#fff');Q(-3,s,6,1,'#556')}
-  else{if(ph){[[-4,1],[3,2],[0,4],[-2,6]].forEach(a=>{Q(a[0],a[1],1,1,'#ff8');Q(a[0]-1,a[1],3,1,'#fff')})}else{Q(0,-24,1,3,'#fff');Q(-1,-23,3,1,'#fff')}}
+  else if(k==='wick'){if(ph){[[-4,1],[3,2],[0,4],[-2,6]].forEach(a=>{Q(a[0],a[1],1,1,'#ff8');Q(a[0]-1,a[1],3,1,'#fff')})}else{Q(0,-24,1,3,'#fff');Q(-1,-23,3,1,'#fff')}}
+  else if(k==='bull'){if(!ph){Q(6,-24,1,12,'#c8903c');Q(3,-25,7,1,'#8a5a2a');Q(3,-27,7,2,'#e8b860')}else{Q(6,-9,1,10,'#c8903c');Q(3,1,7,1,'#8a5a2a');Q(3,2,7,2,'#e8b860')}}
+  else if(k==='gully'){if(!ph){Q(5,-17,4,4,'#d02020');Q(6,-13,2,1,'#fff')}else{Q(5,-7,2,5,'#fff');Q(4,-2,5,5,'#d02020');Q(5,3,3,1,'#ff6a6a')}}
+  else if(k==='quantic'){if(ph){Q(6,-7,3,4,'#ff77bb');Q(5,-3,4,4,'#3a3a42');Q(4,3,6,1,'#fff');Q(6,2,2,3,'#fff')}else{Q(6,-14,4,4,'#3a3a42');Q(6,-10,3,2,'#ff77bb')}}
+  else if(k==='billy'){if(!ph){Q(6,-22,1,10,'#9a6a2a');Q(5,-25,3,3,'#c8ccd8');Q(5,-25,3,1,'#fff')}else{Q(6,-9,1,9,'#9a6a2a');Q(5,0,4,3,'#c8ccd8');Q(5,3,4,1,'#8890a0')}}
+  else{if(!ph){Q(6,-17,2,3,'#222');Q(5,-21,4,4,'#999');Q(6,-20,2,1,'#444')}else{Q(6,-9,2,5,'#222');Q(5,-4,4,4,'#999');Q(6,-3,2,1,'#444');Q(3,2,8,1,'#7efff5');Q(2,4,10,1,'#7efff5');Q(4,6,6,1,'#7efff5')}}
 }
-function drawCh(k,x,fy,an,bkd){cx0=x;fy0=fy;bk=bkd?1:0;body(k);if(an>0)tool(k,an<=10?1:0);bk=0}
+function drawCh(k,x,fy,an,bkd,gold){
+  cx0=x;fy0=fy;bk=bkd?1:0;body(k);
+  if(an>0){const ph=an<=10?1:0;
+    if(gold&&!bkd){gm=2;g.globalAlpha=.4+.2*Math.sin(af*.4);[[-3,0],[3,0],[0,-3],[0,3]].forEach(o=>{cx0=x+o[0];fy0=fy+o[1];tool(k,ph)});g.globalAlpha=1;cx0=x;fy0=fy;gm=1}
+    tool(k,ph);gm=0}
+  bk=0}
 function flag(k,x){
   const fx=x+16,fy=SY-26-cam,p=(a,b,w,h,c)=>R(fx+a,fy+b,w,h,c),sh=(rows,y0,c)=>rows.forEach((r,n)=>r.forEach(v=>p(v[0],y0+n,v[1]-v[0]+1,1,c)));
   R(x+15,fy,2,26,'#ccc');
-  p(0,0,20,16,{cat:'#fff',pico:'#8a1a2a',dragon:'#111',hugo:'#fff',fcat:'#8a1010',wick:'#fff'}[k]);
+  p(0,0,20,16,{cat:'#fff',pico:'#8a1a2a',dragon:'#111',hugo:'#fff',fcat:'#8a1010',wick:'#fff',bull:'#1a0a2a',gully:'#111',quantic:'#fff',billy:'#d9a020',smarty:'#fff'}[k]);
   if(k==='cat')sh([[[9,10]],[[9,10]],[[8,11]],[[4,4],[8,11],[15,15]],[[3,5],[7,12],[14,16]],[[1,1],[4,6],[8,11],[13,15],[18,18]],[[1,2],[5,14],[17,18]],[[2,17]],[[4,15]],[[6,13]],[[8,11]],[[9,10]],[[9,10]]],1,'#2ca84a');
   else if(k==='pico'){p(4,4,12,2,'#ffd800');p(6,6,2,6,'#ffd800');p(12,6,2,6,'#ffd800')}
   else if(k==='dragon')T('D',fx+10,fy+3,'#999',2,'c',null);
-  else if(k==='hugo')T('F',fx+10,fy+3,'#e62058',2,'c',null);
+  else if(k==='hugo'||k==='quantic')T('F',fx+10,fy+3,'#e62058',2,'c',null);
   else if(k==='fcat')T('X',fx+10,fy+3,'#fff',2,'c',null);
+  else if(k==='bull'){p(4,3,6,10,'#ff3a8a');p(6,5,2,6,'#1a0a2a');p(10,3,6,10,'#ff3a8a');p(12,5,2,6,'#1a0a2a')}
+  else if(k==='gully'){p(5,3,10,2,'#fff');p(5,3,2,10,'#fff');p(5,11,10,2,'#fff');p(13,8,2,5,'#fff');p(10,8,5,2,'#fff');p(8,6,3,1,'#f6b830')}
+  else if(k==='billy'){p(5,3,10,4,'#222');p(6,7,8,5,'#d8a060');p(7,8,2,2,'#fff');p(11,8,2,2,'#fff');p(8,9,1,1,'#000');p(12,9,1,1,'#000')}
+  else if(k==='smarty'){p(0,0,7,16,'#008751');p(13,0,7,16,'#008751')}
   else{sh(WR.map(r=>r.map(v=>[v[0]+4,v[1]+4])),0,'#000');p(6,9,2,4,'#fff');p(10,8,2,4,'#fff')}
 }
 function icon(t,x,y){x|=0;y|=0;
@@ -644,8 +987,9 @@ function newZone(){zw=rnd(26,46);zc=zw/2+Math.random()*(200-zw);gs=rnd(1.8,3.6)}
 function mkItems(){const a=[];let m=rnd(10,20);while(m<90){a.push({m,t:Math.random()<.65?'D':'S',got:false});m+=rnd(18,28)}return a}
 function newGame(){
   const tt=Math.min(round-1,4)/4,u=Math.max(0,round-5)/5;iv0=60-18*tt-6*u;iv1=90-30*tt-10*u;
-  const ks=['pico','dragon','hugo','fcat','wick'].sort(()=>Math.random()-.5).slice(0,2);
-  ch=['cat',ks[0],ks[1]].map((k,i)=>({k,x:LX[i],d:0,dd:0,an:0,pg:0,t:rnd(45,80),sk:rnd(.3+.4*tt+.3*u,.75+.25*tt+.25*u),fz:0,dm:0,cu:0,it:null,rk:-1,ms:0,items:mkItems()}));
+  if(itemPotion){if(!runAv)runAv=pick(KS)}else runAv=null;
+  const ks=KS.filter(k=>k!==runAv).sort(()=>Math.random()-.5).slice(0,2);shFx=null;
+  ch=[runAv||'cat',ks[0],ks[1]].map((k,i)=>({k,x:LX[i],d:0,dd:0,an:0,pg:0,t:rnd(45,80),sk:rnd(.3+.4*tt+.3*u,.75+.25*tt+.25*u),fz:0,dm:0,cu:0,it:null,rk:-1,ms:0,items:mkItems()}));
   order=0;curses=[];P=[];pops=[];msg=null;cd=0;cn=3;goalT=0;pcd=0;gx=0;gd=1;newZone();st='ROUND';rc=0;flash=0;
 }
 function item(c,i,t){
@@ -672,13 +1016,14 @@ function act(){
   const p=ch[0];if(p.fz>0||p.an>0||pcd>0||p.rk>=0)return;
   const zE=Math.min(200,zw*(p.dm>0?1.7:1)),q=Math.abs(gx-zc)/(zE/2);
   const a=q<=.25?[10/3,'PERFECT!','#ffd700']:q<=.6?[2,'GREAT!','#ff9a3c']:q<=1?[1,'GOOD','#6bff7a']:[0,'MISS','#aaa'];
-  p.pg=a[0];p.an=a[0]?20:14;msg={t:a[1],c:a[2],l:50};pcd=a[0]?26:22;
+  p.pg=a[0]*(itemPickaxe?1.5:1);p.an=a[0]?20:14;msg={t:a[1],c:a[2],l:50};pcd=a[0]?26:22;
   if(q<=.25)playKirarin();else if(a[0]===2)playSound('coin');else if(a[0]===1)bossTone('triangle',660,990,.1,.1);else playSound('deflect');
   newZone();
 }
 function endGame(){
   rank=[...ch].sort((a,b)=>(a.rk<0)-(b.rk<0)||(a.rk>=0?a.rk-b.rk:b.d-a.d));
   win=rank[0]===ch[0];clear=win&&round===10;win?playKirarin():bossTone('sawtooth',300,80,.8,.15);
+  if(!win||clear||ITEM_PER_ROUND)resetItems();
   st='PODIUM';pf=0;lock=performance.now()+3500;flash=6;
   if(rank[0]===ch[0]){const t=firstAf-t0;if(!best||t<best){best=t;try{localStorage.setItem('gcMiningRushBest',best)}catch(e){}}}
 }
@@ -687,8 +1032,8 @@ function upd(){
   pops.forEach(p=>{p.y-=.4;p.l--});pops=pops.filter(p=>p.l>0);
   for(let i=P.length-1;i>=0;i--){const p=P[i];p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;if(--p.l<=0||p.y>H)P.splice(i,1)}
   curses.forEach(q=>{q.t++;if(q.t===10)playSound('thunder');
-    if(q.t===24)ch.forEach((o,j)=>{if(j!==q.i&&o.rk<0){o.d=Math.max(0,o.d-20);o.cu=60;pops.push({x:o.x,y:SY+o.dd*K-cam-50,t:'-20M',c:'#c6f',l:50});spark(o.x,SY+o.dd*K-cam-14,12,['#c060ff','#fff']);if(j===0)shake=10}})});
-  curses=curses.filter(q=>q.t<70);
+    if(q.t===24)ch.forEach((o,j)=>{if(j!==q.i&&o.rk<0){const sh=(j===0&&itemShield),dm=sh?10:20;o.d=Math.max(0,o.d-dm);o.cu=60;pops.push({x:o.x,y:SY+o.dd*K-cam-50,t:'-'+dm+'M',c:sh?'#7efff5':'#c6f',l:50});if(sh){shFx={t:0};bossTone('square',500,900,.15,.1)}spark(o.x,SY+o.dd*K-cam-14,12,['#c060ff','#fff']);if(j===0)shake=10}})});
+  curses=curses.filter(q=>q.t<70);if(shFx&&++shFx.t>=18)shFx=null;
   if(st==='ROUND'){if(rc===0)bossTone('square',523,1046,.3,.15);if(++rc>=100){st='COUNT';cd=0;cn=3}}
   if(st==='COUNT'){if(cd===0)playCount(cn===0);if(++cd>=(cn?50:35)){cd=0;if(--cn<0){st='PLAY';t0=af}}}
   if(st==='COUNT'||st==='PLAY'){gx+=gd*gs;if(gx>=200){gx=200;gd=-1}else if(gx<=0){gx=0;gd=1}}
@@ -714,7 +1059,8 @@ function scene(){
   ch.forEach((c,ci)=>{
     const y=SY+c.dd*K-cam;
     R(c.x-16,SY-cam,32,Math.round(c.dd*K)+3,'#1e1208');
-    flag(c.k,c.x);drawCh(c.k,c.x,Math.round(y)+2,c.an,c.fz>0);
+    flag(c.k,c.x);drawCh(c.k,c.x,Math.round(y)+2,c.an,c.fz>0,ci===0&&itemPickaxe);
+    if(ci===0&&shFx){const t=shFx.t,sz=Math.round(16+Math.min(t,8)*1.5);g.globalAlpha=t<12?1:Math.max(0,(18-t)/6);g.drawImage(shCv,c.x-sz/2,Math.round(y)-18-sz-t*.8,sz,sz);g.globalAlpha=1}
     if(c.cu>0&&((af>>1)&1)){g.globalAlpha=.5;R(c.x-16,y-38,32,40,'#a040ff');g.globalAlpha=1}
     {const es=[c.fz>0&&'B',curses.some(q=>q.i===ci&&q.t<50)&&'S',c.dm>0&&'D'].filter(Boolean);
      es.forEach((e,k)=>{g.save();g.translate(c.x-10-(es.length-1)*11+k*22,Math.max(0,Math.round(y)-68)+((af>>3)&1));g.scale(2,2);icon(e,0,0);g.restore()})}
@@ -770,27 +1116,93 @@ function draw(){
 }
 
 /* ---------- 入力・メニュー ---------- */
-function showMenu(){bgmOff();startPressed=false;$('btnMineStart').classList.remove('pressed');st='TITLE';P=[];rollTitle();ov.style.display='flex'}
-function startGame(){
+/* ---------- アイテムUI（タイトル画面） ---------- */
+function drawItemPotion(cv){const c=cv.getContext('2d'),A=[9,23],B=[23,9],r=5;
+  for(let y=0;y<32;y++)for(let x=0;x<32;x++){
+    const dx=B[0]-A[0],dy=B[1]-A[1],L2=dx*dx+dy*dy;let u=((x-A[0])*dx+(y-A[1])*dy)/L2;u=Math.max(0,Math.min(1,u));
+    const px=A[0]+dx*u,py=A[1]+dy*u,d=Math.hypot(x-px,y-py);
+    if(d>r+1)continue;
+    if(d>r){c.fillStyle='#2a2a38'}
+    else{const side=((x-A[0])*dy-(y-A[1])*dx)/Math.sqrt(L2);let col=u<.5?'#f4f4f8':'#e84a4a';
+      if(u>.47&&u<.53)col='#2a2a38';
+      else if(side<-2&&side>-4)col=u<.5?'#ffffff':'#ff8a8a';else if(side>3)col=u<.5?'#c8c8d4':'#b83030';
+      c.fillStyle=col}
+    c.fillRect(x,y,1,1)}}
+function drawItemPickaxe(cv){const c=cv.getContext('2d'),dot=(x,y,r,col)=>{c.fillStyle=col;for(let yy=-r;yy<=r;yy++)for(let xx=-r;xx<=r;xx++)if(xx*xx+yy*yy<=r*r+.5)c.fillRect(Math.round(x+xx),Math.round(y+yy),1,1)};
+  for(let t=0;t<=1;t+=.01){const x=21-t*13,y=11+t*17;dot(x,y,2.2,'#4a2a10')}
+  for(let t=0;t<=1;t+=.01){const x=21-t*13,y=11+t*17;dot(x,y,1.3,'#b0742a')}
+  const P0=[6,12],P1=[24,1],P2=[28,24];
+  const bz=(t)=>[(1-t)*(1-t)*P0[0]+2*(1-t)*t*P1[0]+t*t*P2[0],(1-t)*(1-t)*P0[1]+2*(1-t)*t*P1[1]+t*t*P2[1]];
+  for(let t=0;t<=1;t+=.005){const p=bz(t),w=2.6*Math.sin(Math.PI*Math.min(1,.15+t*(1-t)*4));dot(p[0],p[1],Math.max(1,w)+.8,'#8a6000')}
+  for(let t=0;t<=1;t+=.005){const p=bz(t),w=2.6*Math.sin(Math.PI*Math.min(1,.15+t*(1-t)*4));dot(p[0],p[1],Math.max(.6,w),'#ffd700')}
+  for(let t=.1;t<=.8;t+=.01){const p=bz(t);dot(p[0]-.6,p[1]-.8,.6,'#fff6a0')}}
+function drawItemShield(cv){const c=cv.getContext('2d'),hw=y=>y<=14?11:11*Math.sqrt(Math.max(0,1-Math.pow((y-14)/14,2))),inM=(x,y)=>y>=4&&y<=28&&Math.abs(x-15.5)<=hw(y);
+  for(let y=4;y<=28;y++)for(let x=0;x<32;x++){if(!inM(x,y))continue;
+    const inner=inM(x-2,y)&&inM(x+2,y)&&inM(x,y-2)&&inM(x,y+2);let col;
+    if(!inner)col=(!inM(x-1,y)||!inM(x+1,y)||!inM(x,y-1)||!inM(x,y+1))?'#8a6000':'#f0c030';
+    else{const dx=Math.abs(x-15.5);col=x<16?'#3a68d8':'#2a50b0';if((dx<1.6&&y>=8&&y<=25)||(y>=11&&y<=12&&dx<=8))col='#ffffff'}
+    c.fillStyle=col;c.fillRect(x,y,1,1)}}
+const shCv=document.createElement('canvas');shCv.width=32;shCv.height=32;drawItemShield(shCv);
+const PRICE_LABEL=()=>{const ids=selectedItemIds();return ids.length?(BILLING_ENABLED?'START \u00B7 '+totalPrice(ids)+' GANJA':'START'):'FREE PLAY'};
+function updateStartLabel(){const sb=$('btnMineStart');if(!sb)return;const t=PRICE_LABEL();if(sb.textContent!==t)sb.textContent=t}
+function refreshItemUI(){
+  try{updateStartLabel()}catch(e){}
+  [['itemPotionCard',itemPotion],['itemPickaxeCard',itemPickaxe],['itemShieldCard',itemShield]].forEach(a=>{const el=$(a[0]);if(el){el.classList.toggle('sel',a[1]);el.setAttribute('aria-pressed',String(a[1]))}})}
+function resetItems(){itemPotion=false;itemPickaxe=false;itemShield=false;runAv=null;refreshItemUI()}
+{drawItemPotion($('imgPotion'));drawItemPickaxe($('imgPickaxe'));drawItemShield($('imgShield'));
+ const tg2=(id,fn)=>{const el=$(id);if(el)el.addEventListener('click',()=>{fn();refreshItemUI();bossTone('square',880,1320,.06,.08)})};
+ tg2('itemPotionCard',()=>{itemPotion=!itemPotion});tg2('itemPickaxeCard',()=>{itemPickaxe=!itemPickaxe});tg2('itemShieldCard',()=>{itemShield=!itemShield})}
+try{updateStartLabel()}catch(e){}
+
+/* ---------- タイトル／スタート／ポーズ ---------- */
+function returnToTitle(){
+  paused=false;confirmT=false;resetItems();bgmOff();startPressed=false;
+  $('btnMineStart').classList.remove('pressed');st='TITLE';P=[];rollTitle();ov.style.display='flex'}
+function beginRun(){round=1;runAv=null;newGame()}
+function pressStart(e){
+  if(e&&e.preventDefault)e.preventDefault();
   if(startPressed)return;startPressed=true;
   const b=$('btnMineStart');b.classList.remove('pressed');void b.offsetWidth;b.classList.add('pressed');
-  playBoing();au();bgmOn();
-  setTimeout(function(){bgmOn();ov.style.display='none';round=1;newGame()},380);
-}
-function press(e){
-  if(e&&e.preventDefault)e.preventDefault();
-  if(ov.style.display!=='none'){startGame();return}
-  if(st==='PLAY')act();else if(st==='PODIUM'&&performance.now()>=lock){if(win&&!clear)round++;else round=1;newGame()}
-}
-{const h=function(e){e.preventDefault();startGame()};
-$('btnMineStart').addEventListener('click',h);$('btnMineStart').addEventListener('touchend',h,{passive:false})}
+  playBoing();unlockAudio();
+  Promise.resolve(purchaseItems()).then(ok=>{
+    if(!ok){startPressed=false;b.classList.remove('pressed');return}
+    setTimeout(()=>{bgmOn();ov.style.display='none';beginRun()},380)})}
+function act2(){if(paused||confirmT||ov.style.display!=='none')return;
+  if(st==='PLAY')act();else if(st==='PODIUM'&&performance.now()>=lock){if(win&&!clear)round++;else round=1;newGame()}}
+function togglePause(){
+  if(ov.style.display!=='none'||st==='TITLE'||st==='PODIUM')return;
+  paused=!paused;confirmT=false;
+  if(paused){pauseImg=g.getImageData(0,0,W,H);drawPause()}else{last=performance.now();acc=0}}
+function drawPause(){
+  if(!paused)return;g.putImageData(pauseImg,0,0);
+  g.fillStyle='rgba(0,0,0,0.6)';g.fillRect(0,0,240,160);
+  g.fillStyle='#fff';g.font="bold 22px 'Courier New'";g.textAlign='center';g.fillText('PAUSE',120,70);
+  g.font="bold 9px 'Courier New'";g.fillText('START : RESUME',120,100);g.fillText('SELECT : BACK TO TITLE',120,114);
+  if(confirmT){
+    g.fillStyle='rgba(0,0,0,0.75)';g.fillRect(0,0,240,160);
+    g.fillStyle='#0f172a';g.fillRect(30,48,180,66);g.strokeStyle='#34d399';g.lineWidth=2;g.strokeRect(30,48,180,66);
+    g.textAlign='center';g.font="bold 12px 'Courier New'";
+    g.fillStyle='#ffffff';g.fillText('RETURN TO TITLE?',120,74);
+    g.fillStyle='#6ee7b7';g.fillText('A : YES',78,100);g.fillStyle='#fca5a5';g.fillText('B : NO',162,100)}
+  g.textAlign='left'}
+function onSelect(){
+  if(ov.style.display!=='none')return;
+  if(st==='PODIUM'){returnToTitle();return}
+  if(confirmT||!paused)return;confirmT=true;drawPause()}
+function answerTitleConfirm(yes){if(!confirmT)return;confirmT=false;if(yes)returnToTitle();else drawPause()}
+$('btnMineStart').addEventListener('click',pressStart);$('btnMineStart').addEventListener('touchend',pressStart,{passive:false});
 $('btnBackSelect').addEventListener('click',e=>{e.preventDefault();stopBgmAndClose();location.href='../'});
-$('btnSelect').addEventListener('click',()=>{if(ov.style.display==='none')showMenu()});
-$('btnStart').addEventListener('click',()=>{if(ov.style.display!=='none')startGame()});
-['gameCanvas','btnArea'].forEach(id=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();press(e)}));
+$('btnBackSelect').addEventListener('touchstart',e=>{e.preventDefault();stopBgmAndClose();location.href='../'},{passive:false});
+$('btnSelect').addEventListener('click',onSelect);$('btnSelect').addEventListener('touchstart',e=>{e.preventDefault();onSelect()},{passive:false});
+$('btnStart').addEventListener('click',togglePause);$('btnStart').addEventListener('touchstart',e=>{e.preventDefault();togglePause()},{passive:false});
+[['btnA',true],['btnB',false]].forEach(a=>{const el=$(a[0]);if(!el)return;const h=e=>{if(!confirmT)return;e.preventDefault();e.stopPropagation();answerTitleConfirm(a[1])};
+  el.addEventListener('mousedown',h);el.addEventListener('touchstart',h,{passive:false})});
+['gameCanvas','btnArea'].forEach(id=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();act2()}));
 addEventListener('keydown',e=>{
-  if(e.code!=='Space'&&e.code!=='Enter')return;
-  e.preventDefault();if(e.repeat)return;press(e);
+  if(confirmT){e.preventDefault();if(e.code==='KeyA'||e.code==='KeyZ')answerTitleConfirm(true);else if(e.code==='KeyB'||e.code==='KeyX'||e.code==='Escape')answerTitleConfirm(false);return}
+  if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();if(!e.repeat)act2()}
+  if(e.code==='Enter'){e.preventDefault();if(!e.repeat)togglePause()}
+  if(e.code==='KeyM'||e.code==='Backspace')onSelect();
 });
 function resizeGame(){const w=$('gameWrapper');w.style.transform='translate(-50%,-50%) scale('+Math.min(innerWidth/340,innerHeight/680)+')'}
 addEventListener('resize',resizeGame);resizeGame();
@@ -806,18 +1218,18 @@ $('btnMusicToggle').addEventListener('click',function(){
 });
 
 /* ---------- タイトル画面のミニ演出 ---------- */
-const TW=206,TH=50,tg=$('titleCanvas').getContext('2d');tg.imageSmoothingEnabled=false;
+const TW=200,TH=50,tg=$('titleCanvas').getContext('2d');tg.imageSmoothingEnabled=false;
 let titleKs=['cat'];
-function rollTitle(){titleKs=['cat',...['pico','dragon','hugo','fcat','wick'].sort(()=>Math.random()-.5).slice(0,2)]}rollTitle();
+function rollTitle(){titleKs=['cat',...KS.slice().sort(()=>Math.random()-.5).slice(0,2)]}rollTitle();
 function drawTitle(){
   const sg=g;g=tg;R(0,0,TW,TH,'#6b4a2a');R(0,0,TW,28,'#b84a8a');R(0,27,TW,3,'#4a8a4a');
-  [[titleKs[0],36],[titleKs[1],103],[titleKs[2],170]].forEach((o,i)=>{R(o[1]-16,30,32,20,'#1e1208');drawCh(o[0],o[1],44,((af+i*9)%24)<12?15:6,false)});
+  [[titleKs[0],34],[titleKs[1],100],[titleKs[2],166]].forEach((o,i)=>{R(o[1]-16,30,32,20,'#1e1208');drawCh(o[0],o[1],44,((af+i*9)%24)<12?15:6,false)});
   g=sg;
 }
 let last=performance.now(),acc=0;
-function loop(t){acc+=Math.min(100,t-last);last=t;while(acc>=1000/60){upd();acc-=1000/60}if(ov.style.display==='none')draw();else{af++;drawTitle()}requestAnimationFrame(loop)}
+function loop(t){if(paused){last=t;acc=0;requestAnimationFrame(loop);return}acc+=Math.min(100,t-last);last=t;while(acc>=1000/60){upd();acc-=1000/60}if(ov.style.display==='none')draw();else{af++;drawTitle()}requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 })();
-</script>
+  </script>
 </body>
 </html>
