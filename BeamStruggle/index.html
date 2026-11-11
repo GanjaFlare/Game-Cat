@@ -263,9 +263,9 @@
             <div class="item-area">
               <div class="item-head"><span>ITEMS</span></div>
               <div class="item-row">
-                <div id="itemGiantCard" class="item-card" role="button" aria-pressed="false">
-                  <div class="item-name">Giant Potion</div>
-                  <canvas id="imgGiant" class="item-img" width="32" height="32"></canvas>
+                <div id="itemBerserkCard" class="item-card" role="button" aria-pressed="false">
+                  <div class="item-name">Berserker Potion</div>
+                  <canvas id="imgBerserk" class="item-img" width="32" height="32"></canvas>
                   <div class="item-desc">1.5x Power</div>
                   <div class="item-price">200 GANJA</div>
                 </div>
@@ -713,17 +713,17 @@ const $=id=>document.getElementById(id),ov=$('setupOverlay');
 // 🛒 アイテム：1つだけ選べる（選び直すと前の選択は解除）。使えるのは1回きり（死亡・クリアで消える）
 let isPaused=false,confirmTitle=false,pauseFrame=null,sel=0,act=0;   // sel=選択中(0なし 1〜3) act=この挑戦で有効なアイテム
 const TAPM=[1,1.5,2.5,3],THK=[1,2,1,3],ITEM_PRICES=[0,200,400,1000];   // 連打の効果／ビームの太さ／価格（act: 1=巨大化の薬 2=ロケットランチャー 3=スーパーサイヤ人）
-const AUC=[['#7efff5','#fff','#bff'],['#7efff5','#fff','#bff'],['#7efff5','#fff','#bff'],['#ffe14a','#fff6b0','#ffe98a']],ASC=[1,2,1,2];   // オーラの色／大きさ
+const AUC=[['#7efff5','#fff','#bff'],['#8b1a1a','#ff2a2a','#ff7a6a'],['#7efff5','#fff','#bff'],['#ffe14a','#fff6b0','#ffe98a']],ASC=[1,1,1,2];   // オーラの色／大きさ
 function drawSyringe(cv){   // 巨大化の薬：注射器
   const c=cv.getContext('2d');c.clearRect(0,0,32,32);
   const px=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h)};
   px(1,9,2,14,'#9ca3af');px(3,14,5,4,'#cbd5e1');px(3,15,5,1,'#f1f5f9');
   px(7,9,2,14,'#9ca3af');px(8,11,15,10,'#e5e7eb');px(8,11,15,1,'#9ca3af');px(8,20,15,1,'#9ca3af');
   px(9,12,3,8,'#111827');
-  px(12,13,10,6,'#22c55e');px(12,13,10,1,'#86efac');px(12,18,10,1,'#15803d');px(15,15,2,2,'#bbf7d0');px(19,16,1,1,'#bbf7d0');
+  px(12,13,10,6,'#b91c1c');px(12,13,10,1,'#f87171');px(12,18,10,1,'#7f1d1d');px(15,15,2,2,'#fecaca');px(19,16,1,1,'#fecaca');
   [14,17,20].forEach(function(x){px(x,11,1,2,'#6b7280')});
   px(23,12,3,8,'#9ca3af');px(23,12,3,1,'#d1d5db');px(26,15,5,2,'#d1d5db');px(30,15,2,1,'#9ca3af');
-  px(24,6,1,3,'#22c55e');px(22,4,1,2,'#86efac');px(27,5,1,2,'#22c55e');
+  px(24,6,1,3,'#b91c1c');px(22,4,1,2,'#f87171');px(27,5,1,2,'#b91c1c');
 }
 function drawLauncher(cv){   // ロケットランチャー
   const c=cv.getContext('2d');c.clearRect(0,0,32,32);
@@ -755,11 +755,11 @@ function updateStartLabel(){   // STARTボタンの文字：アイテム無し�
 }
 function refreshItemUI(){
   try{updateStartLabel()}catch(e){}
-  ['itemGiantCard','itemRocketCard','itemSsjCard'].forEach(function(id,i){const el=$(id);if(el){el.classList.toggle('sel',sel===i+1);el.setAttribute('aria-pressed',String(sel===i+1))}});
+  ['itemBerserkCard','itemRocketCard','itemSsjCard'].forEach(function(id,i){const el=$(id);if(el){el.classList.toggle('sel',sel===i+1);el.setAttribute('aria-pressed',String(sel===i+1))}});
 }
 (function(){
-  drawSyringe($('imgGiant'));drawLauncher($('imgRocket'));drawDragonBall($('imgSsj'));
-  [['itemGiantCard',1],['itemRocketCard',2],['itemSsjCard',3]].forEach(function(p){
+  drawSyringe($('imgBerserk'));drawLauncher($('imgRocket'));drawDragonBall($('imgSsj'));
+  [['itemBerserkCard',1],['itemRocketCard',2],['itemSsjCard',3]].forEach(function(p){
     $(p[0]).addEventListener('click',function(){sel=(sel===p[1])?0:p[1];refreshItemUI();bossTone('square',880,1320,0.06,0.08)});
   });
 })();
@@ -1122,7 +1122,7 @@ function upd(){
 
 /* ---------- キャラ描画 ---------- */
 function catBody(){ // GCRのLv3（ブースト）の見た目をそのまま移植
-  const sk=stun>0?((af>>1)%3)-1:0,x=16+sk,y=GY-20,hx=x+5,hy=y-14,B='#87CEEB',S='#4169E1',hit=stun>0;
+  const sk=stun>0?((af>>1)%3)-1:0,x=16+sk,y=GY-20,hx=x+5,hy=y-14,hit=stun>0,B=act===1?'#23232e':'#87CEEB',S=act===1?'#8b1a1a':'#4169E1',HC=act===1?'#3a3a46':'#e6f6ff';
   R(x+7,y-2,10,16,B);R(x+7,y+2,10,3,S);R(x+7,y+9,10,3,S);
   R(hx,hy,12,12,B);R(hx+4,hy,2,4,S);R(hx+2,hy-3,3,3,B);R(hx+9,hy-3,3,3,B);
   if(act===3){const Y='#ffd93a',Y2='#e0a800',up=(cx,top,h,hw)=>{for(let r=0;r<=h;r++){const w=Math.round(hw*r/h);R(cx-w,top+r,w*2+1,1,Y);if(w>0)R(cx+Math.ceil(w*.4),top+r,Math.floor(w*.6)+1,1,Y2)}};
@@ -1134,16 +1134,16 @@ function catBody(){ // GCRのLv3（ブースト）の見た目をそのまま移
   }else{
     [2,7].forEach(o=>{R(hx+o,hy+2,4,4,'#fff');R(hx+o,hy+2,2,1,'#FF69B4');R(hx+o,hy+3,1,2,'#FF69B4');
       R(hx+o+2,hy+2,2,1,'#FFD700');R(hx+o+3,hy+3,1,2,'#FFD700');R(hx+o+1,hy+4,2,1,'#00FFFF');R(hx+o+2,hy+5,1,1,'#00FFFF');R(hx+o+1,hy+3,1,1,'#9370DB')});
-    if(act===1){const A='#8b1a1a';R(hx+3,hy+2,3,1,A);R(hx+5,hy+3,1,1,A);R(hx+7,hy+2,3,1,A);R(hx+7,hy+3,1,1,A);R(hx+2,hy+1,2,1,A);R(hx+8,hy+1,2,1,A)}   // 怒った目
+    if(act===1)[2,7].forEach(function(o){R(hx+o,hy+2,4,4,'#ff1a1a');R(hx+o+1,hy+3,2,2,'#7a0000');R(hx+o,hy+2,1,1,'#ffc0c0')});   // 赤い目
     R(hx+10,hy+8,6,2,'#fff');R(hx+15,hy+8,1,2,'#ff0000');
     R(x+7,y+14,3,6,B);R(x+14,y+14,3,6,B);
   }
   if(act===2){R(x+8,y+3,15,6,'#556b2f');R(x+8,y+7,15,2,'#3b4a1f');R(x+9,y+4,12,1,'#7a9142');R(x+21,y+2,3,8,'#2b2b2b');R(x+6,y+2,3,8,'#2b2b2b');R(x+13,y+9,3,4,'#2b2b2b');R(x+12,y+8,5,3,'#e6f6ff');R(x+14,y+0,4,3,'#2b2b2b')}   // ロケットランチャーを構える
-  else{R(x+17,y+6,5,2,B);R(x+21,y+4,3,6,'#e6f6ff')} // ビームを撃つ腕
+  else{R(x+17,y+6,5,2,B);R(x+21,y+4,3,6,HC)} // ビームを撃つ腕
   if(stun>0){const a=af*.2;R(x+10+Math.cos(a)*9,y-24+Math.sin(a)*2,2,2,'#ffee00');R(x+10-Math.cos(a)*9,y-24-Math.sin(a)*2,2,2,'#ffee00');T('CHEATER!',CX,GY-52,'#ff3030')}
 }
 function cat(){
-  g.save();if(act===1){g.translate(HL,BY);g.scale(2,2);g.translate(-HL,-BY)}   // 巨大化：ビームの出る手を中心に2倍
+  g.save();
   catBody();
   g.restore();
 }
@@ -1162,19 +1162,21 @@ function dog(){
 
 /* ---------- ビーム ---------- */
 const PAL=[['#2468ff','#27a8ff','#8ef6ff'],['#c42a2a','#ff6a2a','#ffc25a']];
-function rockets(x1,x2){   // ロケット弾の連射（ビームの代わり）
-  const sp=26,w=x2-x1;g.globalAlpha=.3;R(x1,BY-1,w,3,'#d1d5db');g.globalAlpha=1;
-  for(let x=x1+(af*6)%sp;x+16<=x2;x+=sp){
-    R(x-18,BY-1,10,3,'#9ca3af');R(x-8,BY-2,5,5,'#f97316');R(x-4,BY-1,4,3,'#fbbf24');   // 煙と炎
-    R(x,BY-3,11,7,'#cbd5e1');R(x,BY+1,11,3,'#94a3b8');R(x,BY-3,11,1,'#f1f5f9');       // 弾体
-    R(x+11,BY-3,3,7,'#dc2626');R(x+14,BY-2,2,5,'#ef4444');                            // 先端
-    R(x,BY-6,4,3,'#dc2626');R(x,BY+4,4,3,'#dc2626')}                                  // 羽
+const palOf=t=>(!t&&act===1)?['#7a0a0a','#ff2a2a','#ffc0b0']:PAL[t];   // 狂戦士薬：自分のビームは赤
+function rockets(x1,x2){   // ロケットは1発だけ。先端(x2)が、ぶつかる位置・押し進む位置になる
+  g.globalAlpha=.3;R(x1,BY-1,x2-x1,3,'#d1d5db');g.globalAlpha=1;   // 飛んだ跡の煙
+  if(x2>=W)return;   // 画面の外へ飛んでいったあとは、煙だけが残る
+  const t=x2-32,fl=(af>>1)&1;
+  R(t-38,BY-2,22,5,'#9ca3af');R(t-18,BY-4-fl,12,9+fl*2,'#f97316');R(t-10,BY-3,10,7,'#fbbf24');   // 煙と炎
+  R(t,BY-7,22,14,'#cbd5e1');R(t,BY+2,22,5,'#94a3b8');R(t,BY-7,22,2,'#f1f5f9');R(t+10,BY-7,2,14,'#64748b');   // 弾体
+  R(t+22,BY-7,6,14,'#dc2626');R(t+28,BY-5,4,10,'#ef4444');R(t+22,BY-7,6,2,'#f87171');   // 先端
+  R(t,BY-13,8,6,'#dc2626');R(t,BY+7,8,6,'#dc2626');   // 羽
 }
 const exOf=t=>t?Math.round((rd-1)/29*5):(st==='FIN'||st==='WIN'||st==='LOSE'||st==='CLEAR'?fExt:pExt); // ビームの太さ追加量（自分=連打の速さ、敵=ラウンド）
 function bar(x1,x2,t){
   x1=Math.floor(x1);x2=Math.floor(x2);const w=x2-x1;if(w<=0)return;
   if(!t&&act===2){rockets(x1,x2);return}
-  const p=PAL[t],o=(af>>2)&1,s=t?E[rd-1].s:'s',ex=exOf(t),hx=ex>>1;
+  const p=palOf(t),o=(af>>2)&1,s=t?E[rd-1].s:'s',ex=exOf(t),hx=ex>>1;
   const m=t?1:THK[act],L=(hh,c)=>{hh*=m;R(x1,BY-hh,w,2*hh+1,c)};
   if(s==='s'){L(5+ex-o,p[0]);L(4+ex,p[1]);L(2+hx,p[2]);L(1+(hx>>1),'#fff');return}
   if(s==='t'){L(2+hx,p[0]);L(1+hx,p[1]);L(hx>>1,'#fff');return}
@@ -1187,7 +1189,7 @@ function bar(x1,x2,t){
 }
 function orb(x,t){
   if(!t&&act===2){const f=(af>>1)&1;disc(g,x,BY,4+f*2,'#ffb020');disc(g,x,BY,2+f,'#fff');return}   // ロケットの発射炎
-  const p=PAL[t],r=Math.round((7+(exOf(t)>>1))*(t?1:1+(THK[act]-1)*.2));disc(g,x,BY,r,p[0]);disc(g,x,BY,r-2,p[1]);disc(g,x,BY,r-4,'#fff')}
+  const p=palOf(t),r=Math.round((7+(exOf(t)>>1))*(t?1:1+(THK[act]-1)*.2));disc(g,x,BY,r,p[0]);disc(g,x,BY,r-2,p[1]);disc(g,x,BY,r-4,'#fff')}
 function clash(x){
   const w=Math.round(Math.sin(af*.3)*1.5),o=(af>>2)&1;
   disc(g,Math.floor(x),BY,6+w,'#fff');disc(g,Math.floor(x),BY,4,'#ffe9a8');
