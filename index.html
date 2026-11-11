@@ -145,15 +145,22 @@
       transform: translateY(1px) scale(0.98);
     }
 
-    /* 🎮 ゲーム選択：カートリッジ画像を2列×2段に並べる */
-    .cart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; width: 88%; }
-    .cart { position: relative; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform 0.12s, filter 0.12s; }
-    .cart img { width: 100%; height: auto; display: block; pointer-events: none; filter: drop-shadow(0 6px 8px rgba(0,0,0,0.55)); }
-    .cart:active { transform: translateY(2px) scale(0.98); filter: brightness(1.15); }
-    /* 次のゲーム用の空き枠：SELECT GAMEと同じ色の細い四角いフレーム（塗りなし）＋控えめなSOON */
-    /* 画像がまだ無いときの代わりの表示（細いフレーム＋ゲーム名） */
-    .cart.noimg { aspect-ratio: 462 / 527; box-sizing: border-box; border: 2px solid; border-image: linear-gradient(135deg, #ffffff 0%, #34d399 100%) 1; display: flex; justify-content: center; align-items: center; }
-    .cart.noimg::after { content: attr(data-label); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 2px; text-align: center; background: linear-gradient(135deg, #ffffff 0%, #34d399 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    /* 🎮 ゲーム選択：カートリッジを横に1列に並べ、左右ボタンでスライド（ぐるっと一周するループ） */
+    .sel-marker { width: 0; height: 0; border-left: 26px solid transparent; border-right: 26px solid transparent; border-top: 23px solid #a7f3d0; margin-bottom: 12px; filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.45)); }
+    .carousel { position: relative; width: 100%; height: 208px; overflow: hidden; touch-action: pan-y; }
+    .cart { position: absolute; top: 0; left: calc(50% - 74px); width: 148px; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; will-change: transform; }
+    .cart-face { position: relative; transition: transform 0.12s, filter 0.12s; }
+    .cart-face img { width: 100%; height: auto; display: block; pointer-events: none; filter: drop-shadow(0 6px 8px rgba(0,0,0,0.55)); }
+    .cart:active .cart-face { transform: translateY(2px) scale(0.98); filter: brightness(1.15); }
+    .cart-name { margin: 10px -12px 0; text-align: center; white-space: nowrap; font-family: 'Courier New', Courier, monospace; font-weight: bold; font-size: 17px; color: #a7f3d0; text-shadow: 0 0 8px rgba(52, 211, 153, 0.45); }
+    /* 画像がまだ無いときの代わりの表示（細いフレームだけ。名前は下に出る） */
+    .cart-face.noimg { aspect-ratio: 462 / 527; box-sizing: border-box; border: 2px solid; border-image: linear-gradient(135deg, #ffffff 0%, #34d399 100%) 1; }
+    .sel-arrows { display: flex; gap: 26px; margin-top: 6px; }
+    .sel-arrow { background: none; border: 0; padding: 14px 24px; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: opacity 0.1s, transform 0.1s; }
+    .sel-arrow::before { content: ""; display: block; width: 0; height: 0; border-top: 16px solid transparent; border-bottom: 16px solid transparent; filter: drop-shadow(0 0 6px rgba(52, 211, 153, 0.4)); }
+    .sel-arrow.prev::before { border-right: 19px solid #a7f3d0; }
+    .sel-arrow.next::before { border-left: 19px solid #a7f3d0; }
+    .sel-arrow:active { opacity: 0.6; transform: scale(0.92); }
     .cart-soon { aspect-ratio: 462 / 527; box-sizing: border-box; border: 2px solid; border-image: linear-gradient(135deg, #ffffff 0%, #34d399 100%) 1; display: flex; justify-content: center; align-items: center; }
     .cart-soon span { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 13px; letter-spacing: 3px; background: linear-gradient(135deg, #ffffff 0%, #34d399 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; opacity: 0.8; }
     /* 🔗 関連プロジェクトのリンク一覧（ゲームと間違えないよう、細いフレームと小さなアイコンだけ） */
@@ -168,9 +175,9 @@
     .more-link .ext { color: #6ee7b7; font-size: 12px; margin-left: 3px; }
     @media (hover: hover) { .more-link:hover { color: #6ee7b7; } }
     @media (hover: hover) {
-      .cart:hover { transform: translateY(-6px) scale(1.05); filter: brightness(1.12) drop-shadow(0 0 14px rgba(52, 211, 153, 0.8)); }
+      .cart:hover .cart-face { transform: translateY(-6px) scale(1.05); filter: brightness(1.12) drop-shadow(0 0 14px rgba(52, 211, 153, 0.8)); }
     }
-    .cart.picked { animation: pickFlash 0.32s ease-out both; }
+    .cart-face.picked { animation: pickFlash 0.32s ease-out both; }
     @keyframes pickFlash {
       0% { transform: scale(1); filter: brightness(1); }
       45% { transform: translateY(-6px) scale(1.1); filter: brightness(1.7) drop-shadow(0 0 20px rgba(110, 255, 200, 0.95)); }
@@ -284,12 +291,17 @@
         </div>
 
         <div id="setupOverlay" class="overlay">
-          <h1 class="title-glow" style="font-size: 30px; margin-bottom: 20px;">SELECT GAME</h1>
-          <div class="cart-grid">
-            <div class="cart" data-href="GanjaCatRun/" role="button" aria-label="GANJA CAT RUN 2"><img src="GCR2_title.webp" alt="GANJA CAT RUN 2"></div>
-            <div class="cart" data-href="BeamStruggle/" role="button" aria-label="BEAM STRUGGLE"><img src="BeamStruggle_title.webp" alt="BEAM STRUGGLE"></div>
-            <div class="cart" data-href="PoliceDog/" role="button" aria-label="POLICE DOG"><img src="PoliceDog_title.webp" alt="POLICE DOG"></div>
-            <div class="cart" data-href="MiningRush/" data-label="MINING RUSH" role="button" aria-label="MINING RUSH"><img src="MiningRush_title.webp" alt="MINING RUSH" onerror="this.parentNode.classList.add('noimg'); this.remove();"></div>
+          <h1 class="title-glow" style="font-size: 30px; margin-bottom: 14px;">SELECT GAME</h1>
+          <div class="sel-marker"></div>
+          <div id="carousel" class="carousel">
+            <div class="cart" data-href="GanjaCatRun/" role="button" aria-label="GANJA CAT RUN 2"><div class="cart-face"><img src="GCR2_title.webp" alt=""></div><div class="cart-name">GANJA CAT RUN 2</div></div>
+            <div class="cart" data-href="BeamStruggle/" role="button" aria-label="BEAM STRUGGLE"><div class="cart-face"><img src="BeamStruggle_title.webp" alt=""></div><div class="cart-name">BEAM STRUGGLE</div></div>
+            <div class="cart" data-href="PoliceDog/" role="button" aria-label="POLICE DOG"><div class="cart-face"><img src="PoliceDog_title.webp" alt=""></div><div class="cart-name">POLICE DOG</div></div>
+            <div class="cart" data-href="MiningRush/" role="button" aria-label="MINING RUSH"><div class="cart-face"><img src="MiningRush_title.webp" alt="" onerror="this.parentNode.classList.add('noimg'); this.remove();"></div><div class="cart-name">MINING RUSH</div></div>
+          </div>
+          <div class="sel-arrows">
+            <button id="selPrev" class="sel-arrow prev" type="button" aria-label="Previous game"></button>
+            <button id="selNext" class="sel-arrow next" type="button" aria-label="Next game"></button>
           </div>
           <div class="more-box">
             <div class="more-title">LINK</div>
@@ -452,18 +464,69 @@
     });
     selPreload();
 
-    // ===== ゲームを選ぶ（タップ／クリックの演出 → BGMをフェードアウト → 移動） =====
-    document.querySelectorAll(".cart[data-href]").forEach(function(el) {
-      el.addEventListener("click", function() {
-        if (el.dataset.busy) return;
-        el.dataset.busy = "1";
-        el.classList.add("picked");
+    // ===== ゲームを選ぶ：左右ボタン／スワイプ／矢印キーでスライド（ループ）。真ん中のゲームをタップで開始 =====
+    (function() {
+      const car = document.getElementById("carousel");
+      if (!car) return;
+      const slides = [].slice.call(car.querySelectorAll(".cart"));
+      const N = slides.length, PITCH = 186, DUR = 300;   // PITCH：カートリッジ1つ分の間隔(px)、DUR：スライドの時間(ms)
+      const LO = -1, HI = N - 2;                         // 並びの範囲（-1=左隣、0=真ん中、1=右隣、HI=右の画面外）
+      const pos = slides.map(function(_, i) { return i <= HI ? i : i - N; });
+      let busy = false, chosen = false, swiped = false, queue = [];
+      function place(i, anim) {
+        const el = slides[i];
+        el.style.transition = anim ? "transform " + DUR + "ms ease" : "none";
+        el.style.transform = "translateX(" + (pos[i] * PITCH) + "px)";
+      }
+      slides.forEach(function(_, i) { place(i, false); });
+      function move(dir) {   // dir=1：次のゲーム（右ボタン）／dir=-1：前のゲーム（左ボタン）
+        if (chosen) return;
+        if (busy) { if (queue.length < 3) queue.push(dir); return; }
+        busy = true;
+        if (dir < 0) {   // 前へ：右の画面外にいるカードを、先に左の画面外へ移しておく（見えない所での移動）
+          slides.forEach(function(el, i) { if (pos[i] === HI) { pos[i] = LO - 1; place(i, false); void el.offsetWidth; } });
+        }
+        slides.forEach(function(_, i) { pos[i] -= dir; place(i, true); });
+        setTimeout(function() {
+          slides.forEach(function(_, i) { if (pos[i] < LO) { pos[i] += N; place(i, false); } });   // 次へ：左の画面外に出たカードを右の画面外へ
+          busy = false;
+          if (queue.length) move(queue.shift());
+        }, DUR + 20);
+      }
+      function pick(el) {
+        if (chosen) return;
+        chosen = true;
+        const face = el.querySelector(".cart-face");
+        if (face) face.classList.add("picked");
         unlockAudio();
-        playBoingSel();   // 選んだときも「ぴょいん！」
+        playBoingSel();   // 選んだときの「ぴょいん！」
         selFadeOut(0.3);
         setTimeout(function() { selStopAndClose(); window.location.href = el.getAttribute("data-href"); }, 480);
+      }
+      slides.forEach(function(el, i) {
+        el.addEventListener("click", function() {
+          if (swiped || chosen || busy) return;
+          if (pos[i] === 0) pick(el);                          // 真ん中：ゲームを開始
+          else if (pos[i] === 1 || pos[i] === -1) move(pos[i]); // 左右の隣：タップで真ん中へ
+        });
       });
-    });
+      const bp = document.getElementById("selPrev"), bn = document.getElementById("selNext");
+      if (bp) bp.addEventListener("click", function() { unlockAudio(); move(-1); });
+      if (bn) bn.addEventListener("click", function() { unlockAudio(); move(1); });
+      let tx = null;   // 指で左右にスワイプしても動かせる
+      car.addEventListener("touchstart", function(e) { tx = e.touches.length ? e.touches[0].clientX : null; }, { passive: true });
+      car.addEventListener("touchend", function(e) {
+        if (tx === null || !e.changedTouches.length) return;
+        const dx = e.changedTouches[0].clientX - tx; tx = null;
+        if (Math.abs(dx) > 40) { swiped = true; setTimeout(function() { swiped = false; }, 350); move(dx < 0 ? 1 : -1); }
+      }, { passive: true });
+      window.addEventListener("keydown", function(e) {   // パソコン：矢印キーで移動、Enterで開始
+        if (introActive) return;
+        if (e.key === "ArrowLeft") move(-1);
+        else if (e.key === "ArrowRight") move(1);
+        else if (e.key === "Enter") { for (let i = 0; i < N; i++) if (pos[i] === 0) pick(slides[i]); }
+      });
+    })();
 
     // ===== 🎬 オープニング（同じタブでは最初の1回だけ。?intro を付けると毎回見られる）。再生中は操作不能 =====
     (function() {
