@@ -203,8 +203,11 @@
     }
     /* ℹ️ タイトル画面の説明ボックス（TO THE MOON） */
     .info-box { width: 100%; box-sizing: border-box; border: 1px solid rgba(148, 163, 184, 0.35); padding: 10px 12px; text-align: left; }
-    .info-lead { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.4px; color: #6ee7b7; margin-bottom: 6px; text-align: center; }
-    .info-text { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 10px; line-height: 1.5; color: #cbd5e1; margin-bottom: 6px; }
+    .info-lead { font-family: 'Plus Jakarta Sans', 'Hiragino Sans', 'Yu Gothic', 'Noto Sans JP', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.4px; color: #6ee7b7; margin-bottom: 6px; text-align: center; }
+    .info-text { font-family: 'Plus Jakarta Sans', 'Hiragino Sans', 'Yu Gothic', 'Noto Sans JP', sans-serif; font-size: 10px; line-height: 1.5; color: #cbd5e1; margin-bottom: 6px; }
+    .lang-sw { display: flex; justify-content: flex-end; margin-top: 4px; }
+    .lang-sw button { font: 700 9px 'Plus Jakarta Sans', sans-serif; padding: 3px 9px; border: 1px solid rgba(148, 163, 184, 0.5); background: transparent; color: #94a3b8; cursor: pointer; }
+    .lang-sw button.on { background: #34d399; color: #06281c; border-color: #34d399; }
     * { touch-action: manipulation; -webkit-touch-callout: none; }
     #gameCanvas, #btnArea { touch-action: none; }
   </style>
@@ -258,10 +261,11 @@
           <canvas id="titleCanvas" width="200" height="50" style="image-rendering: pixelated; margin: 2px 0 8px;"></canvas>
           <div class="mode-buttons">
             <div class="info-box">
-              <div class="info-lead">LET'S SEND GANJA CAT TO THE MOON, TOGETHER!</div>
-              <div class="info-text">Every WFLR donated moves the cat higher on everyone's screen. The game is free to play, and the world is fun to poke at.</div>
-              <div class="info-text">GanjaFlare is a non-profit community project. Donations help cover server and infrastructure costs. They are voluntary and carry no rewards, rights, or financial returns.</div>
+              <div id="infoLead" class="info-lead">LET'S SEND GANJA CAT TO THE MOON, TOGETHER!</div>
+              <div id="infoT1" class="info-text"></div>
+              <div id="infoT2" class="info-text"></div>
               <div id="walletMsg" class="item-note"></div>
+              <div class="lang-sw"><button id="langEN" class="on" type="button">EN</button><button id="langJP" type="button">JP</button></div>
             </div>
             <button id="btnGameStart" class="start-btn normal-btn">START</button>
             <button id="btnBackSelect" class="start-btn" style="background:#334155;color:#e2e8f0;box-shadow:0 4px 0 #1e293b;font-size:12px;">&lt; BACK TO GAME SELECT</button>
@@ -479,7 +483,7 @@ function playClick(){const c=ensureAudioCtx();if(!c)return;const t=c.currentTime
 
 /* ---------- BGM：GCRと同じ方式（Web Audioで隙間なくループ） ---------- */
 let isMusicOn=true;
-const BGM_URL="../BGM_FILE_NAME.mp3";   // ★BGMのファイル名はまだ未定。決まったらここを書き換える
+const BGM_URL="../iwashiro_yume_ochi.mp3";
 let bgmBuffer=null,bgmSource=null,bgmGain=null,bgmLoading=false;
 let leaving=false,unlockArmed=false;
 let bgmWanted=false;   // タイトル画面では false。STARTで true、タイトルに戻ると false
@@ -831,46 +835,67 @@ const rnd=(a,b)=>a+Math.random()*(b-a),pick=a=>a[Math.random()*a.length|0];
 
 /* ★GAME ── 設定 */
 const GAME_NAME='TO THE MOON';
-const GOAL=222222;                    // 月に到達する寄付の合計（WFLR）
-const WH=4800,SUMMIT=2400,FEETY=116,LAND0=0.93;   // 世界の高さ／山頂（ロケット発射台）／ネコの足元の画面Y／着陸の始まり
+const GOAL=222222;                    // 山頂に着く寄付の合計（WFLR）。着いたらロケットを発射できる
+const SLOPE=0.55,XL=3900,XS=XL-260,XC=XL-150,XP=XL-52;   // 坂の傾き／世界の長さ／頂上の平らな所の始まり／ネコの最終位置／ロケット発射台の位置
+const SX=84,FEET=112;                 // ネコの足元の画面位置
+const FLY=3600,FLY_FRAMES=900,LAND_START=750;             // 飛行の高さ／飛行時間（900フレーム≒15秒）／月への着陸の始まり
 const DEMO_FAST=/[?&]fast/.test(location.search); // ?fast を付けるとダミーの寄付が大きくなる（テスト用）
 const USE_DUMMY_DATA=true;            // true＝ダミーの数値（GASにつなぐまで）／false＝DATA_API_URLから読む
 const DATA_API_URL='';                // ★あとでGASのURLを入れる。返す形：{total, ranking:[{addr,amt}], donations:[{addr,amt,cum}], recent:[{addr,amt}]}
 
 /* ---------- 道具 ---------- */
-const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t;
+const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,sm=t=>t*t*(3-2*t);
 function hash(n){n=Math.imul((n|0)^61,0x27d4eb2d);n^=n>>>15;n=Math.imul(n,0x85ebca6b);n^=n>>>13;return(n>>>0)/4294967296}
 function mulberry(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 const hex2rgb=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
-const SKY=[[0,'#8fd3f4'],[0.2,'#6bb8ee'],[0.38,'#4a96e0'],[0.5,'#3475c8'],[0.58,'#1f4aa0'],[0.66,'#10286a'],[0.78,'#080f38'],[1,'#03051a']].map(a=>[a[0],hex2rgb(a[1])]);
-function skyAt(a){a=clamp(a,0,1);for(let i=1;i<SKY.length;i++){if(a<=SKY[i][0]){const p=SKY[i-1],q=SKY[i],t=(a-p[0])/(q[0]-p[0]);return 'rgb('+[0,1,2].map(k=>Math.round(lerp(p[1][k],q[1][k],t))).join(',')+')'}}return 'rgb(3,5,26)'}
+const SKY=[[0,'#8fd3f4'],[1600,'#6bb8ee'],[2600,'#4a96e0'],[3300,'#3475c8'],[3900,'#1f4aa0'],[4500,'#10286a'],[5100,'#080f38'],[6000,'#03051a']].map(a=>[a[0],hex2rgb(a[1])]);
+function skyAt(y){for(let i=1;i<SKY.length;i++){if(y<=SKY[i][0]){const p=SKY[i-1],q=SKY[i],t=clamp((y-p[0])/(q[0]-p[0]),0,1);return 'rgb('+[0,1,2].map(k=>Math.round(lerp(p[1][k],q[1][k],t))).join(',')+')'}}return 'rgb(3,5,26)'}
 const fmt=n=>Math.floor(n).toLocaleString('en-US');
 const sAddr=a=>a?a.slice(0,6)+'.'+a.slice(-4):'';
 const addrColor=a=>['#ef4444','#f59e0b','#22c55e','#06b6d4','#6366f1','#ec4899','#eab308','#14b8a6'][(hash(parseInt((a||'0x0').slice(2,8),16)||1)*8)|0];
+const RR=(x,y,w,h,c)=>R(x,y,w,h,c);
 const tone=(f0,f1,d,v,t)=>bossTone(t||'square',f0,f1,d,v);
 function meow(){tone(620,900,.1,.1,'triangle');setTimeout(()=>tone(900,520,.2,.1,'triangle'),90)}
 
 /* ---------- 状態 ---------- */
 let st='TITLE',af=0,paused=false,confirmT=false,pauseImg=null;
-let total=0,dP=0,viewOff=0,idleView=0,menu=null,toast=null,guideT=0,tapped=false,walking=false,catDir=1;
-let ranking=[],donations=[],fakeT=0,liftT=0,endT=0,hopT=0,rocketShake=0,flash=0,shake=0,lifted=false;
+let total=0,dP=0,viewOff=0,idleView=0,menu=null,toast=null,guideT=0,tapped=false,walking=false;
+let ranking=[],donations=[],fakeT=0,hopT=0,flash=0,shake=0,liftT=0;
+let lch=null,boarded=false,summitDone=false,summitT=0,camX=0,camY=0;   // lch＝発射イベント {s:段階1〜5, t:経過フレーム}
 const dpadHeld={u:0,d:0,l:0,r:0};
-const parts=[],meteors=[],flowers=[];
+const parts=[],meteors=[];
 const isTouch='ontouchstart' in window||navigator.maxTouchPoints>0;
 
-/* ---------- 世界のデータ（雲・鳥・星など。毎回同じ配置） ---------- */
-const rg=mulberry(20261112);
-const clouds=[];for(let i=0;i<46;i++)clouds.push({x:rg()*260-10,y:70+rg()*WH*0.54,w:22+((rg()*26)|0),v:(0.05+rg()*0.12)*(rg()<.5?-1:1),front:rg()<.45,puff:0});
-const birds=[];for(let i=0;i<12;i++)birds.push({x:rg()*240,y:60+rg()*SUMMIT*0.85,v:(0.25+rg()*0.35)*(rg()<.5?-1:1),ph:(rg()*60)|0,fl:0});
-const stars=[];for(let i=0;i<240;i++)stars.push({x:(rg()*240)|0,y:WH*0.5+rg()*WH*0.52,p:(rg()*100)|0,b:rg()<.2});
-const sats=[{x:30,y:WH*0.63,v:.18,bl:0},{x:200,y:WH*0.71,v:-.14,bl:0},{x:120,y:WH*0.8,v:.1,bl:0}];
-const plane={x:-30,y:WH*0.53,v:.55};
-for(let i=0;i<26;i++)flowers.push({x:4+((rg()*232)|0),wy:0,c:['#ff5d8f','#ffd23f','#ffffff','#b388ff'][(rg()*4)|0],age:99});
+/* ---------- 山の形：左下から右上へ上る坂、頂上は平ら ---------- */
+function hbase(x){
+  if(x<=XS-40)return SLOPE*x;
+  if(x<=XS){const t=x-(XS-40);return SLOPE*(XS-40)+SLOPE*(t-t*t/80)}
+  return SLOPE*(XS-20);
+}
+function gh(x){return hbase(x)+(x<XS?(1.5*Math.sin(x/29)+1.0*Math.sin(x/11+2))*clamp((XS-x)/80,0,1):0)}
+const HS=hbase(XL);                                     // 頂上の高さ
+const catX=()=>dP*XC;
+const sxOf=wx=>Math.round(SX+(wx-camX)),syOf=wy=>Math.round(FEET-(wy-camY));
+const flightA=t=>FLY*(1-Math.cos(Math.PI*clamp(t/LAND_START,0,1)))/2;
+const landT=()=>lch?(lch.s===4?clamp((lch.t-LAND_START)/(FLY_FRAMES-LAND_START),0,1):lch.s===5?1:0):0;
+function updCam(){
+  const cx=catX();
+  if(!lch){camX=cx+viewOff;camY=gh(camX);return}
+  camX=lerp(cx,XP-(120-SX),lch.s===1?sm(clamp(lch.t/90,0,1)):1);
+  camY=HS+(lch.s===4?flightA(lch.t):lch.s===5?FLY:0);
+}
 
-/* ---------- 山の形・ジグザグの登山道 ---------- */
-function hwAt(wy){const s=clamp(wy/SUMMIT,0,1);let h=100*(1-Math.pow(s,1.15))+10;if(wy>SUMMIT-30)h=Math.max(h,26);return h}
-function pathX(wy){return 120+(hwAt(wy)-12)*Math.sin(wy/260*Math.PI*2)*clamp((SUMMIT-wy)/150,0,1)}
-const trees=[];{const r=mulberry(99);for(let i=0;i<70;i++){const wy=(20+r()*SUMMIT*0.42)|0,hw=hwAt(wy)-14,x=120+(r()*2-1)*hw;if(Math.abs(x-pathX(wy))<9)continue;trees.push({x:x|0,wy:wy,h:10+((r()*6)|0)})}}
+/* ---------- 世界のデータ（雲・鳥・UFO・落ちている物。毎回同じ配置） ---------- */
+const rg=mulberry(20261112);
+const clouds=[];for(let i=0;i<64;i++)clouds.push({x:rg()*340,y:(i<24?1300+rg()*750:90+rg()*3200),w:24+((rg()*30)|0),v:(0.05+rg()*0.12)*(rg()<.5?-1:1),puff:0});
+const birds=[];for(let i=0;i<12;i++)birds.push({x:200+rg()*(XS-300),yo:50+rg()*90,v:(0.3+rg()*0.4)*(rg()<.5?-1:1),ph:(rg()*60)|0,fl:0});
+const ufos=[{x:XS*0.38,yo:105,ph:0,beam:0},{x:XS*0.8,yo:120,ph:50,beam:0}];
+const stars=[];for(let i=0;i<260;i++)stars.push({x:(rg()*240)|0,y:3200+rg()*3000,p:(rg()*100)|0,b:rg()<.2});
+const sats=[{x:30,y:4300,v:.18,bl:0},{x:200,y:4800,v:-.14,bl:0},{x:120,y:5300,v:.1,bl:0}];
+const plane={x:-30,y:3100,v:.55};
+const trees=[];{const r=mulberry(99);for(let i=0;i<64;i++)trees.push({x:(XS*(0.1+r()*0.5))|0,h:12+((r()*8)|0),dk:r()<.5})}
+const objs=[];{const r=mulberry(4242);const kinds=['flower','flower','flower','flower','can','can','bomb','skull','bug','bug'];
+  let x=60;while(x<XS-80){x+=26+r()*55;const k=kinds[(r()*kinds.length)|0];objs.push({k:k,x:x|0,t:0,dead:0,c:['#ff5d8f','#ffd23f','#ffffff','#b388ff','#ff9a3d'][(r()*5)|0]})}}
 
 /* ---------- データ（ダミー／あとでGAS） ---------- */
 function addRank(addr,amt){const k=(addr||'').toLowerCase();const r=ranking.find(x=>(x.addr||'').toLowerCase()===k);if(r)r.amt+=amt;else ranking.push({addr:addr,amt:amt});ranking.sort((a,b)=>b.amt-a.amt)}
@@ -897,7 +922,7 @@ async function pollData(){
     }
   }catch(e){}
 }
-function showToast(text){toast={t:0,text:text};tone(1200,1800,.1,.1,'triangle');setTimeout(()=>tone(1800,2400,.12,.08,'triangle'),90)}
+function showToast(text){if(lch&&lch.s<=4)return;toast={t:0,text:text};tone(1200,1800,.1,.1,'triangle');setTimeout(()=>tone(1800,2400,.12,.08,'triangle'),90)}
 if(USE_DUMMY_DATA)initDummy();else pollData();
 
 /* ===== 課金アイテムは無し（常に無料）。寄付は A ボタンの「SUPPORT」メニュー ===== */
@@ -906,6 +931,11 @@ if(USE_DUMMY_DATA)initDummy();else pollData();
 const amtOf=m=>parseInt(m.d.join(''),10)||0;
 function openMenu(){menu={stage:'AMT',d:[0,0,0,1,0,0],cur:3,msg:'',t:0,rankOff:0,amt:0};tone(880,1320,.08,.1)}
 function openRank(){menu={stage:'RANK',d:[],cur:0,msg:'',t:0,rankOff:0,amt:0};tone(660,990,.08,.1)}
+function closeMenu(){const was=menu;menu=null;if(was&&was.stage==='DONE')afterThanks()}
+function afterThanks(){   // 「THANK YOU」の枠を閉じたあとで、ネコが歩き出す
+  if(lch)return;hopT=24;const cx=catX();
+  spawn(cx,gh(cx)+22,24,['#ffd700','#fff','#6ee7b7','#ff7ab8'],2.2,0.05,46,2);
+}
 function menuDir(k){
   const m=menu;if(!m)return;
   if(m.stage==='AMT'){
@@ -921,11 +951,11 @@ function menuA(){
   if(m.stage==='AMT'){const a=amtOf(m);if(a<1){m.msg='ENTER 1 OR MORE';tone(200,150,.15,.1,'sawtooth');return}m.amt=a;m.stage='CONF';m.msg='';tone(880,1320,.08,.1)}
   else if(m.stage==='CONF'){m.stage='SEND';m.msg='';m.t=0;doDonate(m)}
   else if(m.stage==='ERR'){m.stage='AMT';m.msg=''}
-  else if(m.stage==='DONE'||m.stage==='RANK'){menu=null}
+  else if(m.stage==='DONE'||m.stage==='RANK'){closeMenu()}
 }
 function menuB(){
   const m=menu;
-  if(m.stage==='AMT'||m.stage==='ERR'||m.stage==='DONE'||m.stage==='RANK')menu=null;
+  if(m.stage==='AMT'||m.stage==='ERR'||m.stage==='DONE'||m.stage==='RANK')closeMenu();
   else if(m.stage==='CONF'){m.stage='AMT';m.msg=''}
 }
 async function doDonate(m){
@@ -933,60 +963,69 @@ async function doDonate(m){
   if(menu!==m)return;
   if(r.ok){onDonated(m.amt);m.stage='DONE';m.t=0}else{m.stage='ERR';m.msg=r.msg||'FAILED'}
 }
-function onDonated(amt){
+function onDonated(amt){   // 数字だけ先に増やす。ネコが歩くのは「THANK YOU」の枠が消えてから
   addDonationData(walletAddress||'0x00000000000000000000000000000000000000f1',amt);
-  playKirarin();hopT=24;flash=6;
-  spawn(120,catWY()+14,30,['#ffd700','#fff','#6ee7b7','#ff7ab8'],2.4,0.05,50,2);
+  playKirarin();
   if(!USE_DUMMY_DATA)setTimeout(pollData,6000);
 }
 const walletOpen=()=>{const m=$('walletModal');return !!m&&m.style.display==='flex'};
-function onA(){if(ov.style.display!=='none'||paused||confirmT||st!=='PLAY'||walletOpen())return;if(!menu)openMenu();else menuA()}
-function onB(){if(ov.style.display!=='none'||paused||confirmT||st!=='PLAY'||walletOpen())return;if(!menu)openRank();else menuB()}
-/* 十字キー：メニュー外は↑↓で景色をスクロール、メニュー内は数字入力 */
+const ready=()=>summitDone&&!lch&&dP>=0.9999;
+function onA(){
+  if(ov.style.display!=='none'||paused||confirmT||st!=='PLAY'||walletOpen())return;
+  if(lch){if(lch.s===5&&lch.t>200)returnToSummit();return}
+  if(!menu)openMenu();else menuA();
+}
+function onB(){
+  if(ov.style.display!=='none'||paused||confirmT||st!=='PLAY'||walletOpen())return;
+  if(lch){if(lch.s===5&&lch.t>200)returnToSummit();return}
+  if(!menu)openRank();else menuB();
+}
+/* 十字キー：メニュー外は景色を見て回る（↑→で山頂側、↓←でふもと側）、メニュー内は数字入力 */
 function dpadHold(k,on){if(on){if(!dpadHeld[k]){dpadHeld[k]=1;if(menu&&st==='PLAY'&&!paused)menuDir(k)}}else dpadHeld[k]=0}
 function dpadSet(k){['u','d','l','r'].forEach(d=>dpadHold(d,d===k))}
 function tickHold(){['u','d','l','r'].forEach(k=>{if(dpadHeld[k]){dpadHeld[k]++;if(menu&&dpadHeld[k]>18&&dpadHeld[k]%5===0)menuDir(k)}})}
 
-/* ---------- 世界の座標 ---------- */
-const catWY=()=>Math.min(dP,LAND0)*WH;
-const camY=()=>Math.round(catWY()+viewOff);
-const syOf=wy=>FEETY-(wy-camY());
-const landT=()=>clamp((dP-LAND0)/(1-LAND0),0,1);
-function altText(){if(dP>=0.9999)return 'THE MOON!';if(dP<0.5)return fmt(dP/0.5*8848)+' M';return fmt((dP-0.5)/0.5*384400)+' KM'}
-
-/* ---------- パーティクル ---------- */
-function spawn(wx,wy,n,cols,sp,gr,life,sz){for(let i=0;i<n&&parts.length<500;i++){const a=Math.random()*6.283,s=Math.random()*sp;parts.push({x:wx,y:wy,vx:Math.cos(a)*s,vy:Math.sin(a)*s+0.3,g:gr||0,l:life*(0.6+Math.random()*0.6),m:life,c:cols[(Math.random()*cols.length)|0],s:sz||2})}}
+/* ---------- パーティクル（世界の座標） ---------- */
+function spawn(wx,wy,n,cols,sp,gr,life,sz){for(let i=0;i<n&&parts.length<520;i++){const a=Math.random()*6.283,s=Math.random()*sp;parts.push({x:wx,y:wy,vx:Math.cos(a)*s,vy:Math.sin(a)*s+0.3,g:gr||0,l:life*(0.6+Math.random()*0.6),m:life,c:cols[(Math.random()*cols.length)|0],s:sz||2})}}
 
 /* ===== ゲーム本体 ===== */
 function newGame(){
-  st='PLAY';menu=null;viewOff=0;idleView=0;toast=null;hopT=0;liftT=0;rocketShake=0;parts.length=0;meteors.length=0;
-  dP=clamp(total/GOAL,0,1);lifted=dP>=0.5;endT=dP>=0.9999?300:0;
-  guideT=600;tapped=false;fakeT=60*6;
+  st='PLAY';menu=null;viewOff=0;idleView=0;toast=null;hopT=0;liftT=0;lch=null;boarded=false;parts.length=0;meteors.length=0;
+  dP=clamp(total/GOAL,0,1);summitDone=dP>=0.9999;summitT=summitDone?999:0;
+  guideT=600;tapped=false;fakeT=60*6;objs.forEach(o=>{o.t=0;o.dead=0});
 }
-function startLift(){
-  liftT=150;flash=12;shake=45;playSound('glow');bossNoise(1.2,.3,600);
-  spawn(120,catWY(),40,['#e2e8f0','#fbbf24','#f97316'],2.2,0,60,3);
-}
-function startEnd(){
-  flash=14;shake=30;bossNoise(.8,.3,900);playKirarin();
-  spawn(100,catWY(),40,['#d6d6df','#b8b8c4','#fff'],2.5,0.03,50,2);
+function startSummit(){summitDone=true;summitT=0;flash=10;playKirarin();setTimeout(playKirarin,260);spawn(XC,HS+30,40,['#ffd700','#fff','#6ee7b7','#ff7ab8'],2.6,0.05,60,2)}
+function startLaunch(){lch={s:1,t:0};boarded=false;menu=null;viewOff=0;flash=4;tone(500,900,.1,.12)}
+function startEnd(){flash=14;shake=30;bossNoise(.8,.3,900);playKirarin();spawn(100,HS+FLY,40,['#d6d6df','#b8b8c4','#fff'],2.5,0.03,50,2)}
+function returnToSummit(){lch=null;boarded=false;viewOff=0;flash=14;parts.length=0;hopT=0;liftT=0;showToast('WELCOME BACK TO EARTH!')}
+
+function interact(o){
+  if(o.k==='can'&&!o.t){o.t=26;tone(900,500,.06,.12,'triangle');setTimeout(()=>tone(700,350,.08,.1,'triangle'),110)}
+  else if(o.k==='bomb'&&o.dead<=0){o.dead=480;spawn(o.x,gh(o.x)+8,44,['#fbbf24','#f97316','#ef4444','#4b5563','#fff'],3,0.06,42,3);shake=16;flash=3;bossNoise(.6,.35,1200);tone(220,40,.4,.2,'sawtooth')}
+  else if(o.k==='skull'&&!o.t){o.t=36;for(let i=0;i<6;i++)setTimeout(()=>tone(1900+Math.random()*300,1500,.03,.08,'square'),i*70)}
+  else if(o.k==='bug'&&!o.t){o.t=26;tone(1300,1900,.08,.08,'triangle')}
+  else if(o.k==='flower'&&!o.t){o.t=60;tone(880,1100,.15,.05,'triangle')}
 }
 function tapAt(sx,sy){
-  const cam=camY(),wy=cam+FEETY-sy,cw=catWY();
-  const cx=dP>=0.5?lerp(120,84,landT()):pathX(Math.round(cw));
-  // ネコ（ロケット）
-  if(endT===0&&Math.abs(sx-cx)<22&&wy>=cw-48&&wy<=cw+10){
-    if(dP>=0.5){rocketShake=24;bossNoise(.3,.25,500);spawn(cx,cw,14,['#e2e8f0','#fff'],1.6,0,40,3)}
-    else{hopT=24;meow();spawn(cx,cw+22,8,['#ff7ab8','#ff9ec8'],1.2,-0.02,40,2)}
-    return}
-  if(endT>0){const gx=124;if(Math.abs(sx-gx)<22&&Math.abs(sy-(FEETY-6))<24){hopT=24;meow();return}}
-  for(const b of birds){if(Math.abs(sx-b.x)<10&&Math.abs(sy-syOf(b.y))<10){b.fl=90;spawn(b.x,b.y,8,['#e2e8f0','#94a3b8'],1.4,0.05,40,1);tone(1500,900,.12,.1);return}}
-  for(const c of clouds){if(c.y/WH<0.56&&Math.abs(sx-c.x)<c.w/2+4&&Math.abs(sy-syOf(c.y))<9){c.puff=26;spawn(c.x,c.y,10,['#fff','#cfe3ff','#ffd23f'],1.6,0,36,2);tone(900,1500,.08,.08,'triangle');return}}
+  // 発射ボタン／月面から戻る
+  if(lch){if(lch.s===5&&lch.t>200){returnToSummit();return}}
+  else if(ready()){const bx=sxOf(XP-58),by=syOf(HS)-14;if(Math.abs(sx-bx)<17&&Math.abs(sy-by)<17){startLaunch();return}}
+  // ネコ
+  if(!lch){const cx=sxOf(catX()),cy=syOf(gh(catX()));
+    if(Math.abs(sx-cx)<22&&sy>cy-36&&sy<cy+6){hopT=24;meow();spawn(catX(),gh(catX())+24,8,['#ff7ab8','#ff9ec8'],1.2,-0.02,40,2);return}}
+  // 地面の物（空き缶・爆弾・髑髏・てんとう虫・花）
+  if(!lch)for(const o of objs){if(o.dead>0)continue;const ox=sxOf(o.x),oy=syOf(gh(o.x));if(Math.abs(sx-ox)<11&&sy>oy-19&&sy<oy+5){interact(o);return}}
+  // 鳥・UFO・雲
+  if(!lch){
+    for(const b of birds){const wy=gh(b.x)+b.yo;if(Math.abs(sx-sxOf(b.x))<15&&Math.abs(sy-syOf(wy))<12){b.fl=90;spawn(b.x,wy,8,['#e2e8f0','#94a3b8'],1.4,0.05,40,1);tone(1500,900,.12,.1);return}}
+    for(const u of ufos){const wy=gh(u.x)+u.yo;if(Math.abs(sx-sxOf(u.x))<18&&Math.abs(sy-syOf(wy))<12){u.beam=50;tone(300,1400,.5,.1,'sine');setTimeout(()=>tone(1400,300,.4,.08,'sine'),300);return}}
+  }
+  for(const c of clouds){const csx=((c.x-camX*0.6)%340+340)%340-50;if(Math.abs(sx-csx)<c.w/2+4&&Math.abs(sy-syOf(c.y))<9){c.puff=26;spawn(camX+(csx-SX),c.y,10,['#fff','#cfe3ff','#ffd23f'],1.6,0,36,2);tone(900,1500,.08,.08,'triangle');return}}
   for(const s of sats){if(Math.abs(sx-s.x)<9&&Math.abs(sy-syOf(s.y))<9){s.bl=40;tone(1760,1760,.06,.08);setTimeout(()=>tone(2349,2349,.08,.08),90);return}}
   if(Math.abs(sx-plane.x)<14&&Math.abs(sy-syOf(plane.y))<8){tone(300,300,.25,.1,'sawtooth');setTimeout(()=>tone(380,380,.3,.1,'sawtooth'),120);return}
-  for(const s of stars){if(s.y/WH>0.52&&Math.abs(sx-s.x)<7&&Math.abs(sy-syOf(s.y))<7&&meteors.length<8){meteors.push({x:s.x,y:s.y,vx:2.6,vy:-1.5,l:36});tone(2000,400,.3,.08,'triangle');return}}
-  if(wy>=0&&wy<SUMMIT*0.16&&Math.abs(sx-120)<hwAt(wy)-3&&flowers.length<110){flowers.push({x:sx,wy:wy,c:pick(['#ff5d8f','#ffd23f','#ffffff','#b388ff','#ff9a3d']),age:0});tone(700,1400,.08,.09,'triangle');spawn(sx,wy+4,5,['#fff','#ffd23f'],1,0.02,24,1);return}
-  spawn(sx,wy,10,['#fff','#ffd700','#6ee7b7','#ff7ab8','#7efff5'],1.8,0.04,30,2);
+  for(const s of stars){if(s.y>3300&&Math.abs(sx-s.x)<7&&Math.abs(sy-syOf(s.y))<7&&meteors.length<8){meteors.push({x:s.x,y:s.y,vx:2.6,vy:-1.5,l:36});tone(2000,400,.3,.08,'triangle');return}}
+  const wx=camX+(sx-SX),wy=camY+FEET-sy;
+  spawn(wx,wy,10,['#fff','#ffd700','#6ee7b7','#ff7ab8','#7efff5'],1.8,0.04,30,2);
   const sc=[523,587,659,784,880,1047];tone(sc[(sx/40)|0]||523,(sc[(sx/40)|0]||523)*1.5,.12,.08,'triangle');
 }
 function canvasTap(e){
@@ -995,106 +1034,192 @@ function canvasTap(e){
   const sx=Math.round((e.clientX-r.left)/r.width*248-4),sy=Math.round((e.clientY-r.top)/r.height*168-4);
   tapped=true;guideT=0;tapAt(clamp(sx,0,239),clamp(sy,0,159));
 }
-function act2(){if(st!=='PLAY'||paused||confirmT||menu||walletOpen())return;tapped=true;guideT=0;tapAt(120,FEETY-14)}
+function act2(){   // スペースキー：頂上では発射ボタン、それ以外はネコをさわる
+  if(st!=='PLAY'||paused||confirmT||menu||walletOpen())return;
+  tapped=true;guideT=0;
+  if(lch){if(lch.s===5&&lch.t>200)returnToSummit();return}
+  if(ready()){startLaunch();return}
+  tapAt(sxOf(catX()),syOf(gh(catX()))-14);
+}
+
+/* ---------- 発射イベント（ゴゴゴ→3,2,1,FIRE→約15秒の飛行→月面） ---------- */
+function stepLaunch(){
+  const l=lch,t=l.t;
+  if(l.s===1){                                   // ① 地面が開いて、ロケットがゴゴゴとせり上がる
+    shake=Math.max(shake,3);
+    if(t===1){bossNoise(3.4,.45,220);tone(45,95,3,.12,'sawtooth')}
+    if(t%36===1){const hi=(t%72===1);tone(hi?880:660,hi?880:660,.18,.1,'square')}
+    if(t>10&&t%2===0)spawn(XP+(Math.random()*34-17),HS+2,1,['#e2e8f0','#cbd5e1'],0.6,-0.01,50,3);
+    if(t%3===0)spawn(XP+(Math.random()*30-15),HS+2,2,['#fbbf24','#f97316'],1.8,0.08,26,2);
+    if(t>=170)lch={s:2,t:0};
+  }else if(l.s===2){                             // ② ガンジャキャットがロケットに飛び乗る
+    if(t===50){boarded=true;tone(900,1400,.1,.12);spawn(XP,HS+30,16,['#fff','#7dd3fc'],1.6,0,30,2)}
+    if(t>=62)lch={s:3,t:0};
+  }else if(l.s===3){                             // ③ カウントダウン
+    if(t%60===0&&t<180)tone(660,660,.15,.14,'square');
+    if(t===180){playCount(true);bossNoise(2,.45,900);flash=8;shake=20}
+    if(t>=180){shake=Math.max(shake,4);spawn(XP+(Math.random()*20-10),HS+2,2,['#e2e8f0','#fff','#fbbf24'],1.5,-0.02,60,3)}
+    if(t>=240){lch={s:4,t:0};liftT=120}
+  }else if(l.s===4){                             // ④ 発射！約15秒の飛行（最後の約2.5秒で月に着陸）
+    if(t<90)shake=Math.max(shake,3);
+    if(t%2===0)spawn(XP+(Math.random()*8-4),HS+flightA(t)-2,1,['#e2e8f0','#cbd5e1','#fbbf24'],0.7,0,40+Math.random()*20,3);
+    if(t>=FLY_FRAMES){lch={s:5,t:0};startEnd()}
+  }
+}
 
 function upd(){
   af++;
   if(st!=='PLAY')return;
   tickHold();
-  const P=clamp(total/GOAL,0,1),diff=P-dP,prev=dP;
-  walking=diff>0.00002;
-  if(diff>0)dP=Math.min(P,dP+Math.max(0.00002,diff*0.03));
-  if(!lifted&&dP>=0.5){lifted=true;if(prev<0.5)startLift()}
-  if(dP>=0.9999){if(endT===0)startEnd();endT++}
-  // カメラ（十字キー↑↓で景色を見る。しばらく触らないとネコに戻る）
-  const cw=catWY();
-  if(!menu){if(dpadHeld.u){viewOff+=3;idleView=0}if(dpadHeld.d){viewOff-=3;idleView=0}}
+  // ネコの歩み（寄付の合計に合わせて山頂へ。「THANK YOU」の枠が出ている間は止まる）
+  const P=clamp(total/GOAL,0,1),diff=P-dP;
+  walking=false;
+  if(diff>0&&!menu&&!lch){walking=diff>0.00002;dP=Math.min(P,dP+Math.max(0.00002,diff*0.03))}
+  if(dP>=0.9999&&!summitDone)startSummit();
+  if(summitDone)summitT++;
+  if(lch){lch.t++;stepLaunch()}
+  // カメラ（十字キーで景色を見て回る。しばらく触らないとネコに戻る）
+  if(!menu&&!lch){const sp=4;if(dpadHeld.u||dpadHeld.r){viewOff+=sp;idleView=0}if(dpadHeld.d||dpadHeld.l){viewOff-=sp;idleView=0}}
   idleView++;if(idleView>300&&viewOff!==0){viewOff*=0.9;if(Math.abs(viewOff)<1)viewOff=0}
-  viewOff=clamp(viewOff,-cw,WH+30-cw);
+  viewOff=clamp(viewOff,-catX()-80,XL+30-catX());
+  if(lch)viewOff=0;
+  updCam();
   // 世界の動き
-  clouds.forEach(c=>{c.x+=c.v;if(c.x>270)c.x=-30;if(c.x<-30)c.x=270;if(c.puff>0)c.puff--});
-  birds.forEach(b=>{b.x+=b.v*(b.fl>0?3:1);if(b.x>250)b.x=-10;if(b.x<-10)b.x=250;if(b.fl>0)b.fl--});
+  clouds.forEach(c=>{c.x+=c.v;if(c.puff>0)c.puff--});
+  birds.forEach(b=>{b.x+=b.v*(b.fl>0?3:1);if(b.x>XS)b.x=200;if(b.x<200)b.x=XS;if(b.fl>0)b.fl--});
+  ufos.forEach(u=>{if(u.beam>0)u.beam--});
   sats.forEach(s=>{s.x+=s.v;if(s.x>250)s.x=-10;if(s.x<-10)s.x=250;if(s.bl>0)s.bl--});
   plane.x+=plane.v;if(plane.x>290)plane.x=-40;
+  objs.forEach(o=>{if(o.t>0)o.t--;if(o.dead>0&&--o.dead===0){spawn(o.x,gh(o.x)+8,8,['#fff','#cbd5e1'],1,0,24,2);tone(500,900,.1,.08,'triangle')}});
   for(let i=parts.length-1;i>=0;i--){const p=parts[i];p.x+=p.vx;p.y+=p.vy;p.vy-=p.g;if(--p.l<=0)parts.splice(i,1)}
   for(let i=meteors.length-1;i>=0;i--){const m=meteors[i];m.x+=m.vx;m.y+=m.vy;if(--m.l<=0)meteors.splice(i,1)}
-  flowers.forEach(f=>{if(f.age<30)f.age++});
-  if(hopT>0)hopT--;if(rocketShake>0)rocketShake--;if(liftT>0)liftT--;
+  if(hopT>0)hopT--;if(liftT>0)liftT--;
   if(toast&&++toast.t>200)toast=null;
   if(guideT>0)guideT--;
-  if(menu&&menu.stage==='DONE'&&++menu.t>180)menu=null;
-  // ロケットの煙
-  if(dP>=0.5&&endT===0&&af%3===0)spawn(landT()>0?lerp(120,84,landT()):120,cw-2,1,['#e2e8f0','#cbd5e1'],0.5,0,40,3);
+  if(menu&&menu.stage==='DONE'&&++menu.t>150)closeMenu();
   // ダミーのほかの人の寄付／本物のデータの取得
   if(USE_DUMMY_DATA){if(--fakeT<=0){fakeDonor();fakeT=(60*(7+Math.random()*9))|0}}
   else if(af%1200===0)pollData();
   // 月面：到着したあとの花火
-  if(endT>150&&af%45===0){const wx=20+Math.random()*200,wy=camY()+FEETY-(20+Math.random()*50);spawn(wx,wy,26,[pick(['#ff5d8f','#ffd23f','#6ee7b7','#7efff5','#b388ff'])],2.2,0.04,50,2);if(af%135===0)playKirarin();else tone(300+Math.random()*200,60,.3,.1,'sawtooth')}
+  if(lch&&lch.s===5&&lch.t>150&&af%45===0){const wx=camX+(20+Math.random()*200-SX),wy=camY+FEET-(20+Math.random()*50);spawn(wx,wy,26,[pick(['#ff5d8f','#ffd23f','#6ee7b7','#7efff5','#b388ff'])],2.2,0.04,50,2);if(af%135===0)playKirarin();else tone(300+Math.random()*200,60,.3,.1,'sawtooth')}
 }
 
-/* ---------- 描画：背景 ---------- */
+/* ---------- 描画：空・遠い山・雲・鳥・UFO ---------- */
 function drawSky(){
-  const cam=camY();
-  for(let sy=0;sy<160;sy+=2){const wy=cam+FEETY-sy;
-    if(wy>=0)R(0,sy,240,2,skyAt(wy/WH));
-    else R(0,sy,240,2,wy>-3?'#5cc05c':(((wy>>2)&1)?'#6b4a2a':'#5d3f23'))}
-  const ss=syOf(520);if(ss>-20&&ss<180){disc(g,196,ss,8,'#ffe58a');disc(g,196,ss,6,'#fff6c8')}
+  for(let sy=0;sy<160;sy+=2)R(0,sy,240,2,skyAt(camY+FEET-sy));
+  const a=1-clamp((camY-2800)/900,0,1);
+  if(a>0){g.globalAlpha=a;disc(g,208,22,8,'#ffe58a');disc(g,208,22,6,'#fff6c8');g.globalAlpha=1}
 }
 function drawStars(){
-  const cam=camY();
-  for(const s of stars){const sy=FEETY-(s.y-cam);if(sy<-2||sy>162)continue;const a=clamp((s.y/WH-0.5)/0.12,0,1);if(a<=0)continue;
+  for(const s of stars){const sy=syOf(s.y);if(sy<-2||sy>162)continue;const a=clamp((s.y-3300)/700,0,1);if(a<=0)continue;
     const tw=((af+s.p)>>4)&3;g.globalAlpha=a*(tw===3?0.35:1);R(s.x,sy,s.b?2:1,s.b?2:1,'#fff');if(s.b&&tw!==3){R(s.x-1,sy,1,1,'#bcd3ff');R(s.x+2,sy,1,1,'#bcd3ff')}}
   g.globalAlpha=1;
 }
-function drawHills(){
-  const b=syOf(0);if(b<-40)return;
-  for(let x=0;x<240;x+=4){const h1=34+14*Math.sin(x/31+1)+9*Math.sin(x/11),h2=18+9*Math.sin(x/23+4)+6*Math.sin(x/9);
-    const t1=Math.round(syOf(h1)),t2=Math.round(syOf(h2));R(x,t1,4,b-t1,'#8fd0b0');R(x,t2,4,b-t2,'#62b07f')}
+function drawFar(){
+  if(camY>1500)return;
+  for(let sx=0;sx<240;sx+=2){
+    const p1=camX*0.25+sx,tri1=Math.abs(((p1/110)%2+2)%2-1),h1=34+62*tri1+8*Math.sin(p1/13),t1=Math.round(FEET+58-h1+camY*0.3);
+    if(t1<160){R(sx,t1,2,160-t1,'#9bc3e0');if(h1>84)R(sx,t1,2,Math.min(6,(h1-84)|0)+1,'#fff')}
+    const p2=camX*0.5+sx,tri2=Math.abs(((p2/70)%2+2)%2-1),h2=22+34*tri2+5*Math.sin(p2/9),t2=Math.round(FEET+66-h2+camY*0.45);
+    if(t2<160)R(sx,t2,2,160-t2,'#74a9cf');
+  }
 }
-function drawClouds(front){
-  const cam=camY();
-  for(const c of clouds){if(c.front!==front)continue;const sy=FEETY-(c.y-cam);if(sy<-16||sy>176)continue;
-    const a=1-clamp((c.y/WH-0.52)/0.08,0,1);if(a<=0)continue;
+function drawClouds(){
+  for(const c of clouds){const sy=syOf(c.y);if(sy<-16||sy>176)continue;
+    const sx=Math.round(((c.x-camX*0.6)%340+340)%340-50);
+    const a=1-clamp((c.y-3000)/300,0,1);if(a<=0)continue;
     let w=c.w;if(c.puff>0)w*=1-0.85*Math.sin(c.puff/26*Math.PI);w=Math.round(w);if(w<4)continue;
-    g.globalAlpha=a*(front?0.95:0.8);const x=Math.round(c.x),hw=w>>1;
-    R(x-hw,sy,w,6,'#fff');R(x-(w/3|0),sy-4,(w*0.55)|0,5,'#fff');R(x+((w*0.05)|0),sy-7,(w*0.35)|0,8,'#fff');R(x-hw+2,sy+4,w-4,3,'#d6e4f5')}
+    g.globalAlpha=a*0.9;const hw=w>>1;
+    R(sx-hw,sy,w,6,'#fff');R(sx-(w/3|0),sy-4,(w*0.55)|0,5,'#fff');R(sx+((w*0.05)|0),sy-7,(w*0.35)|0,8,'#fff');R(sx-hw+2,sy+4,w-4,3,'#d6e4f5')}
   g.globalAlpha=1;
 }
-function bandCols(s){if(s<0.16)return['#5cc05c','#43a047','#2e7d32'];if(s<0.40)return['#35a05a','#278049','#1b5e32'];if(s<0.68)return['#a4a4ae','#7f7f8a','#5d5d68'];return['#ffffff','#cddcf0','#9fb6d6']}
-function drawMountain(){
-  const cam=camY();
-  for(let sy=0;sy<160;sy++){
-    const wy=cam+FEETY-sy;if(wy<0||wy>SUMMIT+2)continue;
-    const s=wy/SUMMIT;let hw=Math.round(hwAt(wy)+((hash(wy>>2)*7)|0)-3);if(hw<8)hw=8;
-    const c=bandCols(s);
-    R(120-hw,sy,hw,1,c[0]);R(120,sy,hw,1,c[1]);R(120-hw,sy,2,1,c[2]);R(120+hw-2,sy,2,1,c[2]);
-    if(s>0.34&&hash(wy*7+13)<0.05){R(120-hw+((hash(wy*11+5)*hw*2)|0),sy,5,1,c[2])}
-  }
-  // 登山道（点線）
-  for(let sy=0;sy<160;sy++){const wy=cam+FEETY-sy;if(wy<4||wy>SUMMIT-6)continue;if(((wy>>1)&1)===0){const px=Math.round(pathX(wy));R(px-1,sy,3,1,'#d9b77a')}}
-  // 木
-  for(const t of trees){const sy=FEETY-(t.wy-cam);if(sy<-4||sy>176)continue;
-    R(t.x-1,sy-3,2,3,'#6b4423');R(t.x-5,sy-8,10,5,'#1b6b36');R(t.x-4,sy-12,8,4,'#1b6b36');R(t.x-2,sy-t.h,4,t.h-11,'#1b6b36');R(t.x-5,sy-8,2,5,'#2f8f4a');R(t.x-4,sy-12,2,4,'#2f8f4a')}
+function drawBirds(){   // 2倍サイズ
+  for(const b of birds){const wy=gh(b.x)+b.yo,sy=syOf(wy),sx=sxOf(b.x);if(sx<-16||sx>256||sy<-10||sy>170)continue;
+    const up=((af+b.ph)>>(b.fl>0?1:3))&1,c=b.fl>0?'#7f1d1d':'#2b3a55';
+    R(sx,sy,8,4,c);
+    if(b.v>0){R(sx+8,sy,3,3,c);R(sx+11,sy+1,2,1,'#f59e0b')}else{R(sx-3,sy,3,3,c);R(sx-5,sy+1,2,1,'#f59e0b')}
+    if(up){R(sx-4,sy-4,6,4,c);R(sx+6,sy-4,6,4,c)}else{R(sx-4,sy+2,6,4,c);R(sx+6,sy+2,6,4,c)}}
 }
-function drawFlowers(){
-  const cam=camY();
-  flowers.forEach((f,i)=>{const sy=FEETY-(f.wy-cam);if(sy<-8||sy>170)return;
-    const h=Math.min(4,1+(f.age>>2)),sw=(((af>>5)+i)&1);
-    R(f.x+sw,sy-h-1,3,2,f.c);R(f.x+1+sw,sy-h-1,1,1,'#ffd23f');R(f.x+1,sy-h+1,1,h,'#2e7d32')})
+function drawUFOs(){   // 2倍サイズ
+  for(const u of ufos){const wy=gh(u.x)+u.yo+Math.sin((af+u.ph)/30)*5,sy=syOf(wy),sx=sxOf(u.x);if(sx<-20||sx>260||sy<-14||sy>170)continue;
+    if(u.beam>0){g.globalAlpha=.3*Math.min(1,u.beam/12);for(let i=0;i<7;i++)R(sx-5-i*2,sy+6+i*13,10+i*4,13,'#fde68a');g.globalAlpha=1}
+    const wob=u.beam>0?Math.round(Math.sin(af/2)*2):0;
+    R(sx-8+wob,sy-11,16,6,'#a5f3fc');R(sx-6+wob,sy-13,12,2,'#cffafe');
+    R(sx-14+wob,sy-5,28,5,'#9ca3af');R(sx-14+wob,sy-5,28,1,'#d1d5db');R(sx-11+wob,sy,22,4,'#6b7280');
+    for(let i=0;i<4;i++)R(sx-9+i*6+wob,sy-3,3,2,((af>>3)+i)%3?'#fde047':'#ef4444')}
+}
+
+/* ---------- 描画：地面（坂） ---------- */
+const ZC=[['#6fd16f','#4aa84f','#3b8f42','#2e7d32'],['#4cb86a','#2f8f4a','#26773c','#1b5e32'],['#b7b7c2','#8b8b96','#74747f','#5d5d68'],['#ffffff','#dbe6f5','#b9cbe3','#9fb6d6']];
+function zoneOf(wx){const f=clamp(wx/XS,0,1.2)+((hash(wx>>1)-.5)*0.03);return f<0.22?0:f<0.5?1:f<0.78?2:3}
+function drawTerrain(){
+  for(let sx=0;sx<240;sx++){
+    const wx=Math.round(camX+(sx-SX)),top=Math.round(FEET-(gh(wx)-camY));if(top>=160)continue;
+    const c=ZC[zoneOf(wx)],z=zoneOf(wx),t0=Math.max(0,top);
+    R(sx,t0,1,160-t0,c[1]);
+    for(let y=top+8;y<160;y+=16)R(sx,y,1,8,c[2]);
+    R(sx,top,1,3,c[0]);R(sx,top-1,1,1,c[3]);
+    if(z>=2&&hash(wx*3+7)<0.16)R(sx,top+5+((hash(wx)*40)|0),2,1,c[3]);
+    if(z<=1){if(hash(wx)<0.07)R(sx,top-3,1,2,c[3]);if(((wx>>2)&1)===0&&wx>0&&wx<XS-40)R(sx,top,1,1,'#d9b77a')}   // 登山道（点線）
+  }
+}
+function drawTrees(){
+  for(const t of trees){const sx=sxOf(t.x);if(sx<-8||sx>248)continue;const by=syOf(gh(t.x));if(by<-20||by>180)continue;
+    const c=t.dk?'#1b6b36':'#238a46';
+    R(sx-1,by-3,2,3,'#6b4423');R(sx-5,by-8,10,5,c);R(sx-4,by-12,8,4,c);R(sx-2,by-t.h,4,t.h-11,c);R(sx-5,by-8,2,5,'#3fa35f');R(sx-4,by-12,2,4,'#3fa35f')}
 }
 function drawFlags(){
-  const cam=camY();
-  donations.forEach((d,i)=>{if(d.cum>total+1)return;const wy=Math.round(d.cum/GOAL*WH);if(wy>=LAND0*WH)return;
-    const sy=FEETY-(wy-cam);if(sy<-20||sy>170)return;
-    const x=Math.round(wy<SUMMIT?pathX(wy)+((i%2)?-9:9):120+((i%2)?-34:34));
-    R(x,sy-10,1,10,'#e2e8f0');R(x+1,sy-10,5,3,addrColor(d.addr));R(x+1,sy-8,3,1,addrColor(d.addr))})
+  donations.forEach((d,i)=>{if(d.cum>total+1)return;const wx=Math.min(d.cum/GOAL,1)*XC-((i%2)?8:-8);if(wx<0)return;
+    const sx=sxOf(wx),by=syOf(gh(wx));if(sx<-8||sx>248||by<-10||by>180)return;
+    R(sx,by-10,1,10,'#e2e8f0');R(sx+1,by-10,5,3,addrColor(d.addr));R(sx+1,by-8,3,1,addrColor(d.addr))})
 }
+/* ---------- 描画：落ちている物 ---------- */
+function drawObjects(){
+  for(const o of objs){
+    const sx=sxOf(o.x);if(sx<-16||sx>256)continue;const by=syOf(gh(o.x));if(by<-10||by>180)continue;
+    if(o.k==='can'){
+      let dy=0,ang=0;if(o.t>0){const p=o.t/26;dy=-Math.abs(Math.sin(p*Math.PI*2))*7*p;ang=(1-p)*Math.PI*1.2}
+      g.save();g.translate(sx,by-5+dy);g.rotate(ang);
+      g.fillStyle='#c0c6cf';g.fillRect(-3,-5,7,10);g.fillStyle='#e5e9ef';g.fillRect(-3,-5,7,1);g.fillStyle='#e11d48';g.fillRect(-3,-1,7,3);g.fillStyle='#8b93a1';g.fillRect(2,-4,1,8);g.restore();
+    }else if(o.k==='bomb'){
+      if(o.dead>0)continue;
+      disc(g,sx,by-7,6,'#111827');R(sx-4,by-11,2,2,'#6b7280');R(sx+2,by-15,2,4,'#a16207');R(sx+2,by-17,3,2,((af>>4)&1)?'#fbbf24':'#ef4444');
+    }else if(o.k==='skull'){
+      const rat=o.t>0,odd=rat&&((o.t>>1)&1),dx=rat?(odd?1:-1):0,jaw=odd?2:0;
+      R(sx-8+dx,by-2,16,2,'#d9d4c0');R(sx-8+dx,by-4,2,4,'#e8e4d4');R(sx+6+dx,by-4,2,4,'#e8e4d4');
+      R(sx-5+dx,by-12,10,8,'#efe9d6');R(sx-4+dx,by-13,8,1,'#efe9d6');
+      R(sx-4+dx,by-10,3,3,'#111827');R(sx+1+dx,by-10,3,3,'#111827');R(sx+dx,by-7,1,2,'#111827');
+      R(sx-3+dx,by-4+jaw,6,2,'#e0dac6');R(sx-1+dx,by-4+jaw,1,2,'#111827');R(sx+1+dx,by-4+jaw,1,2,'#111827');
+    }else if(o.k==='bug'){
+      const sc=o.t>0?Math.cos((1-o.t/26)*Math.PI*4):1;
+      g.save();g.translate(sx,by);g.scale(Math.abs(sc)<0.05?0.05:sc,1);
+      g.fillStyle='#dc2626';g.fillRect(-4,-5,8,5);g.fillRect(-3,-6,6,1);
+      g.fillStyle='#111827';g.fillRect(-1,-6,1,6);g.fillRect(-3,-4,1,1);g.fillRect(2,-4,1,1);g.fillRect(1,-2,1,1);g.fillRect(-3,-2,1,1);g.fillRect(4,-4,2,3);g.fillRect(-3,0,1,1);g.fillRect(0,0,1,1);g.fillRect(3,0,1,1);g.restore();
+    }else if(o.k==='flower'){
+      const sw=o.t>0?Math.sin(o.t/3)*3*(o.t/60):Math.sin((af+o.x)/40),s1=Math.round(sw*0.4),s2=Math.round(sw);
+      R(sx,by-4,1,4,'#2e7d32');R(sx+s1,by-8,1,4,'#2e7d32');R(sx+1,by-5,3,1,'#2e7d32');
+      R(sx+s2-2,by-13,5,5,o.c);R(sx+s2,by-11,1,1,'#ffd23f');
+    }
+  }
+}
+/* ---------- 描画：山頂のロケット発射台 ---------- */
 function drawPad(){
-  const sy=syOf(SUMMIT);if(sy<-60||sy>200)return;
-  R(94,sy-44,5,44,'#8b95a5');for(let k=0;k<5;k++)R(94,sy-44+k*9,5,1,'#5a6372');R(94,sy-47,5,3,((af>>4)&1)?'#ff4444':'#7f1d1d');
-  R(98,sy,44,3,'#475569');R(98,sy,44,1,'#94a3b8');
-  if(dP<0.5)drawRocket(120,sy,0,false);
+  const cx=sxOf(XP),by=syOf(HS);if(cx<-60||cx>300||by<-60||by>200)return;
+  const op=lch?clamp(lch.t/30,0,1)*(lch.s===1?1:1):0,open=lch&&lch.s>=1?(lch.s===1?clamp(lch.t/30,0,1):1):0;
+  if(open>0)R(cx-18,by,36,70,'#0a0e18');           // 地下の穴（ロケットが入っている）
+  const slide=Math.round(open*17);
+  for(let i=0;i<3;i++){R(cx-18-slide+i*6,by-1,6,3,i%2?'#fbbf24':'#1f2937');R(cx+i*6+slide,by-1,6,3,i%2?'#1f2937':'#fbbf24')}
+  R(cx-38,by-46,5,46,'#8b95a5');for(let k=0;k<5;k++)R(cx-38,by-46+k*9,5,1,'#5a6372');R(cx-38,by-49,5,3,((af>>4)&1)?'#ff4444':'#7f1d1d');
+  // 発射ボタン（山頂に着くと現れる）
+  if(summitDone){
+    const bx=sxOf(XP-58),pop=sm(clamp(summitT/30,0,1)),pressed=lch&&lch.s===1&&lch.t<14;
+    R(bx-9,by-10,18,10,'#475569');R(bx-8,by-9,16,1,'#94a3b8');R(bx-7,by-3,14,1,'#1f2937');
+    const rise=Math.round((1-pop)*12);
+    R(bx-6,by-12+rise,12,2,'#1f2937');disc(g,bx,by-15+rise+(pressed?2:0),5,pressed?'#991b1b':'#dc2626');R(bx-2,by-18+rise,2,1,'#fca5a5');
+    if(!lch&&pop>=1){if((af>>4)&1)T('LAUNCH!',bx,by-31,'#ffd700',1,'c');R(bx-1,by-26+((af>>3)&1),3,1,'#ffd700');R(bx,by-25+((af>>3)&1),1,1,'#ffd700')}
+  }
 }
+/* ---------- 描画：宇宙・月 ---------- */
 function drawPlane(){
   const sy=syOf(plane.y);if(sy<-10||sy>170)return;const x=Math.round(plane.x);
   g.globalAlpha=.5;for(let i=1;i<14;i++)R(x-i*2,sy+1,2,1,'#fff');g.globalAlpha=1;
@@ -1105,30 +1230,29 @@ function drawSats(){
     R(x-7,sy+1,5,2,'#3b82f6');R(x+4,sy+1,5,2,'#3b82f6');R(x-6,sy+1,1,2,'#93c5fd');R(x+6,sy+1,1,2,'#93c5fd');R(x-2,sy-1,5,5,'#c0c8d8');R(x-1,sy,3,3,'#8895aa');
     if(s.bl>0&&((af>>2)&1)){R(x,sy-3,1,2,'#fff');R(x-1,sy-4,3,1,'#fff')}else if(((af>>5)&1)===0)R(x,sy-2,1,1,'#ff4444')}
 }
-function drawBirds(){
-  for(const b of birds){const sy=syOf(b.y);if(sy<-8||sy>168)continue;const x=Math.round(b.x),up=((af+b.ph)>>(b.fl>0?1:3))&1,c=b.fl>0?'#7f1d1d':'#2b3a55';
-    R(x,sy,4,2,c);if(up){R(x-3,sy-2,3,2,c);R(x+4,sy-2,3,2,c)}else{R(x-3,sy+1,3,2,c);R(x+4,sy+1,3,2,c)}}
-}
 function drawMeteors(){
   for(const m of meteors){const sy=syOf(m.y);for(let i=0;i<7;i++){g.globalAlpha=1-i/7;R(m.x-i*m.vx*1.2,sy+i*(-m.vy)*1.2,2,2,i<2?'#fff':'#bcd3ff')}}g.globalAlpha=1;
 }
+const apexSY=t=>FEET+60*(1-t)-3*t;
+function moonY(x){return Math.round(apexSY(landT())+300-Math.sqrt(90000-(x-120)*(x-120)))}
 function drawEarthMoon(){
   const t=landT();if(t<=0)return;
-  const R_=300,apexWY=catWY()-60*(1-t)+3*t,apex=syOf(apexWY);
-  g.globalAlpha=t;const ey=syOf(catWY()+95);disc(g,36,ey,11,'#2f6fd0');disc(g,34,ey-2,6,'#3fae5a');R(28,ey+3,10,2,'#fff');R(36,ey-5,6,1,'#fff');g.globalAlpha=1;
+  g.globalAlpha=t;const ey=FEET-95*(1-t*0.0)-0;disc(g,36,ey,11,'#2f6fd0');disc(g,34,ey-2,6,'#3fae5a');R(28,ey+3,10,2,'#fff');R(36,ey-5,6,1,'#fff');g.globalAlpha=1;
+  const apex=apexSY(t),R_=300;
   for(let x=0;x<240;x++){const dep=R_-Math.sqrt(R_*R_-(x-120)*(x-120)),top=Math.round(apex+dep);if(top>=160)continue;
     R(x,top,1,160-top,'#c9c9d2');R(x,top,1,1,'#ecece4');if(top+26<160)R(x,top+26,1,160-top-26,'#b0b0bc')}
   [[30,9,16],[70,22,12],[118,6,10],[176,18,14],[212,8,12]].forEach(c=>{const gy=moonY(c[0]);R(c[0]-(c[2]>>1),gy+c[1],c[2],3,'#8e8e9b');R(c[0]-(c[2]>>1)+2,gy+c[1]+3,c[2]-4,2,'#7c7c88');R(c[0]-(c[2]>>1),gy+c[1]-1,c[2],1,'#dadae2')});
 }
-function moonY(x){const t=landT(),dep=300-Math.sqrt(90000-(x-120)*(x-120));return Math.round(syOf(catWY()-60*(1-t)+3*t)+dep)}
 
 /* ---------- 描画：キャラクター ---------- */
-/* ガンジャキャット（GCR2のレベル1の四足歩行をそのまま使用）＋登山ハット・リュック・登山靴 */
-function drawCat(x,y,fr,dir,blink){
+/* ガンジャキャット（GCR2のレベル1の四足歩行をそのまま使用）＋登山ハット・背中のリュック・登山靴 */
+function drawCatRaw(x,y,fr,dir,blink,sil){
+  const R=(px,py,w,h,c)=>RR(px,py,w,h,sil||c);
   if(dir<0){g.save();g.translate(Math.floor(x*2+28),0);g.scale(-1,1)}
   const B='#87CEEB',S='#4169E1',hx=x+16,hy=y-10;
-  R(x-5,y+1,6,11,'#2e9e4f');R(x-5,y+1,6,3,'#1f7a37');R(x-3,y+6,2,2,'#e0b020');          // リュック
-  R(x,y,22,14,B);R(x+4,y,3,14,S);R(x+11,y,3,14,S);R(x+1,y+2,2,8,'#1f7a37');            // 体＋ストラップ
+  R(x,y,22,14,B);R(x+4,y,3,14,S);R(x+11,y,3,14,S);                                     // 体
+  R(x+4,y-6,10,7,'#2e9e4f');R(x+4,y-6,10,3,'#1f7a37');R(x+6,y-2,6,3,'#26803f');R(x+8,y-3,2,2,'#e0b020');   // 背中のリュック
+  R(x+5,y+1,2,6,'#1f7a37');R(x+12,y+1,2,6,'#1f7a37');                                  // リュックのひも
   R(hx,hy,12,12,B);R(hx+4,hy,2,4,S);                                                    // 頭
   if(blink){R(hx+2,hy+4,4,1,S);R(hx+7,hy+4,4,1,S)}
   else{
@@ -1138,6 +1262,11 @@ function drawCat(x,y,fr,dir,blink){
   R(x+28,y-2,6,2,'#fff');R(x+33,y-2,1,2,'#f00');                                         // GCR2と同じ
   const a=(fr%20<10);[a?x+1:x+5,a?x+12:x+17].forEach(lx=>{R(lx,y+14,4,2,B);R(lx,y+16,4,2,'#7a4a21')});   // 茶色の登山靴
   if(dir<0)g.restore();
+}
+/* 空や雲の上でも見えるように、ふち取り（濃い紺）を付けて描く */
+function drawCat(x,y,fr,dir,blink){
+  [[-1,0],[1,0],[0,-1],[0,1]].forEach(o=>drawCatRaw(x+o[0],y+o[1],fr,dir,blink,'#12263f'));
+  drawCatRaw(x,y,fr,dir,blink);
 }
 function drawRocket(x,y,fl,hasCat){
   if(fl>0){const L=6+fl*12+((af>>1)&3)*2;R(x-5,y,10,(L*0.6)|0,'#f97316');R(x-4,y,8,L|0,'#fbbf24');R(x-2,y,4,(L*0.7)|0,'#fff7ae')}
@@ -1153,23 +1282,32 @@ function drawRocket(x,y,fl,hasCat){
     R(x-8,y-35,16,2,'#1b6b32');R(x-4,y-40,8,5,'#2e9e4f');R(x-4,y-37,8,1,'#14532d')}
   else{R(x-5,y-31,3,2,'#bae6fd')}
 }
+function rocketState(){
+  const l=lch;let wy=HS,fl=0,has=boarded,rx=sxOf(XP);
+  if(l.s===1)wy=HS-58*(1-sm(clamp((l.t-25)/130,0,1)));
+  else if(l.s===3){fl=l.t>=180?1:(l.t>=120?0.3:0)}
+  else if(l.s===4){wy=HS+flightA(l.t);const lt=landT();fl=lt>0?0.5*(1-lt)+0.2:0.95;rx=Math.round(lerp(120,84,sm(lt)))}
+  else if(l.s===5){wy=HS+FLY;rx=84;has=false}
+  return{wy:wy,fl:fl,has:has,rx:rx};
+}
 function drawActors(){
-  const cw=catWY(),sy=Math.round(syOf(cw)),t=landT();
-  if(dP<0.5){
-    if(sy<-45||sy>190)return;
-    const wy=Math.round(cw),x=pathX(wy),dx=pathX(wy+3)-pathX(wy-3);if(Math.abs(dx)>0.05)catDir=dx>0?1:-1;
-    const hop=hopT>0?Math.sin(hopT/24*Math.PI)*10:0,bob=walking&&((af>>3)&1)?1:0;
-    drawCat(Math.round(x-14),Math.round(sy-18-hop-bob),walking?af:0,catDir,(af%260)<8);
-  }else{
-    const rx=Math.round(lerp(120,84,t*t*(3-2*t)));let fl=0;
-    if(endT===0)fl=t>0?0.5*(1-t)+0.2:(walking?0.9:0.35);
-    const shk=rocketShake>0?Math.round((Math.random()*2-1)*2):0;
-    if(sy>-60&&sy<200)drawRocket(rx+shk,sy,fl,endT===0);
-    if(endT>0)drawLanded();
+  if(lch&&lch.s>=1){
+    const r=rocketState(),jit=r.fl>=1?Math.round((Math.random()*2-1)):0;
+    drawRocket(r.rx+jit,syOf(r.wy),r.fl,r.has);
+    if(lch.s===5)drawLanded();
+  }
+  if(!lch||lch.s<=2){
+    const cx=catX(),fy=syOf(gh(cx));
+    if(lch&&lch.s===2){   // ロケットへ飛び乗る
+      if(lch.t<50){const p=lch.t/50,wx=lerp(cx,XP,p),wy=HS+Math.sin(p*Math.PI)*34+p*26;drawCat(sxOf(wx)-14,syOf(wy)-18,af,1,false)}
+    }else{
+      const hop=hopT>0?Math.sin(hopT/24*Math.PI)*10:0,bob=walking&&((af>>3)&1)?1:0;
+      drawCat(sxOf(cx)-14,Math.round(fy-18-hop-bob),walking?af:0,1,(af%260)<8);
+    }
   }
 }
 function drawLanded(){
-  const e=endT,cx=e<60?lerp(98,124,e/60):124,fy=moonY(Math.round(cx))+1;
+  const e=lch.t,cx=e<60?lerp(98,124,e/60):124,fy=moonY(Math.round(cx))+1;
   const hop=hopT>0?Math.sin(hopT/24*Math.PI)*10:0;
   drawCat(Math.round(cx-14),Math.round(fy-18-hop),e<60?af:0,1,(af%260)<8);
   const fx=152,gy=moonY(fx)+1,ph=clamp((e-60)/40,0,1),pw=clamp((e-100)/40,0,1),pp=Math.round(50*ph);
@@ -1179,24 +1317,50 @@ function drawLanded(){
       if(pw>=1)['WE REACHED','THE MOON!!','THANK YOU FOR','YOUR DONATIONS!!'].forEach((s,i)=>T(s,fx+6,gy-47+i*8,'#fff',1,'l'))}}
 }
 function drawParts(){
-  for(const p of parts){const sy=syOf(p.y);if(sy<-4||sy>164)continue;g.globalAlpha=Math.min(1,p.l/(p.m*0.5));R(p.x,sy,p.s,p.s,p.c)}g.globalAlpha=1;
+  for(const p of parts){const sx=sxOf(p.x),sy=syOf(p.y);if(sy<-4||sy>164||sx<-4||sx>244)continue;g.globalAlpha=Math.min(1,p.l/(p.m*0.5));R(sx,sy,p.s,p.s,p.c)}g.globalAlpha=1;
+}
+function drawStreaks(){   // 飛行中のスピード線
+  if(!lch||lch.s!==4)return;const sp=flightA(lch.t+1)-flightA(lch.t);if(sp<2.5)return;
+  g.globalAlpha=Math.min(.6,sp/10);for(let i=0;i<16;i++){const x=hash(i*7+(af>>1))*240,y=(af*sp*2+i*37)%200-20;R(x,y,1,Math.min(40,sp*4)|0,'#cfe3ff')}g.globalAlpha=1;
 }
 
 /* ---------- 描画：HUD・ガイド・メニュー ---------- */
+function altText(){
+  if(!lch)return dP>=0.9999?'SUMMIT 8,848 M':fmt(dP*8848)+' M';
+  if(lch.s===5)return 'THE MOON!';
+  if(lch.s===4)return fmt(flightA(lch.t)/FLY*384400)+' KM';
+  return '8,848 M';
+}
 function drawHUD(){
-  T(fmt(total)+' / '+fmt(GOAL)+' WFLR',4,4,'#fff',1,'l');
-  T('ALT '+altText(),4,12,'#ffd700',1,'l');
-  T((dP*100).toFixed(1)+'%',4,20,'#6ee7b7',1,'l');
+  const quiet=lch&&lch.s<=3;
+  if(!quiet){
+    T(fmt(total)+' / '+fmt(GOAL)+' WFLR',4,4,'#fff',1,'l');
+    T('ALT '+altText(),4,12,'#ffd700',1,'l');
+    T((dP*100).toFixed(1)+'%',4,20,'#6ee7b7',1,'l');
+  }
   R(232,8,8,146,'#0f172a');R(233,9,6,144,'#1e293b');
   const fh=Math.round(142*dP);R(234,10+142-fh,4,fh,'#34d399');
   disc(g,236,5,3,'#e5e7eb');R(232,154,8,3,'#6b7280');R(234,152,4,2,'#9ca3af');
   R(231,10+142-fh-1,10,3,'#ffd700');
-  if(!menu){const msgs=['A:SUPPORT  B:RANKING','UP/DOWN:LOOK AROUND'];T(msgs[((af/220)|0)%2],120,150,'#fff',1,'c')}
+  // 下のヒント
+  if(!menu&&!lch){
+    const msgs=['A:SUPPORT  B:RANKING','UP/DOWN:LOOK AROUND'];if(ready())msgs.unshift('TAP THE RED BUTTON TO LAUNCH!');
+    T(msgs[((af/220)|0)%msgs.length],120,150,'#fff',1,'c');
+  }
+  if(lch&&lch.s===5&&lch.t>260&&((af>>4)&1))T('A:BACK TO EARTH',120,150,'#ffd700',1,'c');
   if(toast){const a=Math.min(1,toast.t/10,(200-toast.t)/10);g.globalAlpha=0.75*a;R(8,126,224,12,'#000');g.globalAlpha=a;T(toast.text,120,129,'#6ee7b7',1,'c');g.globalAlpha=1}
-  if(liftT>0&&((af>>3)&1))T('LIFT OFF!',120,40,'#ffd700',3,'c');
-  if(endT>20&&((af>>4)&1))T('MISSION COMPLETE!',120,36,'#ffd700',2,'c');
-  if(guideT>0&&guideT<=570&&!tapped&&!menu){
-    const b=Math.round(Math.sin(af/6)*2),gx=(dP>=0.5?lerp(120,84,landT()):pathX(Math.round(catWY())))+30,gy=FEETY-30+b;
+  // 演出の字幕
+  if(lch&&lch.s===1){if((lch.t>>3)&1){g.globalAlpha=.16;R(0,0,240,160,'#ff2020');g.globalAlpha=1}T('LAUNCH SEQUENCE START',120,10,'#ff8a8a',1,'c')}
+  if(lch&&lch.s===3){
+    g.globalAlpha=.4;R(0,lch.t<180?20:30,240,lch.t<180?54:34,'#000');g.globalAlpha=1;
+    if(lch.t<180){T('LAUNCH IN',120,12,'#fff',1,'c');T(String(3-((lch.t/60)|0)),120,26,'#ffd700',9,'c',null)}
+    else T('FIRE!',120,34,'#ff4d4d',5,'c',null);
+  }
+  if(liftT>0&&((af>>3)&1)&&lch&&lch.s===4)T('LIFT OFF!',120,40,'#ffd700',3,'c');
+  if(lch&&lch.s===5&&lch.t>20&&((af>>4)&1))T('MISSION COMPLETE!',120,36,'#ffd700',2,'c');
+  if(summitT>0&&summitT<200&&!lch&&((af>>4)&1))T('SUMMIT REACHED!',120,40,'#ffd700',2,'c');
+  if(guideT>0&&guideT<=570&&!tapped&&!menu&&!lch){
+    const b=Math.round(Math.sin(af/6)*2),gx=sxOf(catX())+30,gy=FEET-34+b;
     T(isTouch?'TAP THE SCREEN!':'CLICK THE SCREEN!',120,58,'#fff',1,'c');
     [['#000',1],['#fff',0]].forEach(a=>{const o=a[1];g.fillStyle=a[0];g.fillRect(gx+3-o,gy-o,3+o*2,6+o*2);g.fillRect(gx+1-o,gy+6-o,7+o*2,6+o*2);g.fillRect(gx-1-o,gy+8-o,3+o*2,3+o*2)});
   }
@@ -1224,7 +1388,7 @@ function drawMenu(){
   }else if(m.stage==='SEND'){
     T('SENDING'+'...'.slice(0,((af>>4)%3)+1),120,40,'#ffd700',2,'c');T(m.msg||'PLEASE WAIT',120,80,'#fff',1,'c');
   }else if(m.stage==='DONE'){
-    T('THANK YOU!',120,30,'#ffd700',3,'c');T(fmt(m.amt)+' WFLR SENT',120,76,'#fff',1,'c');T('YOU MOVED THE CAT HIGHER!',120,92,'#6ee7b7',1,'c');T('A:CLOSE',120,124,'#94a3b8',1,'c');
+    T('THANK YOU!',120,30,'#ffd700',3,'c');T(fmt(m.amt)+' WFLR SENT',120,76,'#fff',1,'c');T('THE CAT WILL CLIMB HIGHER!',120,92,'#6ee7b7',1,'c');T('A:CLOSE',120,124,'#94a3b8',1,'c');
   }else if(m.stage==='ERR'){
     T('OOPS!',120,30,'#fca5a5',3,'c');T(m.msg,120,76,'#fff',1,'c');T('A:RETRY   B:CLOSE',120,120,'#94a3b8',1,'c');
   }else if(m.stage==='RANK'){
@@ -1237,26 +1401,44 @@ function drawMenu(){
   }
 }
 function draw(){
+  updCam();
   g.save();if(shake>0){g.translate((Math.random()*4-2)|0,(Math.random()*4-2)|0);shake--}
-  drawSky();drawStars();drawHills();drawClouds(false);drawBirds();drawMountain();drawFlowers();drawFlags();drawPad();drawClouds(true);drawPlane();drawSats();drawMeteors();drawEarthMoon();drawActors();drawParts();
+  drawSky();drawStars();drawFar();drawClouds();drawPlane();drawSats();drawMeteors();drawBirds();drawUFOs();
+  drawTerrain();drawTrees();drawFlags();drawObjects();drawPad();drawEarthMoon();drawActors();drawParts();drawStreaks();
   if(flash>0){g.globalAlpha=flash/12*.7;R(0,0,240,160,'#fff');g.globalAlpha=1;flash--}
   g.restore();
   drawHUD();drawMenu();
 }
 
-/* ===== タイトル画面のミニ演出（200×50：夜空・月・山を歩くガンジャキャット）===== */
+/* ===== タイトル画面のミニ演出（200×50：夜空・月・坂を登るガンジャキャット）===== */
 const TW=200,TH=50,tg=$('titleCanvas').getContext('2d');tg.imageSmoothingEnabled=false;
 function drawTitle(){
   const sg=g;g=tg;
   R(0,0,TW,TH,'#0b1230');
   for(let i=0;i<16;i++)if(((af>>4)+i)%5)R((i*47+13)%196,(i*17)%26,1,1,'#fff');
   disc(g,172,13,9,'#e5e7eb');R(168,10,4,3,'#c4c4cf');R(174,16,3,2,'#c4c4cf');
-  for(let i=0;i<24;i++)R(56-(i*1.5|0),14+i,(i*3)+2,1,i<5?'#ffffff':i<12?'#9a9aa4':'#43a047');
-  R(0,38,TW,12,'#2e7d32');R(0,38,TW,2,'#5cc05c');
-  const x=100+Math.sin(af/90)*70,dir=Math.cos(af/90)>=0?1:-1;
-  drawCat(Math.round(x-14),20,af,dir,(af%260)<8);
+  for(let x=0;x<TW;x++){const top=Math.round(46-x*0.12);R(x,top,1,TH-top,'#2e7d32');R(x,top,1,2,x>170?'#ffffff':'#5cc05c')}
+  const x=60+Math.sin(af/90)*50,dir=Math.cos(af/90)>=0?1:-1,feet=Math.round(46-x*0.12);
+  drawCat(Math.round(x-14),feet-18,af,dir,(af%260)<8);
   g=sg;
 }
+
+/* ===== タイトル画面の説明文：EN / JP 切り替え（ゲーム内の文字は英語のみ） ===== */
+const LANGS={
+  en:{lead:"LET'S SEND GANJA CAT TO THE MOON, TOGETHER!",
+      t1:"Every WFLR donated moves the cat up the mountain on everyone's screen. When the cat reaches the summit, launch the rocket to the Moon! The game is free to play. Tap the screen to poke the world.",
+      t2:"GanjaFlare is a non-profit community project. Donations help cover server and infrastructure costs. They are voluntary and carry no rewards, rights, or financial returns."},
+  jp:{lead:"みんなでガンジャキャットを月へ送ろう！",
+      t1:"寄付されたWFLRの分だけ、みんなの画面でネコが山を登っていきます。頂上に着いたら、ロケットを発射して月へ！ゲームは無料で遊べます。画面をタップすると、いろいろ動きます。",
+      t2:"GanjaFlareは非営利のコミュニティプロジェクトです。寄付はサーバーなどの運営費に使われます。寄付は任意で、特典・権利・金銭的なリターンはありません。"}};
+function setLang(l){
+  if(!LANGS[l])l='en';const d=LANGS[l];
+  $('infoLead').textContent=d.lead;$('infoT1').textContent=d.t1;$('infoT2').textContent=d.t2;
+  $('langEN').classList.toggle('on',l==='en');$('langJP').classList.toggle('on',l==='jp');
+  try{localStorage.setItem('ttmLang',l)}catch(e){}
+}
+$('langEN').addEventListener('click',()=>setLang('en'));$('langJP').addEventListener('click',()=>setLang('jp'));
+(function(){let l='en';try{l=localStorage.getItem('ttmLang')||'en'}catch(e){}setLang(l)})();
 
 /* ===================== ここから下は共通（触らない） ===================== */
 function returnToTitle(){
