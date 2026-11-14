@@ -207,6 +207,7 @@
     .info-text { font-family: 'Plus Jakarta Sans', 'Hiragino Sans', 'Yu Gothic', 'Noto Sans JP', sans-serif; font-size: 10px; line-height: 1.5; color: #cbd5e1; margin-bottom: 6px; }
     .help-modal { position: absolute; inset: 0; z-index: 250; background: rgba(2, 6, 23, 0.94); display: none; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 12px; box-sizing: border-box; }
     .help-modal img { max-width: 100%; max-height: 82%; object-fit: contain; border-radius: 10px; background: #0f172a; }
+    .help-lang { position: absolute; right: 12px; bottom: 12px; margin: 0; }
     .lang-sw { display: flex; justify-content: flex-end; margin-top: 4px; }
     .lang-sw button { font: 700 9px 'Plus Jakarta Sans', sans-serif; padding: 3px 9px; border: 1px solid rgba(148, 163, 184, 0.5); background: transparent; color: #94a3b8; cursor: pointer; }
     .lang-sw button.on { background: #34d399; color: #06281c; border-color: #34d399; }
@@ -281,7 +282,7 @@
               <button id="walletClose" class="wallet-close" type="button">CLOSE</button>
             </div>
           </div>
-        <div id="helpModal" class="help-modal" style="display:none;"><img id="helpImg" alt="How to play"><button id="helpClose" class="start-btn" type="button" style="width:auto;padding:10px 30px;font-size:13px;background:#334155;color:#fff;border-color:#34d399;">CLOSE</button></div>
+        <div id="helpModal" class="help-modal" style="display:none;"><img id="helpImg" alt="How to play"><button id="helpClose" class="start-btn" type="button" style="width:auto;padding:10px 30px;font-size:13px;background:#334155;color:#fff;border-color:#34d399;">CLOSE</button><div class="lang-sw help-lang"><button id="helpEN" class="on" type="button">EN</button><button id="helpJP" type="button">JP</button></div></div>
       </div>
     </div>
   </div>
@@ -1703,14 +1704,17 @@ function altText(){
   if(lch&&lch.s===4)return fmt(flightA(lch.t)/FLY*384400)+' KM';
   return fmt((viewM+1)/NM*8848)+' M';
 }
-function drawBarIcon(i,cx,cy){
-  if(i===0){R(cx-5,cy-4,4,3,'#ef4444');R(cx+1,cy-4,4,3,'#ef4444');R(cx-6,cy-3,12,4,'#ef4444');R(cx-5,cy+1,10,2,'#ef4444');R(cx-3,cy+3,6,2,'#ef4444');R(cx-1,cy+5,2,1,'#ef4444');R(cx-4,cy-3,2,2,'#fca5a5')}   // ハート（サポート）
-  else if(i===1){R(cx-7,cy-6,14,3,'#d97706');for(let r=0;r<10;r++){const w=Math.max(1,Math.round(14*(1-r/10)));R(cx-(w>>1),cy-3+r,w,1,'#fbbf24')}R(cx-3,cy-2,3,3,'#dc2626');R(cx+2,cy,2,2,'#dc2626');R(cx-1,cy+3,2,2,'#dc2626')}   // ピザ
-  else if(i===2){R(cx-6,cy+1,12,3,'#f8fafc');R(cx-6,cy+1,4,3,'#f59e0b');R(cx+6,cy+1,2,3,'#ef4444');const w=(af>>3)&1;R(cx+5+w,cy-3,2,2,'#9ca3af');R(cx+3-w,cy-7,2,2,'#6b7280')}   // タバコ
-  else if(i===3){for(let r=0;r<10;r++){const w=Math.max(1,Math.round(7*(r+1)/10));R(cx-w,cy-5+r,w,1,'#f59e0b');R(cx,cy-5+r,w,1,'#d97706')}R(cx-1,cy+1,3,4,'#7c2d12');R(cx,cy-7,1,3,'#e5e7eb')}   // テント
-  else if(i===4){R(cx-4,cy-6,8,6,'#fbbf24');R(cx-6,cy-5,2,4,'#f59e0b');R(cx+4,cy-5,2,4,'#f59e0b');R(cx-1,cy,2,3,'#fbbf24');R(cx-4,cy+3,8,2,'#d97706');R(cx-2,cy-5,2,3,'#fde68a')}   // トロフィー
-  else{R(cx-7,cy-5,14,11,'#e8d9b5');R(cx-7,cy-5,14,1,'#c9b98a');R(cx-5,cy+2,4,3,'#6b7280');R(cx-3,cy-1,4,6,'#6b7280');R(cx-1,cy-3,3,2,'#fff');R(cx+3,cy-2,3,3,'#ef4444');R(cx+4,cy+1,1,3,'#ef4444')}   // マップ
+function iconList(i,w){   // 下の項目のイラスト（ゲーム内と操作説明の画像で同じものを使う）。[x,y,幅,高さ,色]（中心からの位置）
+  const L=[],P=(x,y,ww,hh,c)=>L.push([x,y,ww,hh,c]);
+  if(i===0){P(-5,-4,4,3,'#ef4444');P(1,-4,4,3,'#ef4444');P(-6,-3,12,4,'#ef4444');P(-5,1,10,2,'#ef4444');P(-3,3,6,2,'#ef4444');P(-1,5,2,1,'#ef4444');P(-4,-3,2,2,'#fca5a5')}   // ハート（サポート）
+  else if(i===1){P(-7,-6,14,3,'#d97706');for(let r=0;r<10;r++){const ww=Math.max(1,Math.round(14*(1-r/10)));P(-(ww>>1),-3+r,ww,1,'#fbbf24')}P(-3,-2,3,3,'#dc2626');P(2,0,2,2,'#dc2626');P(-1,3,2,2,'#dc2626')}   // ピザ
+  else if(i===2){P(-6,1,12,3,'#f8fafc');P(-6,1,4,3,'#f59e0b');P(6,1,2,3,'#ef4444');P(5+w,-3,2,2,'#9ca3af');P(3-w,-7,2,2,'#6b7280')}   // タバコ
+  else if(i===3){for(let r=0;r<10;r++){const ww=Math.max(1,Math.round(7*(r+1)/10));P(-ww,-5+r,ww,1,'#f59e0b');P(0,-5+r,ww,1,'#d97706')}P(-1,1,3,4,'#7c2d12');P(0,-7,1,3,'#e5e7eb')}   // テント
+  else if(i===4){P(-4,-6,8,6,'#fbbf24');P(-6,-5,2,4,'#f59e0b');P(4,-5,2,4,'#f59e0b');P(-1,0,2,3,'#fbbf24');P(-4,3,8,2,'#d97706');P(-2,-5,2,3,'#fde68a')}   // トロフィー
+  else{P(-7,-5,14,11,'#e8d9b5');P(-7,-5,14,1,'#c9b98a');P(-5,2,4,3,'#6b7280');P(-3,-1,4,6,'#6b7280');P(-1,-3,3,2,'#fff');P(3,-2,3,3,'#ef4444');P(4,1,1,3,'#ef4444')}   // マップ
+  return L;
 }
+function drawBarIcon(i,cx,cy){iconList(i,(af>>3)&1).forEach(r=>R(cx+r[0],cy+r[1],r[2],r[3],r[4]))}
 function drawBar(){
   if(lch||menu||warp)return;
   R(0,138,240,22,'#0b1020');R(0,138,240,1,'#34d399');
@@ -1843,6 +1847,7 @@ function drawTitle(){
   g=sg;
 }
 
+let helpLang='en';
 /* ===== タイトル画面の説明文：EN / JP 切り替え（ゲーム内の文字は英語のみ） ===== */
 const LANGS={
   en:{lead:"LET'S SEND GANJA CAT TO THE MOON, TOGETHER!",help:'HOW TO PLAY',
@@ -1856,39 +1861,52 @@ function setLang(l){
   $('infoLead').textContent=d.lead;$('infoT1').textContent=d.t1;$('infoT2').textContent=d.t2;$('btnHelp').textContent=d.help;
   $('langEN').classList.toggle('on',l==='en');$('langJP').classList.toggle('on',l==='jp');
   try{localStorage.setItem('ttmLang',l)}catch(e){}
+  if(typeof updHelp==='function'&&document.getElementById('helpEN'))updHelp(l);
 }
 $('langEN').addEventListener('click',()=>setLang('en'));$('langJP').addEventListener('click',()=>setLang('jp'));
 (function(){let l='en';try{l=localStorage.getItem('ttmLang')||'en'}catch(e){}setLang(l)})();
 
-/* ===== 操作説明（画像）：スタートボタンの横のボタンで開き、CLOSE か B ボタンで閉じる ===== */
-/* 自分の画像を使うときは、同じフォルダに ToTheMoon_help.webp を置く。無いときは、下の内蔵の説明画像を出す */
-function helpSvgUri(){
+/* ===== 操作説明（画像）：スタートボタンの横のボタンで開き、CLOSE か B ボタンで閉じる。右下の EN / JP で言語を切り替える ===== */
+/* 自分の画像を使うときは、同じフォルダに ToTheMoon_help_en.webp / ToTheMoon_help_jp.webp を置く。無いときは、下の内蔵の説明画像を出す */
+const HELP_TXT={
+  en:{title:'HOW TO PLAY',dpad:['LEFT / RIGHT','Choose an item at the bottom.','In menus: UP / DOWN change numbers.'],a:['A  OK','Confirm the selected item.'],b:['B  CLOSE','Close menus and the map.'],start:'Pause',select:'Back to title (while paused)',
+     head:'BOTTOM MENU',rows:[['SUPPORT','Donate WFLR to move the cat.'],['PIZZA','Eat a pizza.'],['SMOKE','Smoke from the cigarette.'],['TENT','Sleep in a tent for 10 seconds.'],['TOP DONORS','See the top donors.'],['MAP','Warp to mountains you reached.']],
+     foot:['TAP THE SCREEN to poke the world.','At the summit, tap the red button to launch!']},
+  jp:{title:'操作説明',dpad:['左 / 右','下の項目をえらびます。','メニュー内は ↑↓ で数字を変更。'],a:['A  決定','えらんだ項目を実行します。'],b:['B  閉じる','メニューやマップを閉じます。'],start:'ポーズ',select:'タイトルへ（ポーズ中）',
+     head:'下のメニュー',rows:[['サポート','WFLRを寄付して、ネコを進めます。'],['ピザ','ピザを食べます。'],['タバコ','タバコから煙が出ます。'],['テント','10秒、テントで寝ます。'],['TOP DONORS','寄付ランキングを見ます。'],['マップ','着いた山へワープします。']],
+     foot:['画面をタップすると、いろいろ動きます。','頂上では、赤いボタンをタップして発射！']}
+};
+function helpSvgUri(lang){
+  const T_=HELP_TXT[lang]||HELP_TXT.en;
   const F="font-family=\"'Courier New','Hiragino Sans','Yu Gothic','Noto Sans JP',monospace\" font-weight=\"bold\"";
   const t=(x,y,s,c,tx,a)=>'<text x="'+x+'" y="'+y+'" font-size="'+s+'" fill="'+c+'" text-anchor="'+(a||'start')+'" '+F+'>'+tx+'</text>';
-  let s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 500" width="680" height="1000"><rect width="340" height="500" rx="16" fill="#0f172a"/><rect x="3" y="3" width="334" height="494" rx="14" fill="none" stroke="#34d399" stroke-width="3"/>';
-  s+=t(170,36,22,'#ffd700','HOW TO PLAY','middle')+t(170,56,13,'#ffffff','操作説明','middle');
-  s+='<g transform="translate(22,76)"><rect x="0" y="26" width="76" height="26" rx="4" fill="#475569"/><rect x="25" y="1" width="26" height="76" rx="4" fill="#475569"/><polygon points="6,39 18,31 18,47" fill="#34d399"/><polygon points="70,39 58,31 58,47" fill="#34d399"/></g>';
-  s+=t(118,108,13,'#6ee7b7','LEFT / RIGHT')+t(118,126,11,'#fff','Select an item at the bottom')+t(118,142,11,'#cbd5e1','左右キーで 下の項目をえらぶ');
-  s+='<circle cx="58" cy="190" r="17" fill="#ef4444"/>'+t(58,196,16,'#fff','A','middle')+t(118,186,13,'#fca5a5','A  OK')+t(118,204,11,'#cbd5e1','決定 (Confirm)');
-  s+='<circle cx="58" cy="240" r="17" fill="#3b82f6"/>'+t(58,246,16,'#fff','B','middle')+t(118,236,13,'#93c5fd','B  CLOSE')+t(118,254,11,'#cbd5e1','閉じる / もどる');
-  s+='<rect x="26" y="276" width="62" height="18" rx="9" fill="#475569"/>'+t(57,289,10,'#fff','START','middle')+t(118,290,11,'#cbd5e1','Pause / ポーズ');
-  s+='<rect x="26" y="300" width="62" height="18" rx="9" fill="#475569"/>'+t(57,313,10,'#fff','SELECT','middle')+t(118,311,11,'#cbd5e1','Title (while paused)')+t(118,325,11,'#cbd5e1','タイトルへ（ポーズ中）');
-  s+=t(170,346,13,'#ffd700','BOTTOM MENU  下の項目','middle');
-  const it=[['SUPPORT','サポート','#ef4444'],['PIZZA','ピザ','#fbbf24'],['SMOKE','タバコ','#f8fafc'],['TENT','テント','#f59e0b'],['TOP DONORS','ランキング','#fbbf24'],['MAP','マップ','#e8d9b5']];
-  it.forEach((v,i)=>{const x=14+i*52;s+='<rect x="'+x+'" y="356" width="46" height="34" rx="5" fill="#111a2e" stroke="#334155"/><rect x="'+(x+16)+'" y="364" width="14" height="14" rx="3" fill="'+v[2]+'"/>'+t(x+23,404,7,'#fff',v[0],'middle')+t(x+23,416,8,'#cbd5e1',v[1],'middle')});
-  s+=t(170,438,11,'#fff','TAP THE SCREEN to poke the world','middle')+t(170,454,11,'#cbd5e1','画面をタップすると いろいろ動く','middle');
-  s+=t(170,474,10,'#94a3b8','MAP: warp to the mountains you reached','middle')+t(170,490,10,'#94a3b8','マップ：着いた山へワープできる','middle');
+  let s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 584" width="680" height="1168" shape-rendering="crispEdges"><rect width="340" height="584" rx="16" fill="#0f172a"/><rect x="3" y="3" width="334" height="578" rx="14" fill="none" stroke="#34d399" stroke-width="3"/>';
+  s+=t(170,38,22,'#ffd700',T_.title,'middle');
+  s+='<g transform="translate(22,60)"><rect x="0" y="26" width="76" height="26" rx="4" fill="#475569"/><rect x="25" y="1" width="26" height="76" rx="4" fill="#475569"/><polygon points="6,39 18,31 18,47" fill="#34d399"/><polygon points="70,39 58,31 58,47" fill="#34d399"/></g>';
+  s+=t(118,94,13,'#6ee7b7',T_.dpad[0])+t(118,112,11,'#fff',T_.dpad[1])+t(118,128,10,'#cbd5e1',T_.dpad[2]);
+  s+='<circle cx="58" cy="174" r="17" fill="#ef4444"/>'+t(58,180,16,'#fff','A','middle')+t(118,171,13,'#fca5a5',T_.a[0])+t(118,189,11,'#cbd5e1',T_.a[1]);
+  s+='<circle cx="58" cy="224" r="17" fill="#3b82f6"/>'+t(58,230,16,'#fff','B','middle')+t(118,221,13,'#93c5fd',T_.b[0])+t(118,239,11,'#cbd5e1',T_.b[1]);
+  s+='<rect x="26" y="262" width="62" height="18" rx="9" fill="#475569"/>'+t(57,275,10,'#fff','START','middle')+t(118,276,11,'#cbd5e1',T_.start);
+  s+='<rect x="26" y="288" width="62" height="18" rx="9" fill="#475569"/>'+t(57,301,10,'#fff','SELECT','middle')+t(118,302,11,'#cbd5e1',T_.select);
+  s+=t(170,334,14,'#ffd700',T_.head,'middle');
+  T_.rows.forEach((v,i)=>{
+    const ry=346+i*30,cx=42,cy=ry+14;
+    s+='<rect x="20" y="'+ry+'" width="44" height="28" rx="4" fill="#111a2e" stroke="#334155"/>';
+    iconList(i,0).forEach(r=>{s+='<rect x="'+(cx+r[0]*2)+'" y="'+(cy+r[1]*2)+'" width="'+(r[2]*2)+'" height="'+(r[3]*2)+'" fill="'+r[4]+'"/>'});
+    s+=t(74,ry+12,12,'#ffd700',v[0])+t(74,ry+25,10,'#cbd5e1',v[1]);
+  });
+  s+=t(170,548,11,'#fff',T_.foot[0],'middle')+t(170,566,10,'#94a3b8',T_.foot[1],'middle');
   s+='</svg>';
   return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s);
 }
-const helpOpen=()=>{const m=$('helpModal');return !!m&&m.style.display==='flex'};
+function helpOpen(){const m=$('helpModal');return !!m&&m.style.display==='flex'}
+function helpSrc(){const im=$('helpImg'),l=helpLang;im.onerror=function(){im.onerror=null;im.src=helpSvgUri(l)};im.src='ToTheMoon_help_'+l+'.webp'}
+function updHelp(l){helpLang=l;$('helpEN').classList.toggle('on',l==='en');$('helpJP').classList.toggle('on',l==='jp');if(helpOpen())helpSrc()}
 function closeHelp(){$('helpModal').style.display='none';tone(500,400,.08,.08,'triangle')}
-function openHelp(){
-  const im=$('helpImg');
-  if(!im.dataset.set){im.dataset.set='1';im.onerror=function(){im.onerror=null;im.src=helpSvgUri()};im.src='ToTheMoon_help.webp'}
-  $('helpModal').style.display='flex';tone(700,1000,.08,.08,'triangle');
-}
+function openHelp(){helpSrc();$('helpModal').style.display='flex';tone(700,1000,.08,.08,'triangle')}
 $('btnHelp').addEventListener('click',openHelp);$('helpClose').addEventListener('click',closeHelp);
+$('helpEN').addEventListener('click',()=>setLang('en'));$('helpJP').addEventListener('click',()=>setLang('jp'));
+updHelp(document.getElementById('langJP').classList.contains('on')?'jp':'en');
 
 /* ===================== ここから下は共通（触らない） ===================== */
 function returnToTitle(){
