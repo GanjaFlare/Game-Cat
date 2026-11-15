@@ -847,7 +847,7 @@ const FLY=3600,FLY_FRAMES=900,LAND_START=750;             // 飛行の高さ／�
 const DAY_MS=180000;                  // 昼と夜が切り替わる間隔（3分）。実際の時計で決めるので、みんな同じ昼夜になる
 const DEMO_FAST=/[?&]fast/.test(location.search); // ?fast を付けるとダミーの寄付が大きくなる（テスト用）
 const USE_DUMMY_DATA=/[?&](dummy|total=|fast)/.test(location.search);   // 本番は false＝DATA_API_URLから読む。?dummy を付けた時だけテスト用のダミーの数値
-const DATA_API_URL='';                // ★あとでGASのURLを入れる。返す形：{total, ranking:[{addr,amt}], donations:[{addr,amt,cum}], recent:[{addr,amt}]}
+const DATA_API_URL='https://script.google.com/macros/s/AKfycbz_ogMIwBShku-O-W_sH5aiNXUQJyoL9Bw4wsZh-pr97t4Gb9TNjG6b2ynfbxwDDABI/exec';                // ★あとでGASのURLを入れる。返す形：{total, ranking:[{addr,amt}], donations:[{addr,amt,cum}], recent:[{addr,amt}]}
 const HM=m=>m*STEP,H6=6*STEP,GATEX=ML,PADX=ML;
 const endX=m=>m===6?ML-110:ML-22;     // ネコが止まる位置（第7は発射ボタンの手前）
 
