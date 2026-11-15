@@ -969,17 +969,22 @@ function fakeDonor(){
   const amt=pick([10,50,100,300,500,1000])*(DEMO_FAST?30:1);
   addDonationData(ad,amt);showToast(sAddr(ad)+' SENT '+fmt(amt)+' WFLR!');
 }
-async function pollData(){
+/* GASからの取得は、<script>タグで読む方式（JSONP）。GASはCORSが不安定なため（GCRと同じ方式） */
+function applyData(d){
+  if(!d||typeof d.total!=='number')return;
+  if(Array.isArray(d.ranking))ranking=d.ranking.slice().sort((a,b)=>b.amt-a.amt);
+  if(Array.isArray(d.donations))donations=d.donations;
+  const delta=d.total-total;
+  if(delta>0){total=d.total;const rc=d.recent&&d.recent[d.recent.length-1];showToast(rc?sAddr(rc.addr)+' SENT '+fmt(rc.amt)+' WFLR!':'NEW DONATION! +'+fmt(delta)+' WFLR')}
+}
+function pollData(){
   if(USE_DUMMY_DATA||!DATA_API_URL)return;
-  try{
-    const r=await fetch(DATA_API_URL+(DATA_API_URL.indexOf('?')<0?'?':'&')+'action=getClimb&_='+Date.now());const d=await r.json();
-    if(d&&typeof d.total==='number'){
-      if(Array.isArray(d.ranking))ranking=d.ranking.slice().sort((a,b)=>b.amt-a.amt);
-      if(Array.isArray(d.donations))donations=d.donations;
-      const delta=d.total-total;
-      if(delta>0){total=d.total;const rc=d.recent&&d.recent[d.recent.length-1];showToast(rc?sAddr(rc.addr)+' SENT '+fmt(rc.amt)+' WFLR!':'NEW DONATION! +'+fmt(delta)+' WFLR')}
-    }
-  }catch(e){}
+  const cb='__ttm_'+(Date.now()%1e9),s=document.createElement('script');
+  const done=()=>{try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)};
+  window[cb]=d=>{done();try{applyData(d)}catch(e){}};
+  s.onerror=done;
+  s.src=DATA_API_URL+(DATA_API_URL.indexOf('?')<0?'?':'&')+'action=getClimb&callback='+cb+'&_='+Date.now();
+  document.head.appendChild(s);later(15000,done);
 }
 function showToast(text){if(lch||warp)return;toast={t:0,text:text};tone(1200,1800,.1,.1,'triangle');later(90,()=>tone(1800,2400,.12,.08,'triangle'))}
 if(USE_DUMMY_DATA)initDummy();else pollData();
