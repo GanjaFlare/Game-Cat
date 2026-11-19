@@ -293,26 +293,6 @@
           </div>
         </div>
 
-        <div id="rewardOverlay" class="overlay" style="display: none;">
-          <h1 style="color:#ffd700; font-size: 20px; margin-bottom: 4px;">🎉 CLEAR!! 🎉</h1>
-          <p style="font-size: 10px; margin-bottom: 8px; color: #fff;">Boss defeated! You can claim your reward!</p>
-          
-          <div class="input-wrapper" style="width: 85%;">
-            <input type="text" id="walletInput" placeholder="0x... (Wallet Address)" style="padding: 12px 15px; border: 2px solid #ffd700;">
-          </div>
-          
-          <div class="mode-buttons" style="width: 85%;">
-            <button id="btnClaim" class="start-btn" style="background: #ffd700; color: #000; box-shadow: 0 4px 0 #b8860b; font-weight: bold;">
-              CLAIM REWARD & SAVE
-            </button>
-          </div>
-
-          <div style="width: 85%; margin-top: 8px; font-size: 8px; line-height: 1.4; color: #fff; text-align: left;">
-            <p style="margin: 0 0 3px 0;">&bull; Please take a screenshot of this screen in case of bugs.</p>
-            <p style="margin: 0;">&bull; Your reward will arrive in a few minutes.</p>
-          </div>
-        </div>
-
       </div>
     </div>
   </div>
@@ -762,40 +742,6 @@
         });
       }
 
-      const btnClaim = document.getElementById("btnClaim");
-      if (btnClaim) {
-        const claimHandler = function(e) {
-          e.preventDefault();
-          if (isClaiming) return; 
-          
-          const walletInput = document.getElementById("walletInput");
-          const walletAddress = walletInput ? walletInput.value.trim() : "";
-          
-          if (!walletAddress.startsWith("0x") || walletAddress.length !== 42) {
-            alert("有効なウォレットアドレス（0xから始まる42桁）を入力してください。");
-            return;
-          }
-          
-          isClaiming = true;
-          document.getElementById("rewardOverlay").style.display = "none";
-          
-          ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(0,0,240,160);
-          ctx.textAlign = "center";
-          ctx.fillStyle = "#FFD700"; ctx.font = "bold 18px 'Courier New'";
-          ctx.fillText("GAME CLEAR!!", 120, 60);
-          ctx.font = "bold 11px 'Courier New'";
-          ctx.fillText(`YOU SCORED ${score} POINTS`, 120, 82);
-          captureSavingArea();
-          ctx.fillStyle = "#ffffff";
-          ctx.fillText("SENDING CLAIM SIGNAL...", 108, 122);
-          ctx.textAlign = "left";
-          
-          isSaving = true;
-          startSavingAnimation();
-          sendScoreToGAS(walletAddress.toLowerCase(), score, gameMode, walletAddress);
-        };
-        btnClaim.addEventListener("click", claimHandler);
-      }
     }
 
     if (document.getElementById("btnNormal")) {
@@ -2661,20 +2607,13 @@
 
     function showGameOverUI(isClear) {
       itemLife = false; itemPizza = false; itemMagnet = false; refreshItemUI();   // 死亡・クリアでアイテムはリセット（再購入が必要）
-      if (isClear) {
-        const rewardOverlay = document.getElementById("rewardOverlay");
-        if (rewardOverlay) {
-          rewardOverlay.style.display = "flex";
-          try { fillRewardWallet(); } catch (e) {}
-          return; 
-        }
-      }
 
       ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillRect(0,0,240,160);
       ctx.textAlign = "center";
       
       ctx.fillStyle = "#fff";
-      ctx.font = "bold 20px 'Courier New'"; ctx.fillText("GAME OVER", 120, 60);
+      if (isClear) { ctx.fillStyle = "#FFD700"; ctx.font = "bold 18px 'Courier New'"; ctx.fillText("GAME CLEAR!!", 120, 60); }
+      else { ctx.font = "bold 20px 'Courier New'"; ctx.fillText("GAME OVER", 120, 60); }
       
       ctx.fillStyle = "#FFD700";
       ctx.font = "bold 12px 'Courier New'";
