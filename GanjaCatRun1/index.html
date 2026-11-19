@@ -7,11 +7,11 @@
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われる名前(titleより優先される) -->
   <meta name="apple-mobile-web-app-title" content="GanjaCatRun">
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われるアイコン -->
-  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="apple-touch-icon" href="../icon.png">
   <!-- 🌐 ブラウザのタブに表示されるアイコン -->
-  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="icon" type="image/png" href="../icon.png">
   <!-- 📱 Brave・Android Chrome等が参照するWebアプリマニフェスト -->
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="../manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
@@ -110,10 +110,10 @@
     .lb-tabs { display: flex; gap: 6px; margin-bottom: 6px; }
     .lb-tab { flex: 1; background: #0f172a; color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; padding: 7px 2px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 9px; letter-spacing: 0.3px; white-space: nowrap; cursor: pointer; touch-action: manipulation; }
     .lb-tab.on { color: #6ee7b7; border-color: #34d399; box-shadow: 0 0 10px rgba(52, 211, 153, 0.35); }
-    .lb-rows { border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; padding: 6px 10px; min-height: 164px; box-sizing: border-box; text-align: left; }
+    .lb-rows { border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; padding: 6px 10px; min-height: 90px; box-sizing: border-box; text-align: left; }
     .lb-row { display: flex; justify-content: space-between; gap: 8px; font-family: 'Courier New', monospace; font-weight: 700; font-size: 11px; line-height: 15px; color: #fff; }
     .lb-row .v { color: #ffd700; white-space: nowrap; }
-    .lb-empty { text-align: center; color: #94a3b8; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; padding-top: 60px; }
+    .lb-empty { text-align: center; color: #94a3b8; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; padding-top: 30px; }
     .dpad { position: absolute; left: 35px; bottom: 180px; width: 80px; height: 80px; cursor: pointer; z-index: 5; }
     .dpad-axis { position: absolute; background: #2b2b2b; border-radius: 3px; box-shadow: 0 4px 0 #111; }
     .dpad-h { top: 27px; left: 0; width: 80px; height: 26px; }
@@ -185,7 +185,7 @@
 </head>
 <body>
 <audio id="bgmMusic" loop preload="auto">
-  <source src="https://ganjaflare.github.io/GanjaCatRun-Web/iwashiro_tebasakioroshi.mp3" type="audio/mpeg">
+  <source src="../iwashiro_tebasakioroshi.mp3" type="audio/mpeg">
 </audio>
 
   <div class="game-container">
@@ -245,6 +245,7 @@
               </div>
               <div id="lbRows" class="lb-rows"></div>
             </div>
+            <button id="btnBackSelect" class="start-btn" style="background:#334155;color:#e2e8f0;box-shadow:0 4px 0 #1e293b;font-size:12px;">&lt; BACK TO GAME SELECT</button>
           </div>
         </div>
 
@@ -387,7 +388,7 @@
     function getBgmUrl() {
       const el = document.getElementById("bgmMusic");
       const src = el ? el.querySelector("source") : null;
-      return src ? src.src : "iwashiro_tebasakioroshi.mp3";
+      return src ? src.src : "../iwashiro_tebasakioroshi.mp3";
     }
 
     function ensureAudioCtx() {
@@ -736,7 +737,7 @@
       });
       const d = lbData[lbTab];
       if (!d || !d.length) { const e = document.createElement("div"); e.className = "lb-empty"; e.textContent = d ? "No data yet" : "Loading..."; box.appendChild(e); return; }
-      d.slice(0, 10).forEach(function(r) {
+      d.slice(0, 5).forEach(function(r) {   // ベスト5まで
         const row = document.createElement("div"); row.className = "lb-row";
         const l = document.createElement("span"); l.textContent = lbName(r[0]);
         const v = document.createElement("span"); v.className = "v"; v.textContent = r[1] + (r[2] ? " (" + r[2] + ")" : "");
@@ -779,6 +780,14 @@
       attachStartBtn("btnBoost", "BOOST");
       attachStartBtn("btnHell", "HELL");
 
+      // ゲーム選択（TOP）に戻る
+      const btnBack = document.getElementById("btnBackSelect");
+      if (btnBack) {
+        const goBack = function(e) { e.preventDefault(); stopBgmAndClose(); window.location.href = "../"; };
+        btnBack.addEventListener("click", goBack);
+        btnBack.addEventListener("touchstart", goBack, {passive: false});
+      }
+      try { window.localStorage.removeItem('ganjaCatRunId'); } catch (e) {}   // 昔の「Xアカウント名の記憶」は使わないので消す
       // タイトル画面のボードのタブ切り替え
       [["lbTabScore", "score"], ["lbTabPlays", "plays"], ["lbTabLegend", "legend"]].forEach(function(pr) {
         const el = document.getElementById(pr[0]);
@@ -1958,6 +1967,12 @@
         }
       } catch (err) {}
 
+      if (!walletAddress) {   // ウォレット未接続（Guest）：ランキングには載せないので、保存せずにそのまま次へ
+        finishScoreSave();
+        showGuestNotice();
+        return;
+      }
+
       isSaving = true;
 
       captureSavingArea();
@@ -2074,6 +2089,16 @@
         finishScoreSave();
         if (!isClaim) showSaveNotice();
       });
+    }
+
+    // 👛 ウォレット未接続のプレイは、ランキングに載らないことを、画面下に小さく知らせる
+    function showGuestNotice() {
+      ctx.save();
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#ccc";
+      ctx.font = "bold 8px 'Courier New'";
+      ctx.fillText("CONNECT WALLET TO JOIN RANKING", 120, 151);
+      ctx.restore();
     }
 
     // 📢 保存に失敗した可能性があるとき、ゲーム画面の下部に白文字で小さく知らせる
