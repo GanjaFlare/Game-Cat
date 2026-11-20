@@ -1067,8 +1067,62 @@
       }
     }
 
-    function drawRock(x, y) { ctx.fillStyle = "#444"; ctx.fillRect(x, y, 20, 16); ctx.fillStyle = "#666"; ctx.fillRect(x+2, y+2, 6, 6); ctx.fillRect(x+12, y+8, 5, 5); ctx.fillStyle = "#222"; ctx.fillRect(x+5, y+10, 8, 4); }
-    function drawCrow(x, y, frame) { ctx.fillStyle = "#111"; ctx.fillRect(x, y, 16, 8); ctx.fillRect(x - 5, y - 2, 6, 6); ctx.fillStyle="#ff8c00"; ctx.fillRect(x-8, y, 3, 2); ctx.fillStyle = "#111"; if (frame % 30 < 15) { ctx.fillRect(x+3, y - 6, 10, 6); } else { ctx.fillRect(x+3, y + 4, 10, 6); } }
+    // 🛢️ 障害物（地上）：ドラム缶（普通）／消火器（低頻度）。当たり判定は従来の岩と同じ位置・高さ
+    function drawBarrel(x, y) {
+      ctx.fillStyle = "#a8432a"; ctx.fillRect(x+1, y+1, 18, 14);           // 本体（錆びた赤）
+      ctx.fillStyle = "#c9603f"; ctx.fillRect(x+3, y+2, 2, 12);            // ハイライト
+      ctx.fillStyle = "#7c2f1c"; ctx.fillRect(x+16, y+2, 3, 12);           // 影
+      ctx.fillStyle = "#6b2418"; ctx.fillRect(x+1, y+5, 18, 1); ctx.fillRect(x+1, y+10, 18, 1);   // 補強リング
+      ctx.fillStyle = "#9a9a96"; ctx.fillRect(x+1, y, 18, 2);              // 上のフチ
+      ctx.fillStyle = "#4a4a48"; ctx.fillRect(x+1, y+14, 18, 2);           // 下のフチ
+      ctx.fillStyle = "#f2c230"; ctx.fillRect(x+8, y+6, 5, 4);             // 危険マーク（黄色）
+      ctx.fillStyle = "#111";    ctx.fillRect(x+10, y+7, 1, 2);
+      ctx.fillStyle = "#5a2a1a"; ctx.fillRect(x+5, y+11, 2, 2); ctx.fillRect(x+14, y+3, 2, 1);    // サビ
+    }
+    function drawExtinguisher(x, y) {
+      ctx.fillStyle = "#d62b2b"; ctx.fillRect(x+2, y+4, 8, 12);            // 赤いボンベ
+      ctx.fillStyle = "#ff6a5a"; ctx.fillRect(x+3, y+5, 1, 10);            // ハイライト
+      ctx.fillStyle = "#8f1a1a"; ctx.fillRect(x+8, y+5, 2, 11);            // 影
+      ctx.fillStyle = "#eeeeee"; ctx.fillRect(x+4, y+8, 5, 3);             // ラベル
+      ctx.fillStyle = "#c9a227"; ctx.fillRect(x+4, y+12, 5, 1);            // 帯
+      ctx.fillStyle = "#555";    ctx.fillRect(x+4, y+2, 4, 2);             // 首
+      ctx.fillStyle = "#888";    ctx.fillRect(x+2, y, 7, 2);               // レバー
+      ctx.fillStyle = "#111";    ctx.fillRect(x+9, y+2, 3, 1); ctx.fillRect(x+11, y+3, 1, 6);     // ホース
+    }
+    // 🚁 障害物（空中）：監視ドローン／コウモリ。当たり判定は従来のカラスと同じ（16×10）
+    function drawDrone(x, y, frame) {
+      const spin = (frame % 4 < 2);
+      ctx.fillStyle = "#9aa3ad";                                            // ローター（回転して見える）
+      if (spin) { ctx.fillRect(x-4, y+1, 8, 1); ctx.fillRect(x+12, y+1, 8, 1); }
+      else      { ctx.fillRect(x-2, y+1, 4, 1); ctx.fillRect(x+14, y+1, 4, 1); ctx.fillRect(x-4, y+2, 1, 1); ctx.fillRect(x+19, y+2, 1, 1); }
+      ctx.fillStyle = "#444";    ctx.fillRect(x-1, y+3, 5, 1); ctx.fillRect(x+12, y+3, 5, 1);   // アーム
+      ctx.fillRect(x, y+2, 1, 2); ctx.fillRect(x+15, y+2, 1, 2);                                  // モーター
+      ctx.fillStyle = "#2b2f36"; ctx.fillRect(x+3, y+3, 10, 5);            // 本体
+      ctx.fillStyle = "#454c57"; ctx.fillRect(x+5, y+2, 6, 1);             // 上のふくらみ
+      ctx.fillStyle = "#111";    ctx.fillRect(x+6, y+8, 4, 2);             // カメラ
+      ctx.fillStyle = (frame % 24 < 12) ? "#ff2a2a" : "#7a1414"; ctx.fillRect(x+7, y+8, 2, 2);   // 赤いレンズ（点滅）
+      ctx.fillStyle = "#666";    ctx.fillRect(x+8, y, 1, 2);               // アンテナ
+    }
+    function drawBat(x, y, frame) {
+      const up = (frame % 24 < 12);
+      ctx.fillStyle = "#43344f";
+      if (up) {
+        ctx.fillRect(x-1, y-3, 2, 3); ctx.fillRect(x+1, y-1, 3, 3); ctx.fillRect(x+3, y+1, 3, 3);
+        ctx.fillRect(x+15, y-3, 2, 3); ctx.fillRect(x+12, y-1, 3, 3); ctx.fillRect(x+10, y+1, 3, 3);
+      } else {
+        ctx.fillRect(x-1, y+7, 2, 3); ctx.fillRect(x+1, y+5, 3, 3); ctx.fillRect(x+3, y+3, 3, 3);
+        ctx.fillRect(x+15, y+7, 2, 3); ctx.fillRect(x+12, y+5, 3, 3); ctx.fillRect(x+10, y+3, 3, 3);
+      }
+      ctx.fillStyle = "#5e4a74"; ctx.fillRect(x+6, y+3, 4, 5);             // 胴体
+      ctx.fillStyle = "#43344f"; ctx.fillRect(x+6, y+1, 4, 3);             // 頭
+      ctx.fillRect(x+6, y, 1, 1); ctx.fillRect(x+9, y, 1, 1);              // 耳
+      ctx.fillStyle = "#ff3030"; ctx.fillRect(x+7, y+2, 1, 1); ctx.fillRect(x+9, y+2, 1, 1);    // 赤い目
+      ctx.fillStyle = "#43344f"; ctx.fillRect(x+7, y+8, 2, 2);             // 足
+    }
+    function drawObstacle(o) {
+      if (o.type === "rock") { if (o.variant === "ext") drawExtinguisher(o.x, o.y); else drawBarrel(o.x, o.y); }
+      else { if (o.variant === "bat") drawBat(o.x, o.y, frameCount); else drawDrone(o.x, o.y, frameCount); }
+    }
     function drawGanjaCoin(x, y) { ctx.fillStyle = "#ffd700"; ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = "#b8860b"; ctx.lineWidth=1; ctx.stroke(); ctx.fillStyle = "#10b981"; ctx.fillRect(x-1, y-6, 2, 12); ctx.fillRect(x-5, y-2, 10, 2); ctx.fillRect(x-4, y-4, 2, 2); ctx.fillRect(x+2, y-4, 2, 2); ctx.fillRect(x-3, y+2, 2, 2); ctx.fillRect(x+1, y+2, 2, 2); }
 
     // 🐈 タイトル(モード選択)画面用：キャラクターが左右にてくてく歩くアニメーション
@@ -1172,8 +1226,68 @@
       ctx.fillRect(x - 2, y - 5, 4, 3);
     }
 
+    // 🏚️ 背景：崩れかけのビル群（奥と手前の2層。手前ほど速く流れる）
+    let cityFar = [], cityNear = [];
+    function cityPal() {
+      return visualMode === 'HELL'   ? {far:"#5a1414", near:"#340808", hole:"rgba(0,0,0,0.45)", rebar:"#1e0404"}
+           : visualMode === 'ZOMBIE' ? {far:"#5f4c85", near:"#463770", hole:"rgba(10,0,30,0.40)", rebar:"#2a2050"}
+           : visualMode === 'GOLD'   ? {far:"#94750f", near:"#72590a", hole:"rgba(30,20,0,0.38)", rebar:"#3a2c05"}
+           :                           {far:"#7f8963", near:"#667050", hole:"rgba(20,26,10,0.38)", rebar:"#3c4430"};
+    }
+    function makeBuilding(layer, x) {
+      const far = (layer === 'far');
+      const rubble = Math.random() < 0.18;                                   // 崩れ落ちたがれきの山
+      const w = rubble ? 20 + Math.floor(Math.random() * 16) : (far ? 22 + Math.floor(Math.random() * 20) : 18 + Math.floor(Math.random() * 18));
+      const hMin = far ? 34 : 24, hMax = far ? 68 : 50;
+      const h = rubble ? 8 + Math.floor(Math.random() * 10) : hMin + Math.floor(Math.random() * (hMax - hMin));
+      const n = Math.ceil(w / 4), cols = [];
+      for (let i = 0; i < n; i++) {
+        let c = h;
+        if (rubble) { c = Math.max(3, Math.round(h * Math.sin(Math.PI * (i + 0.5) / n)) + Math.floor(Math.random() * 4)); }
+        else if (Math.random() < 0.4) { c = h - (3 + Math.floor(Math.random() * Math.min(18, h * 0.4))); }   // 欠けた屋上
+        cols.push(c);
+      }
+      const holes = [];                                                      // 割れた窓
+      if (!rubble) for (let cy = 6; cy < h - 7; cy += 9) for (let cx = 3; cx < w - 5; cx += 7) if (Math.random() < 0.7) holes.push([cx, cy, Math.random() < 0.25 ? 1 : 0]);
+      let rebar = null;                                                      // むき出しの鉄筋
+      if (!rubble && Math.random() < 0.4) rebar = {i: Math.floor(Math.random() * n), len: 4 + Math.floor(Math.random() * 6), dir: Math.random() < 0.5 ? -1 : 1};
+      return {x: x, w: w, cols: cols, holes: holes, rebar: rebar};
+    }
+    function scrollCity(arr, dx, layer) {
+      arr.forEach(function(b) { b.x -= dx; });
+      while (arr.length && arr[0].x + arr[0].w < -2) arr.shift();
+      let edge = arr.length ? arr[arr.length - 1].x + arr[arr.length - 1].w : -10;
+      while (edge < 260) {
+        const b = makeBuilding(layer, edge + Math.floor(Math.random() * (layer === 'far' ? 10 : 16)));
+        arr.push(b); edge = b.x + b.w;
+      }
+    }
+    function drawCityLayer(arr, color, pal) {
+      const gy = 133;
+      ctx.fillStyle = color;
+      arr.forEach(function(b) {
+        const bx = Math.round(b.x), n = b.cols.length;
+        for (let i = 0; i < n; i++) ctx.fillRect(bx + i * 4, gy - b.cols[i], (i === n - 1) ? b.w - i * 4 : 4, b.cols[i]);
+      });
+      arr.forEach(function(b) {
+        const bx = Math.round(b.x), n = b.cols.length;
+        ctx.fillStyle = pal.hole;
+        b.holes.forEach(function(hl) {
+          const col = b.cols[Math.min(n - 1, (hl[0] / 4) | 0)];
+          if (hl[1] + 6 <= col) ctx.fillRect(bx + hl[0], gy - hl[1] - 5, 4, hl[2] ? 3 : 5);
+        });
+        if (b.rebar) {
+          const rx = bx + b.rebar.i * 4 + 1, top = gy - b.cols[b.rebar.i];
+          ctx.fillStyle = pal.rebar;
+          ctx.fillRect(rx, top - b.rebar.len, 1, b.rebar.len);
+          ctx.fillRect(rx + (b.rebar.dir > 0 ? 1 : -1), top - b.rebar.len, 1, 1);
+        }
+      });
+    }
+    scrollCity(cityFar, 0, 'far'); scrollCity(cityNear, 0, 'near');
+
     function drawClouds() {
-      ctx.fillStyle = (visualMode === 'HELL') ? "rgba(255, 100, 100, 0.15)" : (visualMode === 'ZOMBIE') ? "rgba(225, 205, 255, 0.35)" : (visualMode === 'GOLD') ? "rgba(255, 235, 140, 0.35)" : "rgba(255, 255, 255, 0.4)";
+      ctx.fillStyle = (visualMode === 'HELL') ? "rgba(255, 100, 100, 0.15)" : (visualMode === 'ZOMBIE') ? "rgba(225, 205, 255, 0.35)" : (visualMode === 'GOLD') ? "rgba(255, 235, 140, 0.35)" : "rgba(225, 228, 210, 0.38)";
       clouds.forEach(function(c) {
         ctx.fillRect(c.x, c.y, c.width, 10);
         ctx.fillRect(c.x + 5, c.y - 5, c.width - 10, 5);
@@ -1184,15 +1298,36 @@
           c.y = 15 + Math.random() * 30;
         }
       });
+      // 雲のあとに廃墟の街を描く（ビルの動きはゲームの速さに連動。ボス戦で止まると、街も止まる）
+      if (!isPaused && !gameOver && !isReviving) { scrollCity(cityFar, gameSpeed * 0.1, 'far'); scrollCity(cityNear, gameSpeed * 0.22, 'near'); }
+      const pal = cityPal();
+      drawCityLayer(cityFar, pal.far, pal);
+      drawCityLayer(cityNear, pal.near, pal);
     }
 
+    // 🧱 地面：ひび割れたコンクリート（スラブの目地が、ゲームの速さに合わせて流れる）
+    let groundOff = 0;
+    function groundPal() {
+      return visualMode === 'HELL'   ? {body:"#4a3030", top:"#6a4444", edge:"#2a1818", joint:"#2a1616", speck:"#1c0e0e", light:"#6a4848"}
+           : visualMode === 'ZOMBIE' ? {body:"#5a5070", top:"#7c70a0", edge:"#352d4a", joint:"#31294a", speck:"#241c38", light:"#7c72a0"}
+           : visualMode === 'GOLD'   ? {body:"#6e5a2a", top:"#9a8040", edge:"#46371a", joint:"#40321a", speck:"#2e2410", light:"#a08a50"}
+           :                           {body:"#75756f", top:"#9c9c94", edge:"#4c4c47", joint:"#55554f", speck:"#4a4a45", light:"#8e8e88"};
+    }
     function drawGround() {
-      ctx.fillStyle="#444"; ctx.fillRect(0, 133, 240, 27); 
-      ctx.fillRect(0, 133, 240, 2);
-      ctx.fillStyle = (visualMode === 'HELL') ? "#111" : (visualMode === 'ZOMBIE') ? "#2a1a3a" : (visualMode === 'GOLD') ? "#3a2c00" : "#222";
+      const p = groundPal();
+      const moving = (!isPaused && !gameOver && !isReviving);
+      ctx.fillStyle = p.body; ctx.fillRect(0, 133, 240, 27);
+      ctx.fillStyle = p.top;  ctx.fillRect(0, 133, 240, 3);               // 路面のフチ（明るい線）
+      ctx.fillStyle = p.edge; ctx.fillRect(0, 136, 240, 1);
+      if (moving) groundOff = (groundOff + gameSpeed) % 60;
+      ctx.fillStyle = p.joint;
+      ctx.fillRect(0, 148, 240, 1);                                          // 横の目地
+      for (let x = -groundOff; x < 240; x += 60) ctx.fillRect(Math.round(x), 137, 2, 11);            // 上の段の縦目地
+      for (let x = 30 - groundOff; x < 270; x += 60) ctx.fillRect(Math.round(x), 149, 2, 11);       // 下の段（半分ずらす）
       groundDots.forEach(function(d) {
-        ctx.fillRect(d.x, d.y, d.width, 2);
-        if (!isPaused && !gameOver && !isReviving) d.x -= gameSpeed;
+        ctx.fillStyle = p.speck; ctx.fillRect(Math.round(d.x), Math.round(d.y), d.width, 1);         // ひび・汚れ
+        ctx.fillStyle = p.light; ctx.fillRect(Math.round(d.x) + 1, Math.round(d.y) + 2, 1, 1);       // 小石
+        if (moving) d.x -= gameSpeed;
         if (d.x < -10) d.x = 240 + Math.random() * 20;
       });
     }
@@ -2429,7 +2564,9 @@
 
       if (canSpawn && Math.random() < obstacleSpawnChance) { 
         let type = Math.random() < 0.7 ? "rock" : "crow"; 
-        obstacles.push({x:240, y:type==="rock"?118:60, type:type, width:type==="rock"?20:16, height:type==="rock"?16:10}); 
+        // 地上：ドラム缶（8割）／消火器（2割・幅だけ細い）、空中：ドローン（6.5割）／コウモリ（3.5割）
+        let variant = (type === "rock") ? (Math.random() < 0.2 ? "ext" : "barrel") : (Math.random() < 0.65 ? "drone" : "bat");
+        obstacles.push({x:240, y:type==="rock"?118:60, type:type, variant:variant, width:type==="rock"?(variant==="ext"?12:20):16, height:type==="rock"?16:10}); 
       }
 
       if (frameCount % 75 === 0) {
@@ -2449,7 +2586,7 @@
       for (let i = obstacles.length - 1; i >= 0; i--) {
         let o = obstacles[i];
         o.x -= gameSpeed;
-        if (o.type === "rock") drawRock(o.x, o.y); else drawCrow(o.x, o.y, frameCount);
+        drawObstacle(o);
         
         if (o.x < 20+22 && o.x+o.width > 20+2 && playerY+14 > o.y && playerY < o.y+o.height) { 
           if (hitFlashFrames > 0 || nitroFrames > 0) {
@@ -2538,7 +2675,7 @@
       ctx.fillStyle = "#2d0202"; ctx.fillRect(0, 0, 240, 160);
       drawClouds(); 
       drawGround();
-      obstacles.forEach(function(o) { if (o.type === "rock") drawRock(o.x, o.y); else drawCrow(o.x, o.y, frameCount); });
+      obstacles.forEach(function(o) { drawObstacle(o); });
       
       coins.forEach(function(c) { 
         if (!c.collected) {
