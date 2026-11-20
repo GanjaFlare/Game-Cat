@@ -872,7 +872,7 @@ const later=(ms,fn)=>setTimeout(fn,ms);
 function meow(){tone(620,900,.1,.1,'triangle');later(90,()=>tone(900,520,.2,.1,'triangle'))}
 /* 文字：GCR2と同じ 'Courier New' の太字（HUD 11px／本文 10px／タイトル 18〜22px） */
 function TX(s,x,y,c,size,al,sh){
-  g.font='bold '+size+"px 'Courier New', monospace";g.textBaseline='top';g.textAlign=al==='c'?'center':al==='r'?'right':'left';s=String(s);
+  g.font='bold '+size+(/[^\x00-\x7F]/.test(String(s))?"px 'Courier New','Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif":"px 'Courier New', monospace");g.textBaseline='top';g.textAlign=al==='c'?'center':al==='r'?'right':'left';s=String(s);
   if(sh!==null){g.fillStyle=sh||'#000';g.fillText(s,x+1,y+1)}
   g.fillStyle=c;g.fillText(s,x,y);
 }
@@ -911,6 +911,7 @@ const GK={   // ギミックの大きさ(hw=半幅,h=高さ)・反応の長さ(T
 
 /* ---------- 状態 ---------- */
 let st='TITLE',af=0,paused=false,confirmT=false,pauseImg=null;
+let uiLang='en',loadG=null,dataLoaded=false;
 let total=0,dP=0,menu=null,toast=null,guideT=0,tapped=false,walking=false,advancing=false;
 let ranking=[],donations=[],fakeT=0,hopT=0,flash=0,shake=0,liftT=0,sunFlash=0;
 let lch=null,boarded=false,summitDone=false,summitT=0,camX=0,camY=0;   // lch＝発射イベント {s:段階1〜5, t:経過フレーム}
@@ -971,20 +972,55 @@ function fakeDonor(){
 }
 /* GASからの取得は、<script>タグで読む方式（JSONP）。GASはCORSが不安定なため（GCRと同じ方式） */
 function applyData(d){
-  if(!d||typeof d.total!=='number')return;
+  if(!d||typeof d.total!=='number')return false;dataLoaded=true;
   if(Array.isArray(d.ranking))ranking=d.ranking.slice().sort((a,b)=>b.amt-a.amt);
   if(Array.isArray(d.donations))donations=d.donations;
   const delta=d.total-total;
   if(delta>0){total=d.total;const rc=d.recent&&d.recent[d.recent.length-1];showToast(rc?sAddr(rc.addr)+' SENT '+fmt(rc.amt)+' WFLR!':'NEW DONATION! +'+fmt(delta)+' WFLR')}
+  return true;
 }
-function pollData(){
-  if(USE_DUMMY_DATA||!DATA_API_URL)return;
-  const cb='__ttm_'+(Date.now()%1e9),s=document.createElement('script');
-  const done=()=>{try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s)};
-  window[cb]=d=>{done();try{applyData(d)}catch(e){}};
-  s.onerror=done;
+function pollData(cbk){
+  if(USE_DUMMY_DATA||!DATA_API_URL){if(cbk)cbk(true);return}
+  const cb='__ttm_'+(Date.now()%1e9)+'_'+((Math.random()*1e6)|0),s=document.createElement('script');let fin=false,tm=0;
+  const done=ok=>{if(fin)return;fin=true;clearTimeout(tm);try{delete window[cb]}catch(e){window[cb]=undefined}if(s.parentNode)s.parentNode.removeChild(s);if(cbk)cbk(ok)};
+  tm=setTimeout(()=>done(false),10000);   // 10秒で返事がなければ失敗（GASが上限でHTMLのエラーページを返したときなど）
+  window[cb]=d=>{let ok=false;try{ok=applyData(d)}catch(e){}done(ok)};
+  s.onerror=()=>done(false);
   s.src=DATA_API_URL+(DATA_API_URL.indexOf('?')<0?'?':'&')+'action=getClimb&callback='+cb+'&_='+Date.now();
-  document.head.appendChild(s);later(15000,done);
+  document.head.appendChild(s);
+}
+/* ===== 起動時の「寄付金読み中」画面：最初の取得に成功してからゲーム開始。3回失敗したら混雑メッセージ ===== */
+const BUSY_MIN=10;   // 「◯◯分後」の数字
+function startLoad(){
+  if(USE_DUMMY_DATA||dataLoaded){newGame();return}
+  loadG={state:'load',t:0,tries:0};attemptLoad();
+}
+function attemptLoad(){
+  const lg=loadG;if(!lg)return;lg.state='load';lg.tries++;
+  pollData(ok=>{
+    if(loadG!==lg)return;
+    if(ok){loadG=null;newGame();return}
+    if(lg.tries<3)setTimeout(attemptLoad,1500);else lg.state='busy';
+  });
+}
+function retryLoad(){if(!loadG||loadG.state!=='busy')return;loadG.tries=0;attemptLoad();tone(700,1000,.08,.08,'triangle')}
+function drawLoading(){
+  const lg=loadG;lg.t++;
+  R(0,0,240,160,'#0b1020');
+  R(14,6,212,148,'#0f172a');R(14,6,212,1,'#34d399');R(14,153,212,1,'#34d399');R(14,6,1,148,'#34d399');R(225,6,1,148,'#34d399');
+  if(lg.state==='load'){
+    TX('LOADING'+'...'.slice(0,((lg.t>>4)%3)+1),120,44,'#ffd700',18,'c');
+    TX('READING DONATIONS',120,76,'#fff',11,'c');
+    R(60,100,120,6,'#1e293b');const bx=60+Math.floor(((lg.t*2)%140)-20);
+    for(let x=Math.max(60,bx);x<Math.min(180,bx+30);x++)R(x,100,1,6,'#34d399');
+    TX('PLEASE WAIT',120,122,'#94a3b8',9,'c');
+  }else{
+    TX('SERVER IS BUSY',120,16,'#fca5a5',16,'c');
+    TX('ACCESS IS CROWDED RIGHT NOW.',120,50,'#fff',9,'c');
+    TX('PLEASE OPEN THE GAME AGAIN',120,68,'#fff',9,'c');
+    TX('IN ABOUT '+BUSY_MIN+' MINUTES.',120,82,'#ffd700',10,'c');
+    TX('A:RETRY   B:TITLE',120,124,'#94a3b8',10,'c');
+  }
 }
 function showToast(text){if(lch||warp)return;toast={t:0,text:text};tone(1200,1800,.1,.1,'triangle');later(90,()=>tone(1800,2400,.12,.08,'triangle'))}
 if(USE_DUMMY_DATA)initDummy();else pollData();
@@ -993,7 +1029,7 @@ if(USE_DUMMY_DATA)initDummy();else pollData();
 
 /* ---------- 寄付メニュー・ランキング・マップ ---------- */
 const amtOf=m=>parseInt(m.d.join(''),10)||0;
-function openMenu(){menu={stage:'AMT',d:[0,0,0,1,0,0],cur:3,msg:'',t:0,rankOff:0,amt:0};tone(880,1320,.08,.1)}
+function openMenu(){menu={stage:'AMT',d:[0,0,0,0,0,0],cur:3,msg:'',t:0,rankOff:0,amt:0};tone(880,1320,.08,.1)}
 function openRank(){menu={stage:'RANK',d:[],cur:0,msg:'',t:0,rankOff:0,amt:0};tone(660,990,.08,.1)}
 function openMap(){menu={stage:'MAP',d:[],cur:0,msg:'',t:0,rankOff:0,amt:0,sel:viewM};tone(520,780,.1,.1,'triangle')}
 function closeMenu(){const was=menu;menu=null;if(was&&was.stage==='DONE')afterThanks()}
@@ -1037,7 +1073,7 @@ async function doDonate(m){
 function onDonated(amt){   // 数字だけ先に増やす。ネコが歩くのは「THANK YOU」の枠が消えてから
   addDonationData(walletAddress||'0x00000000000000000000000000000000000000f1',amt);
   playKirarin();
-  if(!USE_DUMMY_DATA)later(6000,pollData);
+  if(!USE_DUMMY_DATA)later(6000,()=>pollData());
 }
 const walletOpen=()=>{const m=$('walletModal');return !!m&&m.style.display==='flex'};
 const ready=()=>summitDone&&!lch&&viewM===6&&dP>=0.9999;
@@ -1050,12 +1086,14 @@ function activateItem(i){
 function moveSel(k){const o=selIdx;selIdx=clamp(selIdx+(k==='r'?1:k==='l'?-1:0),0,5);if(selIdx!==o)tone(700,900,.04,.07,'triangle')}
 const busyUI=()=>st!=='PLAY'||paused||confirmT||!!lch||!!warp||walletOpen()||ov.style.display!=='none';
 function onA(){
+  if(loadG){retryLoad();return}
   if(helpOpen()||ov.style.display!=='none'||paused||confirmT||st!=='PLAY'||walletOpen())return;
   if(lch){if(lch.s===5&&lch.t>200)returnToSummit();return}
   if(warp)return;
   if(menu)menuA();else activateItem(selIdx);
 }
 function onB(){
+  if(loadG){if(loadG.state==='busy')returnToTitle();return}
   if(helpOpen()){closeHelp();return}
   if(ov.style.display!=='none'||paused||confirmT||st!=='PLAY'||walletOpen())return;
   if(lch){if(lch.s===5&&lch.t>200)returnToSummit();return}
@@ -1372,6 +1410,11 @@ function tapAt(sx,sy){
   const sc=[523,587,659,784,880,1047];tone(sc[(sx/40)|0]||523,(sc[(sx/40)|0]||523)*1.5,.12,.08,'triangle');
 }
 function canvasTap(e){
+  if(menu&&menu.stage!=='MAP'&&menu.stage!=='SEND'&&st==='PLAY'&&!paused&&!confirmT&&!walletOpen()){
+    const r0=$('gameCanvas').getBoundingClientRect();
+    const mx=(e.clientX-r0.left)/r0.width*248-4,my=(e.clientY-r0.top)/r0.height*168-4;
+    if(mx>=14&&mx<=54&&my>=4&&my<=23){toggleLang();return}
+  }
   if(st!=='PLAY'||paused||confirmT||menu||walletOpen())return;
   const r=$('gameCanvas').getBoundingClientRect();
   const sx=clamp(Math.round((e.clientX-r.left)/r.width*248-4),0,239),sy=clamp(Math.round((e.clientY-r.top)/r.height*168-4),0,159);
@@ -1380,7 +1423,8 @@ function canvasTap(e){
   if(warp)return;
   tapAt(sx,sy);
 }
-function act2(){   // スペースキー：頂上では発射ボタン、それ以外はネコをさわる
+function act2(){
+  if(loadG)return;   // スペースキー：頂上では発射ボタン、それ以外はネコをさわる
   if(st!=='PLAY'||paused||confirmT||menu||walletOpen()||warp)return;
   tapped=true;guideT=0;
   if(lch){if(lch.s===5&&lch.t>200)returnToSummit();return}
@@ -1790,34 +1834,36 @@ function drawMenuBase(){
   g.globalAlpha=.82;R(0,0,240,160,'#0b1020');g.globalAlpha=1;
   R(14,6,212,148,'#0f172a');R(14,6,212,1,'#34d399');R(14,153,212,1,'#34d399');R(14,6,1,148,'#34d399');R(225,6,1,148,'#34d399');
   if(!DONATE_LIVE&&m.stage!=='RANK')TX('TEST MODE',221,9,'#fca5a5',8,'r');
+  if(m.stage!=='SEND')drawLangTab();
+  const jp=uiLang==='jp';
   if(m.stage==='AMT'){
-    TX('SUPPORT',120,12,'#6ee7b7',18,'c');TX('SEND WFLR TO HELP US REACH THE MOON',120,34,'#94a3b8',8,'c');
+    TX(L('SUPPORT','サポート'),120,12,'#6ee7b7',jp?16:18,'c');TX(L('SEND WFLR TO HELP US REACH THE MOON','WFLRを送って、月をめざそう'),120,34,'#94a3b8',8,'c');
     const x0=50;let started=false;
     for(let i=0;i<6;i++){const x=x0+i*24,sel=i===m.cur;if(m.d[i]>0)started=true;
       R(x,48,20,28,sel?'#1e293b':'#111a2e');R(x,48,20,1,sel?'#ffd700':'#334155');R(x,75,20,1,sel?'#ffd700':'#334155');R(x,48,1,28,sel?'#ffd700':'#334155');R(x+19,48,1,28,sel?'#ffd700':'#334155');
       TX(m.d[i],x+10,52,started||i===5?'#fff':'#475569',22,'c');
       if(sel){const c=x+10;R(c-3,44,7,1,'#ffd700');R(c-2,43,5,1,'#ffd700');R(c-1,42,3,1,'#ffd700');R(c-3,79,7,1,'#ffd700');R(c-2,80,5,1,'#ffd700');R(c-1,81,3,1,'#ffd700')}}
     TX('WFLR',120,86,'#fff',16,'c');
-    TX(walletAddress?'WALLET '+sAddr(walletAddress):'WALLET NOT CONNECTED',120,106,walletAddress?'#6ee7b7':'#94a3b8',9,'c');
-    TX('UP/DOWN:NUMBER  LEFT/RIGHT:DIGIT',120,118,'#94a3b8',8,'c');
-    TX(m.msg||'A:OK   B:CANCEL',120,133,m.msg?'#fca5a5':'#fff',11,'c');
+    TX(walletAddress?L('WALLET ','ウォレット ')+sAddr(walletAddress):L('WALLET NOT CONNECTED','ウォレット未接続'),120,106,walletAddress?'#6ee7b7':'#94a3b8',9,'c');
+    TX(L('UP/DOWN:NUMBER  LEFT/RIGHT:DIGIT','上下:数字  左右:けた'),120,118,'#94a3b8',8,'c');
+    TX(m.msg?MS(m.msg):L('A:OK   B:CANCEL','A:決定   B:やめる'),120,133,m.msg?'#fca5a5':'#fff',11,'c');
   }else if(m.stage==='CONF'){
-    TX('SEND '+fmt(m.amt)+' WFLR?',120,26,'#fff',18,'c');
-    TX('TO THE GANJAFLARE DONATION ADDRESS',120,56,'#94a3b8',8,'c');TX('VOLUNTARY DONATION',120,72,'#6ee7b7',10,'c');TX('NO REWARDS OR RETURNS',120,86,'#6ee7b7',10,'c');
-    TX('A:YES   B:NO',120,112,'#ffd700',18,'c');
+    TX(L('SEND '+fmt(m.amt)+' WFLR?',fmt(m.amt)+' WFLRを送る？'),120,26,'#fff',jp?14:18,'c');
+    TX(L('TO THE GANJAFLARE DONATION ADDRESS','GanjaFlareの寄付アドレスへ'),120,56,'#94a3b8',8,'c');TX(L('VOLUNTARY DONATION','寄付は任意です'),120,72,'#6ee7b7',10,'c');TX(L('NO REWARDS OR RETURNS','特典・リターンはありません'),120,86,'#6ee7b7',10,'c');
+    TX(L('A:YES   B:NO','A:はい   B:いいえ'),120,112,'#ffd700',jp?14:18,'c');
   }else if(m.stage==='SEND'){
-    TX('SENDING'+'...'.slice(0,((af>>4)%3)+1),120,36,'#ffd700',18,'c');TX(m.msg||'PLEASE WAIT',120,76,'#fff',10,'c');
+    TX(L('SENDING','送信中')+'...'.slice(0,((af>>4)%3)+1),120,36,'#ffd700',jp?16:18,'c');TX(m.msg?MS(m.msg):L('PLEASE WAIT','しばらくお待ちください'),120,76,'#fff',10,'c');
   }else if(m.stage==='DONE'){
-    TX('THANK YOU!',120,24,'#ffd700',22,'c');TX(fmt(m.amt)+' WFLR SENT',120,64,'#fff',12,'c');TX('THE CAT WILL CLIMB HIGHER!',120,86,'#6ee7b7',10,'c');TX('A:CLOSE',120,116,'#94a3b8',10,'c');
+    TX(L('THANK YOU!','ありがとう！'),120,24,'#ffd700',22,'c');TX(L(fmt(m.amt)+' WFLR SENT',fmt(m.amt)+' WFLRを送りました'),120,64,'#fff',12,'c');TX(L('THE CAT WILL CLIMB HIGHER!','ネコがもっと進みます！'),120,86,'#6ee7b7',10,'c');TX(L('A:CLOSE','A:閉じる'),120,116,'#94a3b8',10,'c');
   }else if(m.stage==='ERR'){
-    TX('OOPS!',120,24,'#fca5a5',22,'c');TX(m.msg,120,68,'#fff',10,'c');TX('A:RETRY   B:CLOSE',120,108,'#94a3b8',10,'c');
+    TX(L('OOPS!','エラー'),120,24,'#fca5a5',22,'c');TX(MS(m.msg),120,68,'#fff',10,'c');TX(L('A:RETRY   B:CLOSE','A:もう一度   B:閉じる'),120,108,'#94a3b8',10,'c');
   }else if(m.stage==='RANK'){
-    TX('TOP DONORS',120,10,'#ffd700',18,'c');
-    if(!ranking.length)TX('NO DONORS YET',120,70,'#94a3b8',10,'c');
+    TX(L('TOP DONORS','寄付ランキング'),120,10,'#ffd700',jp?16:18,'c');
+    if(!ranking.length)TX(L('NO DONORS YET','まだ寄付はありません'),120,70,'#94a3b8',10,'c');
     for(let i=0;i<7;i++){const r=ranking[m.rankOff+i];if(!r)break;const y=36+i*13,rk=m.rankOff+i+1,me=walletAddress&&r.addr.toLowerCase()===walletAddress.toLowerCase();
       const col=me?'#6ee7b7':rk===1?'#ffd700':rk===2?'#d1d5db':rk===3?'#d97706':'#fff';
       R(20,y-1,200,12,i%2?'#0f172a':'#16203a');TX(rk,24,y,col,10,'l');TX(sAddr(r.addr),42,y,col,10,'l');TX(fmt(r.amt),214,y,col,10,'r')}
-    TX('UP/DOWN:SCROLL   A/B:CLOSE',120,138,'#94a3b8',8,'c');
+    TX(L('UP/DOWN:SCROLL   A/B:CLOSE','上下:スクロール   A/B:閉じる'),120,138,'#94a3b8',8,'c');
   }
 }
 
@@ -1867,6 +1913,16 @@ function drawTitle(){
 }
 
 let helpLang='en';
+/* ===== 寄付画面の日本語（ゲーム内の他の文字は英語のまま。寄付とランキングだけ EN/JP 切り替え） ===== */
+const JPM={'TEST MODE: NO REAL PAYMENT':'テストモード：実際には送金されません','CONNECT YOUR WALLET':'ウォレットをつなぎます','CHECKING NETWORK':'ネットワーク確認中','NOT ENOUGH WFLR':'WFLRが足りません','CONFIRM IN YOUR WALLET':'ウォレットで承認してください','CANCELLED':'キャンセルしました','WAITING FOR CONFIRMATION':'承認を待っています','TIMED OUT. CHECK YOUR WALLET':'時間切れです。ウォレットを確認','TRANSACTION FAILED':'送金に失敗しました','SOMETHING WENT WRONG':'エラーが起きました','WALLET NOT CONNECTED':'ウォレット未接続','ENTER 1 OR MORE':'1以上を入れてください','FAILED':'失敗しました'};
+const L=(en,jp)=>uiLang==='jp'?jp:en;
+const MS=t=>uiLang==='jp'&&JPM[t]?JPM[t]:t;
+function toggleLang(){setLang(uiLang==='en'?'jp':'en');tone(700,900,.05,.08,'triangle')}
+function drawLangTab(){
+  const a=uiLang==='en';
+  R(18,8,15,11,a?'#34d399':'#1e293b');R(35,8,15,11,a?'#1e293b':'#34d399');
+  TX('EN',20,10,a?'#06281c':'#94a3b8',8,'l',null);TX('JP',37,10,a?'#94a3b8':'#06281c',8,'l',null);
+}
 /* ===== タイトル画面の説明文：EN / JP 切り替え（ゲーム内の文字は英語のみ） ===== */
 const LANGS={
   en:{lead:"LET'S SEND GANJA CAT TO THE MOON, TOGETHER!",help:'HOW TO PLAY',
@@ -1876,7 +1932,7 @@ const LANGS={
       t1:"寄付されたWFLRの分だけ、みんなの画面でネコが道を進みます。山のゴールにある転送ゲートで、次の高い山へ。7つの山をのぼったら、ロケットで月へ！ゲームは無料で遊べます。画面をタップすると、いろいろ動きます。",
       t2:"GanjaFlareは非営利のコミュニティプロジェクトです。寄付はサーバーなどの運営費に使われます。寄付は任意で、特典・権利・金銭的なリターンはありません。"}};
 function setLang(l){
-  if(!LANGS[l])l='en';const d=LANGS[l];
+  if(!LANGS[l])l='en';const d=LANGS[l];uiLang=l;
   $('infoLead').textContent=d.lead;$('infoT1').textContent=d.t1;$('infoT2').textContent=d.t2;$('btnHelp').textContent=d.help;
   $('langEN').classList.toggle('on',l==='en');$('langJP').classList.toggle('on',l==='jp');
   try{localStorage.setItem('ttmLang',l)}catch(e){}
@@ -1929,29 +1985,49 @@ updHelp(document.getElementById('langJP').classList.contains('on')?'jp':'en');
 
 /* ===================== ここから下は共通（触らない） ===================== */
 function returnToTitle(){
-  paused=false;confirmT=false;menu=null;dpadSet(null);bgmOff();startPressed=false;
+  loadG=null;paused=false;confirmT=false;menu=null;dpadSet(null);bgmOff();startPressed=false;
   $('btnGameStart').classList.remove('pressed');st='TITLE';ov.style.display='flex'}
 function pressStart(e){
   if(e&&e.preventDefault)e.preventDefault();
   if(startPressed)return;startPressed=true;
   const b=$('btnGameStart');b.classList.remove('pressed');void b.offsetWidth;b.classList.add('pressed');
   playBoing();unlockAudio();
-  setTimeout(()=>{bgmOn();ov.style.display='none';newGame()},380)}
+  setTimeout(()=>{bgmOn();ov.style.display='none';startLoad()},380)}
 function togglePause(){
   if(ov.style.display!=='none'||st==='TITLE'||menu||walletOpen())return;
   paused=!paused;confirmT=false;
   if(paused){pauseImg=g.getImageData(0,0,240,160);drawPause()}else{last=performance.now();acc=0}}
+/* 「RETURN TO TITLE?」の確認ダイアログ（キャンバス 240×160 用） */
+function drawReturnToTitleDialog(ctx) {
+  ctx.save();
+  ctx.textBaseline = "alphabetic";   // 他の描画が textBaseline を変えているので、ここで元に戻す
+  // 背景を暗くする
+  ctx.fillStyle = "rgba(0,0,0,0.75)";
+  ctx.fillRect(0, 0, 240, 160);
+  // 枠（濃い紺の箱＋緑の縁）
+  ctx.fillStyle = "#0f172a";
+  ctx.fillRect(30, 48, 180, 66);
+  ctx.strokeStyle = "#34d399";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(30, 48, 180, 66);
+  // 文字
+  ctx.textAlign = "center";
+  ctx.font = "bold 12px 'Courier New'";
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("RETURN TO TITLE?", 120, 74);
+  ctx.fillStyle = "#6ee7b7";
+  ctx.fillText("A : YES", 78, 100);
+  ctx.fillStyle = "#fca5a5";
+  ctx.fillText("B : NO", 162, 100);
+  ctx.textAlign = "left";
+  ctx.restore();
+}
 function drawPause(){
   if(!paused)return;g.putImageData(pauseImg,0,0);
   g.fillStyle='rgba(0,0,0,0.6)';g.fillRect(0,0,240,160);
   g.fillStyle='#fff';g.font="bold 22px 'Courier New'";g.textAlign='center';g.fillText('PAUSE',120,70);
   g.font="bold 9px 'Courier New'";g.fillText('START : RESUME',120,100);g.fillText('SELECT : BACK TO TITLE',120,114);
-  if(confirmT){
-    g.fillStyle='rgba(0,0,0,0.75)';g.fillRect(0,0,240,160);
-    g.fillStyle='#0f172a';g.fillRect(30,48,180,66);g.strokeStyle='#34d399';g.lineWidth=2;g.strokeRect(30,48,180,66);
-    g.textAlign='center';g.font="bold 12px 'Courier New'";
-    g.fillStyle='#ffffff';g.fillText('RETURN TO TITLE?',120,74);
-    g.fillStyle='#6ee7b7';g.fillText('A : YES',78,100);g.fillStyle='#fca5a5';g.fillText('B : NO',162,100)}
+  if(confirmT)drawReturnToTitleDialog(g);
   g.textAlign='left'}
 function onSelect(){
   if(ov.style.display!=='none'||menu)return;
@@ -1979,6 +2055,7 @@ addEventListener('keydown',e=>{
   if(dk){e.preventDefault();if(!e.repeat)dpadHold(dk,true);return}
   if(e.code==='Space'){e.preventDefault();if(!e.repeat)act2()}
 
+  if(e.code==='KeyL'&&menu&&menu.stage!=='MAP'&&menu.stage!=='SEND'&&!e.repeat){toggleLang();return}
   if(e.code==='KeyA'||e.code==='KeyZ'){e.preventDefault();if(!e.repeat)onA()}
   if(e.code==='KeyB'||e.code==='KeyX'||e.code==='Escape'){e.preventDefault();if(!e.repeat)onB()}
   if(e.code==='Enter'){e.preventDefault();if(!e.repeat)togglePause()}
@@ -1999,7 +2076,7 @@ $('btnMusicToggle').addEventListener('click',function(){
   if(isMusicOn)startBgm();else stopBgm();this.blur();
 });
 let last=performance.now(),acc=0;
-function loop(t){if(paused){last=t;acc=0;requestAnimationFrame(loop);return}acc+=Math.min(100,t-last);last=t;while(acc>=1000/60){upd();acc-=1000/60}if(ov.style.display==='none')draw();else{af++;drawTitle()}requestAnimationFrame(loop)}
+function loop(t){if(paused){last=t;acc=0;requestAnimationFrame(loop);return}acc+=Math.min(100,t-last);last=t;while(acc>=1000/60){upd();acc-=1000/60}if(ov.style.display==='none'){if(loadG)drawLoading();else draw()}else{af++;drawTitle()}requestAnimationFrame(loop)}
 requestAnimationFrame(loop);
 })();
   </script>
