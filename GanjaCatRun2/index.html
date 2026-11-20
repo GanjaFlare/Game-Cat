@@ -1069,32 +1069,37 @@
 
     // 🛢️ 障害物（地上）：ドラム缶（普通）／消火栓（低頻度）
     //    ドラム缶は縦長の長方形（見た目は上に2px高いが、当たり判定は従来どおり高さ16）
-    function drawBarrel(x, y) {
-      const t = y - 2;
-      ctx.fillStyle = "#a8432a"; ctx.fillRect(x, t+1, 14, 16);             // 本体（錆びた赤）
-      ctx.fillStyle = "#c9603f"; ctx.fillRect(x+2, t+2, 2, 14);            // ハイライト
-      ctx.fillStyle = "#7c2f1c"; ctx.fillRect(x+11, t+2, 3, 14);           // 影
-      ctx.fillStyle = "#6b2418"; ctx.fillRect(x, t+6, 14, 1); ctx.fillRect(x, t+12, 14, 1);       // 補強リング
-      ctx.fillStyle = "#d28a6c"; ctx.fillRect(x, t+7, 14, 1);
+    function drawBarrel(x, y) {                                             // ドラム缶（幅14×高さ22。見た目と当たり判定が同じ）
+      const t = y;
+      ctx.fillStyle = "#a8432a"; ctx.fillRect(x, t+1, 14, 20);             // 本体（錆びた赤）
+      ctx.fillStyle = "#c9603f"; ctx.fillRect(x+2, t+2, 2, 18);            // ハイライト
+      ctx.fillStyle = "#7c2f1c"; ctx.fillRect(x+11, t+2, 3, 18);           // 影
+      ctx.fillStyle = "#6b2418"; ctx.fillRect(x, t+7, 14, 1); ctx.fillRect(x, t+14, 14, 1);       // 補強リング
+      ctx.fillStyle = "#d28a6c"; ctx.fillRect(x, t+8, 14, 1); ctx.fillRect(x, t+15, 14, 1);
       ctx.fillStyle = "#9a9a96"; ctx.fillRect(x, t, 14, 2);                // 上のフチ
       ctx.fillStyle = "#c4c4bf"; ctx.fillRect(x+1, t, 12, 1);
-      ctx.fillStyle = "#4a4a48"; ctx.fillRect(x, t+16, 14, 2);             // 下のフチ
-      ctx.fillStyle = "#f2c230"; ctx.fillRect(x+5, t+8, 4, 4);             // 危険マーク（黄色）
-      ctx.fillStyle = "#111";    ctx.fillRect(x+7, t+9, 1, 2);
-      ctx.fillStyle = "#5a2a1a"; ctx.fillRect(x+3, t+14, 2, 2); ctx.fillRect(x+10, t+3, 2, 1);    // サビ
+      ctx.fillStyle = "#4a4a48"; ctx.fillRect(x, t+20, 14, 2);             // 下のフチ
+      ctx.fillStyle = "#5a2a1a"; ctx.fillRect(x+3, t+17, 2, 2); ctx.fillRect(x+9, t+4, 2, 1); ctx.fillRect(x+5, t+11, 1, 2);    // サビ
     }
-    function drawHydrant(x, y) {                                            // 消火栓（幅12×高さ16）
-      ctx.fillStyle = "#d62b2b"; ctx.fillRect(x+3, y+5, 6, 8);             // 胴体
-      ctx.fillStyle = "#ff6a5a"; ctx.fillRect(x+4, y+5, 1, 8);             // ハイライト
-      ctx.fillStyle = "#8f1a1a"; ctx.fillRect(x+8, y+5, 1, 8);             // 影
-      ctx.fillStyle = "#d62b2b"; ctx.fillRect(x+3, y+1, 6, 2);             // 頭のドーム
-      ctx.fillRect(x+5, y, 2, 1);
-      ctx.fillStyle = "#f2c230"; ctx.fillRect(x+2, y+3, 8, 2);             // 黄色い帯
-      ctx.fillStyle = "#b8b8b8"; ctx.fillRect(x, y+7, 3, 3); ctx.fillRect(x+9, y+7, 3, 3);     // 左右の放水口
-      ctx.fillStyle = "#6a6a6a"; ctx.fillRect(x, y+7, 1, 3); ctx.fillRect(x+11, y+7, 1, 3);
-      ctx.fillStyle = "#b8b8b8"; ctx.fillRect(x+5, y+8, 2, 2);             // 正面の口
-      ctx.fillStyle = "#a01c1c"; ctx.fillRect(x+2, y+13, 8, 2);            // 下のフランジ
-      ctx.fillStyle = "#4a4a48"; ctx.fillRect(x+1, y+15, 10, 1);           // 土台
+    function drawHydrant(x, y) {                                            // 消火栓（幅24×高さ32）
+      ctx.fillStyle = "#b8b8b8"; ctx.fillRect(x+10, y, 4, 2);              // 頭のボルト
+      ctx.fillStyle = "#d62b2b";                                            // 頭のドーム
+      ctx.fillRect(x+8, y+2, 8, 1); ctx.fillRect(x+6, y+3, 12, 1); ctx.fillRect(x+5, y+4, 14, 2);
+      ctx.fillStyle = "#ff8a7a"; ctx.fillRect(x+9, y+3, 3, 1);
+      ctx.fillStyle = "#f2c230"; ctx.fillRect(x+4, y+6, 16, 3);            // 黄色い帯
+      ctx.fillStyle = "#b8901a"; ctx.fillRect(x+4, y+9, 16, 1);
+      ctx.fillStyle = "#d62b2b"; ctx.fillRect(x+6, y+10, 12, 16);          // 胴体
+      ctx.fillStyle = "#ff6a5a"; ctx.fillRect(x+8, y+10, 2, 16);           // ハイライト
+      ctx.fillStyle = "#8f1a1a"; ctx.fillRect(x+15, y+10, 3, 16);          // 影
+      ctx.fillRect(x+6, y+10, 12, 1);
+      ctx.fillStyle = "#b8b8b8"; ctx.fillRect(x, y+14, 6, 6); ctx.fillRect(x+18, y+14, 6, 6);      // 左右の放水口
+      ctx.fillStyle = "#888";    ctx.fillRect(x, y+13, 2, 8); ctx.fillRect(x+22, y+13, 2, 8);      // 口のフタ
+      ctx.fillStyle = "#e6e6e6"; ctx.fillRect(x+2, y+15, 3, 1); ctx.fillRect(x+19, y+15, 3, 1);
+      ctx.fillStyle = "#b8b8b8"; ctx.fillRect(x+9, y+16, 6, 6);            // 正面の口
+      ctx.fillStyle = "#444";    ctx.fillRect(x+11, y+18, 2, 2);
+      ctx.fillStyle = "#a01c1c"; ctx.fillRect(x+4, y+26, 16, 3);           // 下のフランジ
+      ctx.fillStyle = "#4a4a48"; ctx.fillRect(x+2, y+29, 20, 3);           // 土台
+      ctx.fillStyle = "#6a6a66"; ctx.fillRect(x+2, y+29, 20, 1);
     }
     // 🐦 障害物（空中）：カラス（目が赤い）／球体の監視ロボット。当たり判定は 16×10
     function drawCrow(x, y, frame) {
@@ -1109,24 +1114,24 @@
       ctx.fillStyle = color;
       for (let dy = -r; dy <= r; dy++) { const hw = Math.round(Math.sqrt(r * r + 0.5 - dy * dy)); ctx.fillRect(cx - hw, cy + dy, hw * 2, 1); }
     }
-    function drawSentryBall(x, y, frame) {
-      const cx = x + 8, cy = y + 5;
-      drawRoundRows(cx, cy, 8, "#1d2128");                                  // 輪郭（暗い背景でも見えるように）
-      for (let dy = -7; dy <= 7; dy++) {                                    // 金属の球（上が明るく、下が暗い）
-        const hw = Math.round(Math.sqrt(49.5 - dy * dy));
-        ctx.fillStyle = dy <= -4 ? "#b4bcc6" : (dy <= 2 ? "#8a929c" : "#5f6670");
+    function drawSentryBall(x, y, frame) {                                  // 当たり判定は 19×12。球は直径19（輪郭を入れて21）
+      const cx = x + 9, cy = y + 6;
+      drawRoundRows(cx, cy, 10, "#1d2128");                                 // 輪郭（暗い背景でも見えるように）
+      for (let dy = -9; dy <= 9; dy++) {                                    // 金属の球（上が明るく、下が暗い）
+        const hw = Math.round(Math.sqrt(81.5 - dy * dy));
+        ctx.fillStyle = dy <= -5 ? "#b4bcc6" : (dy <= 3 ? "#8a929c" : "#5f6670");
         ctx.fillRect(cx - hw, cy + dy, hw * 2, 1);
       }
-      ctx.fillStyle = "#e6ebf0"; ctx.fillRect(cx - 4, cy - 5, 2, 1); ctx.fillRect(cx - 5, cy - 4, 1, 1);   // つや
-      ctx.fillStyle = "#3a4048"; ctx.fillRect(cx - 6, cy + 4, 12, 1);       // 下のほうの継ぎ目
-      ctx.fillStyle = "#0e1014"; ctx.fillRect(cx - 5, cy - 2, 10, 5);       // バイザー（黒いガラス）
-      const sc = Math.round(Math.sin(frame * 0.12) * 2);                    // 赤い目が左右にスキャン
-      ctx.fillStyle = "#ff2a2a"; ctx.fillRect(cx - 1 + sc, cy - 1, 2, 3);
-      ctx.fillStyle = "#ff9a9a"; ctx.fillRect(cx - 1 + sc, cy, 1, 1);
-      ctx.fillStyle = "#666";    ctx.fillRect(cx, cy - 10, 1, 2);           // アンテナ
-      ctx.fillStyle = (frame % 24 < 12) ? "#ff2a2a" : "#7a1414"; ctx.fillRect(cx, cy - 11, 1, 1);
+      ctx.fillStyle = "#e6ebf0"; ctx.fillRect(cx - 5, cy - 7, 3, 1); ctx.fillRect(cx - 6, cy - 6, 1, 2);   // つや
+      ctx.fillStyle = "#3a4048"; ctx.fillRect(cx - 8, cy + 5, 16, 1);       // 下のほうの継ぎ目
+      ctx.fillStyle = "#0e1014"; ctx.fillRect(cx - 6, cy - 3, 12, 6);       // バイザー（黒いガラス）
+      const sc = Math.round(Math.sin(frame * 0.12) * 3);                    // 赤い目が左右にスキャン
+      ctx.fillStyle = "#ff2a2a"; ctx.fillRect(cx - 1 + sc, cy - 2, 3, 4);
+      ctx.fillStyle = "#ff9a9a"; ctx.fillRect(cx - 1 + sc, cy - 1, 1, 1);
+      ctx.fillStyle = "#666";    ctx.fillRect(cx, cy - 13, 1, 3);           // アンテナ
+      ctx.fillStyle = (frame % 24 < 12) ? "#ff2a2a" : "#7a1414"; ctx.fillRect(cx - 1, cy - 15, 3, 2);
       ctx.fillStyle = (frame % 4 < 2) ? "#5ad2ff" : "#2a7aa0";              // 浮いているエンジンの光
-      ctx.fillRect(cx - 2, cy + 9, 4, 1);
+      ctx.fillRect(cx - 3, cy + 11, 6, 1);
     }
     function drawObstacle(o) {
       if (o.type === "rock") { if (o.variant === "hydrant") drawHydrant(o.x, o.y); else drawBarrel(o.x, o.y); }
@@ -2575,7 +2580,9 @@
         let type = Math.random() < 0.7 ? "rock" : "crow"; 
         // 地上：ドラム缶（8割）／消火栓（2割）、空中：カラス（5割）／球体の監視ロボット（5割）
         let variant = (type === "rock") ? (Math.random() < 0.2 ? "hydrant" : "barrel") : (Math.random() < 0.5 ? "crow" : "ball");
-        obstacles.push({x:240, y:type==="rock"?118:60, type:type, variant:variant, width:type==="rock"?(variant==="hydrant"?12:14):16, height:type==="rock"?16:10}); 
+        // 種類ごとの大きさ（w×h）と出現の高さ y（足元は地面の高さ134にそろえる）
+        const dim = {barrel:{w:14,h:22,y:112}, hydrant:{w:24,h:32,y:102}, crow:{w:16,h:10,y:60}, ball:{w:19,h:12,y:60}}[variant];
+        obstacles.push({x:240, y:dim.y, type:type, variant:variant, width:dim.w, height:dim.h}); 
       }
 
       if (frameCount % 75 === 0) {
