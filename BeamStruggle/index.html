@@ -285,6 +285,10 @@
               <div id="walletMsg" class="item-note"></div>
             </div>
             <button id="btnNormal" class="start-btn normal-btn">FREE PLAY</button>
+            <div class="lb-panel">
+              <div class="lb-title">TAP SPEED RANKING</div>
+              <div id="lbRows" class="lb-rows"></div>
+            </div>
             <button id="btnBackSelect" class="start-btn" style="background:#334155;color:#e2e8f0;box-shadow:0 4px 0 #1e293b;font-size:12px;">&lt; BACK TO GAME SELECT</button>
           </div>
         </div>
@@ -665,8 +669,8 @@ const bg=document.createElement('canvas');bg.width=W;bg.height=H;
 const DEV=false,MAXR=30;
 let fp=0,chg=0,fExt=0,pExt=0,pe=0,peak=0,tw=[],st='TITLE',rd=1,cp=0,cs=0,cf=0,ip=0,af=0,P=[],win=null,fx=0,lock=0,taps=[],stun=0,rock=null,flash=0,boomed=0,best=0;
 try{best=+localStorage.getItem('gcBeamStruggleBest')||0}catch(e){}
-const go=s=>{st=s;if(s==='WIN'||s==='LOSE'||s==='CLEAR')lock=performance.now()+1200;if(s==='LOSE'||s==='CLEAR'){sel=0;try{refreshItemUI()}catch(e){}}};   // 死亡・クリアでアイテムは使い切り（再購入が必要）
-function start(n){rd=n;fp=0;chg=0;PAL[1]=E[n-1].b;if(n===1){peak=0;tw=[]}cp=0;P=[];ip=0;stun=0;rock=null;taps=[];win=null;boomed=0;flash=0;st='INTRO'}
+const go=s=>{st=s;if(s==='WIN'||s==='LOSE'||s==='CLEAR')lock=performance.now()+1200;if(s==='LOSE'||s==='CLEAR'){sel=0;try{refreshItemUI()}catch(e){}submitScore()}};   // 死亡・クリアでアイテムは使い切り（再購入が必要）
+function start(n){rd=n;fp=0;chg=0;PAL[1]=E[n-1].b;if(n===1){peak=0;tw=[];sessionToken='';requestNewSessionToken()}cp=0;P=[];ip=0;stun=0;rock=null;taps=[];win=null;boomed=0;flash=0;st='INTRO'}
 
 const clouds=[];for(let i=0;i<4;i++)clouds.push({x:Math.random()*W,y:15+Math.random()*30,s:.2+Math.random()*.4,w:20+Math.random()*20});
 const COL=['#fff','#7efff5','#ff9a3c','#ffee55','#ff4a4a'];
@@ -710,6 +714,93 @@ function press(e){
   }
 }
 const $=id=>document.getElementById(id),ov=$('setupOverlay');
+// 🌐 ブラウザ → Cloudflare Worker(中継) → GAS → スプレッドシート、という経路でランキングを扱う
+const WORKER_API_URL="https://beamstruggle-proxy.ganjaflare.workers.dev";
+let sessionToken="";
+function callGasApi(action, payload) {
+      var body = Object.assign({ action: action }, payload || {});
+
+      var controller = new AbortController();
+      // 🕐 20秒で諦めるタイムアウト(モバイル回線での遅延に余裕を持たせる)
+      var timeoutId = setTimeout(function() { controller.abort(); }, 20000);
+
+      return fetch(WORKER_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal
+      }).then(function(response) {
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+          throw new Error("通信に失敗しました (HTTP " + response.status + ")");
+        }
+        return response.json();
+      }).catch(function(error) {
+        clearTimeout(timeoutId);
+        if (error && error.name === "AbortError") {
+          throw new Error("通信がタイムアウトしました");
+        }
+        throw error;
+      });
+    }
+function requestNewSessionToken(attemptsLeft) {
+      if (attemptsLeft === undefined) attemptsLeft = 4;
+      console.log("[DEBUG] startSession リクエスト送信 (残り試行回数:", attemptsLeft, ")", new Date().toISOString());
+      callGasApi("startSession").then(function(data) {
+        if (data && data.status === "success" && data.token) {
+          sessionToken = data.token;
+          console.log("[DEBUG] startSession 成功、token受領:", sessionToken, new Date().toISOString());
+        } else {
+          console.warn("[DEBUG] startSession 応答が異常:", data, new Date().toISOString());
+          if (attemptsLeft > 1) {
+            setTimeout(function() { requestNewSessionToken(attemptsLeft - 1); }, 500);
+          }
+        }
+      }).catch(function(err) {
+        console.error("startSession failed:", err, new Date().toISOString());
+        if (attemptsLeft > 1) {
+          setTimeout(function() { requestNewSessionToken(attemptsLeft - 1); }, 500);
+        }
+      });
+    }
+// 🏆 タイトル画面のボード：連打の速さ（1秒間の連打数）のベスト5
+let lbData=null;
+function lbName(t) { return String(t).replace(/0x[0-9a-fA-F]{40}/g, function(a) { return a.slice(0, 6) + "\u2026" + a.slice(-4); }); }
+function renderTitleBoard() {
+      const box = document.getElementById("lbRows"); if (!box) return;
+      box.textContent = "";
+      const d = lbData;
+      if (!d || !d.length) { const e = document.createElement("div"); e.className = "lb-empty"; e.textContent = d ? "No data yet" : "Loading..."; box.appendChild(e); return; }
+      d.slice(0, 5).forEach(function(r) {   // ベスト5まで
+        const row = document.createElement("div"); row.className = "lb-row";
+        const l = document.createElement("span"); l.textContent = lbName(r[0]);
+        const v = document.createElement("span"); v.className = "v"; v.textContent = r[1] + (r[2] ? " (" + r[2] + ")" : "");
+        row.appendChild(l); row.appendChild(v); box.appendChild(row);
+      });
+    }
+function loadTitleBoard() {
+      lbData = null; renderTitleBoard();
+      callGasApi("getWinnerData").then(function(res) { lbData = (res && res.data) || []; renderTitleBoard(); }).catch(function() { lbData = []; renderTitleBoard(); });
+    }
+let statusTimer=null;
+function setStatus(t,ms){
+  const el=$('statusMessage');if(!el)return;
+  el.innerText=t;clearTimeout(statusTimer);
+  if(ms)statusTimer=setTimeout(function(){el.innerText=''},ms);
+}
+function submitScore(){   // ゲームオーバー／全クリアのとき、その挑戦の「1秒間の最大連打数」を送る
+  if(!(peak>0))return;
+  const id=(typeof walletAddress==='string'&&walletAddress)?walletAddress:'Guest';   // 未接続はGuest（ランキングには載らない）
+  setStatus('Saving score...');
+  sendScore(id,peak,0);
+}
+function sendScore(id,sc,tries){
+  if(!sessionToken&&tries<50){setTimeout(function(){sendScore(id,sc,tries+1)},100);return}   // トークンが届くのを最大5秒待つ
+  callGasApi('submitScoreFromGame',{playerId:id,twitterId:id,score:sc,mode:'NORMAL',sessionToken:sessionToken}).then(function(r){
+    if(r&&r.status==='success')setStatus(id==='Guest'?'Score saved (connect a wallet to rank)':'Score saved!',4000);
+    else setStatus('Save failed',4000);
+  }).catch(function(){setStatus('Save failed',4000)});
+}
 // 🛒 アイテム：1つだけ選べる（選び直すと前の選択は解除）。使えるのは1回きり（死亡・クリアで消える）
 let isPaused=false,confirmTitle=false,pauseFrame=null,sel=0,act=0;   // sel=選択中(0なし 1〜3) act=この挑戦で有効なアイテム
 const TAPM=[1,1.5,2.5,3],THK=[1,2,1,3],ITEM_PRICES=[0,200,400,1000];   // 連打の効果／ビームの太さ／価格（act: 1=巨大化の薬 2=ロケットランチャー 3=スーパーサイヤ人）
@@ -997,6 +1088,7 @@ function returnToTitle(){   // タイトル画面に戻る：BGMを消し、ア�
   try{refreshItemUI()}catch(e){}
   bgmOff();startPressed=false;$('btnNormal').classList.remove('pressed');
   st='TITLE';P=[];stun=0;rock=null;cp=0;ov.style.display='flex';
+  try{loadTitleBoard()}catch(e){}
 }
 function drawPauseScreen(){
   if(!isPaused)return;
@@ -1067,6 +1159,7 @@ addEventListener('keydown',e=>{
 });
 function resizeGame(){const w=$('gameWrapper');w.style.transform='translate(-50%,-50%) scale('+Math.min(innerWidth/340,innerHeight/680)+')'}
 addEventListener('resize',resizeGame);resizeGame();
+loadTitleBoard();
 preloadBgm(); // タイトル画面は無音。音楽ファイルだけ先に読み込んでおく
 // iPhoneの連打でズームしないようにする（ダブルタップ拡大・ピンチを無効化）
 document.addEventListener('gesturestart',e=>e.preventDefault());
