@@ -126,9 +126,7 @@
     .item-price { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; color: #6ee7b7; margin-top: 2px; }
     #setupOverlay { overflow-y: auto; justify-content: safe center; }
     .lb-panel { width: 100%; }
-    .lb-tabs { display: flex; gap: 6px; margin-bottom: 6px; }
-    .lb-tab { flex: 1; background: #0f172a; color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; padding: 7px 4px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.8px; cursor: pointer; touch-action: manipulation; }
-    .lb-tab.on { color: #6ee7b7; border-color: #34d399; box-shadow: 0 0 10px rgba(52, 211, 153, 0.35); }
+    .lb-title { text-align: center; color: #6ee7b7; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1.5px; margin-bottom: 6px; text-shadow: 0 0 10px rgba(52, 211, 153, 0.35); }
     .lb-rows { border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; padding: 6px 10px; min-height: 90px; box-sizing: border-box; text-align: left; }
     .lb-row { display: flex; justify-content: space-between; gap: 8px; font-family: 'Courier New', monospace; font-weight: 700; font-size: 11px; line-height: 15px; color: #fff; }
     .lb-row .v { color: #ffd700; white-space: nowrap; }
@@ -283,10 +281,7 @@
             </div>
             <button id="btnNormal" class="start-btn normal-btn">FREE PLAY</button>
             <div class="lb-panel">
-              <div class="lb-tabs">
-                <button id="lbTabScore" class="lb-tab on" type="button">2WEEKS SCORE</button>
-                <button id="lbTabLegend" class="lb-tab" type="button">LEGEND</button>
-              </div>
+              <div class="lb-title">HIGH SCORES</div>
               <div id="lbRows" class="lb-rows"></div>
             </div>
             <button id="btnBackSelect" class="start-btn" style="background:#334155;color:#e2e8f0;box-shadow:0 4px 0 #1e293b;font-size:12px;">&lt; BACK TO GAME SELECT</button>
@@ -631,17 +626,13 @@
       lfo.start(t); lfo.stop(t + d); ns.start(t); ns.stop(t + d);
     }
 
-    // 🏆 タイトル画面のボード：2WEEKS SCORE と LEGEND（上位10名）
-    let lbTab = "score";
-    const lbData = { score: null, legend: null };
+    // 🏆 タイトル画面のボード：HIGH SCORES（ベスト5。リセットしない、ずっと残るランキング）
+    let lbData = null;
     function lbName(t) { return String(t).replace(/0x[0-9a-fA-F]{40}/g, function(a) { return a.slice(0, 6) + "\u2026" + a.slice(-4); }); }
     function renderTitleBoard() {
       const box = document.getElementById("lbRows"); if (!box) return;
       box.textContent = "";
-      const t1 = document.getElementById("lbTabScore"), t2 = document.getElementById("lbTabLegend");
-      if (t1) t1.classList.toggle("on", lbTab === "score");
-      if (t2) t2.classList.toggle("on", lbTab === "legend");
-      const d = lbData[lbTab];
+      const d = lbData;
       if (!d || !d.length) { const e = document.createElement("div"); e.className = "lb-empty"; e.textContent = d ? "No data yet" : "Loading..."; box.appendChild(e); return; }
       d.slice(0, 5).forEach(function(r) {   // ベスト5まで
         const row = document.createElement("div"); row.className = "lb-row";
@@ -651,9 +642,8 @@
       });
     }
     function loadTitleBoard() {
-      lbData.score = null; lbData.legend = null; renderTitleBoard();
-      callGasApi("getWinnerData").then(function(res) { lbData.score = (res && res.data) || []; renderTitleBoard(); }).catch(function() { lbData.score = []; renderTitleBoard(); });
-      callGasApi("getLegendData").then(function(res) { lbData.legend = (res && res.data) || []; renderTitleBoard(); }).catch(function() { lbData.legend = []; renderTitleBoard(); });
+      lbData = null; renderTitleBoard();
+      callGasApi("getWinnerData").then(function(res) { lbData = (res && res.data) || []; renderTitleBoard(); }).catch(function() { lbData = []; renderTitleBoard(); });
     }
     function initializeEvents() {
       // 🔥 ページを開いた瞬間に、GASを軽く1回呼んで「起こして」おく
@@ -692,10 +682,6 @@
         btnBack.addEventListener("touchstart", goBack, {passive: false});
       }
       preloadBgm(); // タイトル画面は無音。音楽ファイルだけ先に読み込んでおく
-      [["lbTabScore", "score"], ["lbTabLegend", "legend"]].forEach(function(pr) {
-        const el = document.getElementById(pr[0]);
-        if (el) el.addEventListener("click", function() { lbTab = pr[1]; renderTitleBoard(); });
-      });
       loadTitleBoard();
 
       const dpad = document.getElementById("dpadControl");
