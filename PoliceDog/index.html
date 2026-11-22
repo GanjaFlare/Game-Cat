@@ -319,8 +319,8 @@
     // 🌐 ブラウザ → Cloudflare Worker(中継) → GAS（課金の確認用。GCR2と同じ）
     //  クロスオリジンの二段階リダイレクト(exec→echo)がモバイル回線等で不安定になる
     //  問題が確認されたため、サーバー間fetch()で中継するこちらの方式に戻した)
-    // ★ POLICE DOG 専用のCloudflare WorkerのURLに書き換えること（手順参照）
-    const WORKER_API_URL = "https://policedog-proxy.YOUR-SUBDOMAIN.workers.dev";
+    // POLICE DOG 専用のCloudflare Worker
+    const WORKER_API_URL = "https://policedog-proxy.ganjaflare.workers.dev";
 
     // GASへ action 付きのリクエストを送り、JSON形式で結果を受け取る共通関数
     function callGasApi(action, payload) {
