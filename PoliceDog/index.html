@@ -126,6 +126,7 @@
     .item-price { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; color: #6ee7b7; margin-top: 2px; }
     #setupOverlay { overflow-y: auto; justify-content: safe center; }
     .lb-panel { width: 100%; }
+    .lb-title { text-align: center; color: #6ee7b7; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1.5px; margin-bottom: 6px; text-shadow: 0 0 10px rgba(52, 211, 153, 0.35); }
     .lb-tabs { display: flex; gap: 6px; margin-bottom: 6px; }
     .lb-tab { flex: 1; background: #0f172a; color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; padding: 7px 4px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.8px; cursor: pointer; touch-action: manipulation; }
     .lb-tab.on { color: #6ee7b7; border-color: #34d399; box-shadow: 0 0 10px rgba(52, 211, 153, 0.35); }
@@ -1155,9 +1156,8 @@
     // =====================================================================
     //  描画
     // =====================================================================
-    function outlineText(str, x, y, size, color, align) {
-      ctx.font = "bold " + size + "px 'Courier New'"; ctx.textAlign = align || 'left'; ctx.lineJoin = 'round';
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.strokeText(str, x, y);
+    function outlineText(str, x, y, size, color, align) {   // GCR2と同じ：縁取りなしの Courier New 太字
+      ctx.font = "bold " + size + "px 'Courier New'"; ctx.textAlign = align || 'left';
       ctx.fillStyle = color; ctx.fillText(str, x, y); ctx.textAlign = 'left';
     }
     function jpText(str, x, y, size, color, align) {
@@ -1310,35 +1310,38 @@
       if (paused) drawPause();
     }
     function fmtTime(sec) { sec = Math.floor(sec); const m = Math.floor(sec / 60), r = sec % 60; return m + ':' + (r < 10 ? '0' : '') + r; }
-    function drawSaveStatus(y) {   // 保存中／保存失敗／操作ガイド（GCR2と同じ流れ）
-      ctx.textAlign = 'center';
+    function drawSaveStatus() {   // GCR2と同じ：保存中の表示 → 操作ガイド → 保存失敗の注意書き
+      ctx.save(); ctx.textAlign = 'center';
       if (isSaving) {
         ctx.font = "bold 10px 'Courier New'"; ctx.fillStyle = '#ffffff';
-        ctx.fillText('NOW SAVING SCORE' + '...'.slice(0, 1 + Math.floor(frameCount / 14) % 3), 120, y);
+        ctx.fillText('NOW SAVING SCORE' + '...'.slice(0, 1 + Math.floor(frameCount / 14) % 3), 108, 122);
       } else {
-        ctx.font = "bold 10px 'Courier New'"; ctx.fillStyle = '#cccccc';
-        ctx.fillText('A / SPACE : REPLAY', 120, y); ctx.fillText('SELECT    : RETURN TO TITLE', 120, y + 14);
-        if (saveFailed) { ctx.font = "bold 8px 'Courier New'"; ctx.fillText('SCORE MAY NOT BE SAVED', 120, y + 28); }
+        ctx.fillStyle = '#ccc'; ctx.font = "bold 10px 'Courier New'";
+        ctx.fillText('A / SPACE : REPLAY', 120, 118);
+        ctx.fillText('SELECT    : RETURN TO TITLE', 120, 133);
+        if (saveFailed) {
+          ctx.font = "bold 8px 'Courier New'";
+          ctx.fillText('SCORE MAY NOT BE SAVED', 120, 147);
+          ctx.fillText('TRY SWITCHING WI-FI / MOBILE DATA', 120, 156);
+        }
       }
-      ctx.textAlign = 'left';
+      ctx.restore();
     }
     function drawClear() {
-      const k = Math.min(1, t / 30);
-      ctx.fillStyle = 'rgba(0,0,0,' + (0.62 * k) + ')'; ctx.fillRect(0, 0, W, H);
-      if (t < 8) return;
-      outlineText('YOU WIN!', 120, 40, 24, '#ffd700', 'center');
-      outlineText('CLEAR TIME', 120, 66, 10, '#a5f3fc', 'center');
-      outlineText(stats.time.toFixed(1) + ' SEC', 120, 90, 20, '#ffffff', 'center');
-      drawSaveStatus(116);
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0, 0, W, H);
+      ctx.save(); ctx.textAlign = 'center';
+      ctx.fillStyle = '#FFD700'; ctx.font = "bold 18px 'Courier New'"; ctx.fillText('GAME CLEAR!!', 120, 60);
+      ctx.font = "bold 12px 'Courier New'"; ctx.fillText('CLEAR TIME ' + stats.time.toFixed(1) + ' SEC', 120, 82);
+      ctx.restore();
+      drawSaveStatus();
     }
     function drawGameOver() {
-      const k = Math.min(1, t / 30);
-      ctx.fillStyle = 'rgba(0,0,0,' + (0.62 * k) + ')'; ctx.fillRect(0, 0, W, H);
-      if (t < 8) return;
-      outlineText('GAME OVER', 120, 42, 22, '#ef4444', 'center');
-      outlineText('SURVIVED', 120, 68, 10, '#a5f3fc', 'center');
-      outlineText(fmtTime(stats.time), 120, 94, 24, '#ffffff', 'center');
-      drawSaveStatus(120);
+      ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(0, 0, W, H);
+      ctx.save(); ctx.textAlign = 'center';
+      ctx.fillStyle = '#fff'; ctx.font = "bold 20px 'Courier New'"; ctx.fillText('GAME OVER', 120, 60);
+      ctx.fillStyle = '#FFD700'; ctx.font = "bold 12px 'Courier New'"; ctx.fillText('YOU SURVIVED ' + fmtTime(stats.time), 120, 82);
+      ctx.restore();
+      drawSaveStatus();
     }
     function drawPause() {   // GCR2と同じ見た目
       ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, 0, 240, 160);
