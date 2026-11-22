@@ -737,7 +737,12 @@
       });
       const d = lbData[lbTab];
       if (!d || !d.length) { const e = document.createElement("div"); e.className = "lb-empty"; e.textContent = d ? "No data yet" : "Loading..."; box.appendChild(e); return; }
-      d.slice(0, 5).forEach(function(r) {   // ベスト5まで
+      // 🚫 Guest（ウォレット未接続）はランキング対象外。名前に「guest」を含む行は除き、順位表記（1st, 2nd…）は詰め直す
+      const ords = ["1st", "2nd", "3rd", "4th", "5th", "6th", "7th", "8th", "9th", "10th"];
+      const shown = d.filter(function(r) { return !/guest/i.test(String(r[0])); });
+      if (!shown.length) { const e2 = document.createElement("div"); e2.className = "lb-empty"; e2.textContent = "No data yet"; box.appendChild(e2); return; }
+      shown.slice(0, 5).forEach(function(r, idx) {   // ベスト5まで
+        r = [String(r[0]).replace(/^\d+(st|nd|rd|th)\s*:/i, ords[idx] + ":"), r[1], r[2]];
         const row = document.createElement("div"); row.className = "lb-row";
         const l = document.createElement("span"); l.textContent = lbName(r[0]);
         const v = document.createElement("span"); v.className = "v"; v.textContent = r[1] + (r[2] ? " (" + r[2] + ")" : "");
