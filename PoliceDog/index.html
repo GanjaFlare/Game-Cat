@@ -290,6 +290,10 @@
               <div id="walletMsg" class="item-note"></div>
             </div>
             <button id="btnNormal" class="start-btn normal-btn">FREE PLAY</button>
+            <div class="lb-panel">
+              <div class="lb-title">HIGH SCORES</div>
+              <div id="lbRows" class="lb-rows"></div>
+            </div>
             <button id="btnBackSelect" class="start-btn" style="background:#334155;color:#e2e8f0;box-shadow:0 4px 0 #1e293b;font-size:12px;">&lt; BACK TO GAME SELECT</button>
           </div>
         </div>
@@ -314,7 +318,8 @@
     // 🌐 ブラウザ → Cloudflare Worker(中継) → GAS（課金の確認用。GCR2と同じ）
     //  クロスオリジンの二段階リダイレクト(exec→echo)がモバイル回線等で不安定になる
     //  問題が確認されたため、サーバー間fetch()で中継するこちらの方式に戻した)
-    const WORKER_API_URL = "https://gcr2-proxy.ganjaflare.workers.dev";
+    // ★ POLICE DOG 専用のCloudflare WorkerのURLに書き換えること（手順参照）
+    const WORKER_API_URL = "https://policedog-proxy.YOUR-SUBDOMAIN.workers.dev";
 
     // GASへ action 付きのリクエストを送り、JSON形式で結果を受け取る共通関数
     function callGasApi(action, payload) {
@@ -344,6 +349,7 @@
       });
     }
 
+    const GAME_ID = "policedog";   // GAS側でこのゲーム専用のシート・ランキングに振り分けるための名前
     const BGM_URL = "../iwashiro_yanagi_bocho.mp3";   // ← GCRと同じ階層構成（ゲームフォルダの1つ上＝GitHubルート）
     const BACK_URL = "../";                            // ← GAME SELECTへ戻るリンク先
 
@@ -864,6 +870,7 @@
     let itemSpring = false, itemClover = false, itemRobo = false;   // タイトルで選んだアイテム（1回きり）
     const run = { spring: false, clover: false, robo: false };       // 今回のプレイで有効なアイテム
     let confirmTitle = false;   // 「タイトルに戻る？」確認中
+    let sessionToken = "", isSaving = false, saveFailed = false;   // ランキング：ワンタイムトークン／保存中／保存失敗
     let deathMode = false;   // 2段階目（Death mode）に入ったか
     const mini = { x: 0, yoff: 0, vy: 0, flip: false, mouth: false, run: false };   // 正体：ミニポリスドッグ
     let stats = { hitsTaken: 0, dodges: 0, heals: 0, time: 0 };
@@ -873,6 +880,7 @@
       run.spring = itemSpring; run.clover = itemClover; run.robo = itemRobo;   // アイテムは使い切り：このプレイ限り
       itemSpring = itemClover = itemRobo = false; try { refreshItemUI(); } catch (e) {}
       confirmTitle = false;
+      sessionToken = ""; isSaving = false; saveFailed = false; requestNewSessionToken();   // ランキング用：プレイ開始のたびに新しいトークンを発行
       cat.hpMax = run.robo ? LIFE_MAX * 2 : LIFE_MAX; cat.hp = cat.hpMax; cat.healQ = 0; cat.dead = false; cat.y = CAT_REST; cat.vy = 0; cat.jumpBuf = 0; cat.hitFlash = 0; cat.gauge = 0; cat.charge = 0; cat.laserT = 0; cat.glint = 0; cat.nitro = 0; cat.pop = 0; cat.powerFlash = 0;
       deathMode = false; dog.healQ = 0; dog.spirit = false; dog.angry = false;
       dog.x = 270; dog.hp = LIFE_MAX; dog.hits = 0; dog.flash = 0; dog.muzzle = 0; dog.mouth = false; dog.walking = false; dog.healT = 0; dog.hurtT = 0; dog.gone = false;
@@ -1003,7 +1011,7 @@
         const ex = mini.flip ? mini.x + 1 : mini.x + 11, ey = 106 + mini.yoff + 4.5;
         parts.push({ x: ex, y: ey, vx: mini.run ? -(0.8 + Math.random() * 1.5) : (Math.random() - 0.5) * 2.4, vy: -1.2 - Math.random(), g: 0.18, life: 28, size: 2, color: '#7dd3fc' });
       }
-      if (mini.x > 250 || t > 400) { mode = 'clear'; t = 0; stats.time = fightT / 60; sfxKirarin(); setTimeout(sfxKirarin, 220); }
+      if (mini.x > 250 || t > 400) { mode = 'clear'; t = 0; stats.time = fightT / 60; beginSave(); sfxKirarin(); setTimeout(sfxKirarin, 220); }
     }
     function drawMini() {
       const tx = (t >= 55 && t < 95) ? Math.sin(t * 2.2) * 1.2 : 0, bob = mini.run ? (Math.floor(frameCount / 4) % 2) : 0;
@@ -1047,7 +1055,7 @@
       if (mode === 'intro') stepIntro();
       else if (mode === 'fight') stepFight();
       else if (mode === 'dying') stepDying();
-      else if (mode === 'catdie') { if (t >= 100) { mode = 'gameover'; t = 0; } }
+      else if (mode === 'catdie') { if (t >= 100) { mode = 'gameover'; t = 0; stats.time = fightT / 60; beginSave(); } }
       else if (mode === 'rage') stepRage();
       else if (mode === 'reveal') stepReveal();
       else if (mode === 'boom') { if (t >= 70) startReveal(); }
@@ -1301,23 +1309,36 @@
       if (mode === 'gameover') drawGameOver();
       if (paused) drawPause();
     }
+    function fmtTime(sec) { sec = Math.floor(sec); const m = Math.floor(sec / 60), r = sec % 60; return m + ':' + (r < 10 ? '0' : '') + r; }
+    function drawSaveStatus(y) {   // 保存中／保存失敗／操作ガイド（GCR2と同じ流れ）
+      ctx.textAlign = 'center';
+      if (isSaving) {
+        ctx.font = "bold 10px 'Courier New'"; ctx.fillStyle = '#ffffff';
+        ctx.fillText('NOW SAVING SCORE' + '...'.slice(0, 1 + Math.floor(frameCount / 14) % 3), 120, y);
+      } else {
+        ctx.font = "bold 10px 'Courier New'"; ctx.fillStyle = '#cccccc';
+        ctx.fillText('A / SPACE : REPLAY', 120, y); ctx.fillText('SELECT    : RETURN TO TITLE', 120, y + 14);
+        if (saveFailed) { ctx.font = "bold 8px 'Courier New'"; ctx.fillText('SCORE MAY NOT BE SAVED', 120, y + 28); }
+      }
+      ctx.textAlign = 'left';
+    }
     function drawClear() {
       const k = Math.min(1, t / 30);
       ctx.fillStyle = 'rgba(0,0,0,' + (0.62 * k) + ')'; ctx.fillRect(0, 0, W, H);
       if (t < 8) return;
-      outlineText('YOU WIN!', 120, 52, 24, '#ffd700', 'center');
-      outlineText('CLEAR TIME', 120, 82, 10, '#a5f3fc', 'center');
-      outlineText(stats.time.toFixed(1) + ' SEC', 120, 106, 20, '#ffffff', 'center');
-      if (t > 70 && Math.floor(t / 25) % 2 === 0) outlineText('A / TAP : PLAY AGAIN', 120, 134, 9, '#fff', 'center');
-      outlineText('SELECT : TITLE', 120, 148, 8, '#cbd5e1', 'center');
+      outlineText('YOU WIN!', 120, 40, 24, '#ffd700', 'center');
+      outlineText('CLEAR TIME', 120, 66, 10, '#a5f3fc', 'center');
+      outlineText(stats.time.toFixed(1) + ' SEC', 120, 90, 20, '#ffffff', 'center');
+      drawSaveStatus(116);
     }
     function drawGameOver() {
       const k = Math.min(1, t / 30);
       ctx.fillStyle = 'rgba(0,0,0,' + (0.62 * k) + ')'; ctx.fillRect(0, 0, W, H);
       if (t < 8) return;
-      outlineText('GAME OVER', 120, 76, 22, '#ef4444', 'center');
-      if (t > 70 && Math.floor(t / 25) % 2 === 0) outlineText('A / TAP : RETRY', 120, 112, 9, '#fff', 'center');
-      outlineText('SELECT : TITLE', 120, 130, 8, '#cbd5e1', 'center');
+      outlineText('GAME OVER', 120, 42, 22, '#ef4444', 'center');
+      outlineText('SURVIVED', 120, 68, 10, '#a5f3fc', 'center');
+      outlineText(fmtTime(stats.time), 120, 94, 24, '#ffffff', 'center');
+      drawSaveStatus(120);
     }
     function drawPause() {   // GCR2と同じ見た目
       ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, 0, 240, 160);
@@ -1383,7 +1404,7 @@
     function triggerJump() {
       if (confirmTitle) return;
       if (mode === 'title') return;
-      if (mode === 'clear' || mode === 'gameover') { if (t > 70) startGame(); return; }
+      if (mode === 'clear' || mode === 'gameover') { if (t > 70 && !isSaving) startGame(); return; }
       if (mode === 'catdie') return;
       if (paused || mode === 'boom') return;
       if (cat.y >= CAT_REST) doJump(); else cat.jumpBuf = 10;
@@ -1396,7 +1417,7 @@
     function stopNitroSoundSoft() { /* ニトロ音は短いのでそのまま */ }
     function togglePause() { if (mode === 'title' || mode === 'clear' || mode === 'boom' || mode === 'catdie' || mode === 'gameover') return; setPaused(!paused); confirmTitle = false; }
     function selectPressed() {   // SELECT：ポーズ中なら「タイトルに戻る？」確認／クリア・ゲームオーバー画面ならタイトルへ
-      if (mode === 'clear' || mode === 'gameover') { showTitle(); return; }
+      if (mode === 'clear' || mode === 'gameover') { if (isSaving) return; showTitle(); return; }
       if (confirmTitle) return;
       if (!paused) return;
       confirmTitle = true;
@@ -1407,6 +1428,7 @@
       if (yes) showTitle();
     }
     function showTitle() {
+      try { loadTitleBoard(); } catch (e) {}
       bgmOff(); stopNitroSound();
       mode = 'title'; paused = false; confirmTitle = false; startPressed = false;
       itemSpring = itemClover = itemRobo = false; try { refreshItemUI(); } catch (e) {}
@@ -1453,6 +1475,8 @@
       back.addEventListener("click", goBack);
       back.addEventListener("touchstart", goBack, { passive: false });
       preloadBgm();   // タイトル画面は無音。音楽ファイルだけ先に読み込んでおく
+      callGasApi("startSession").catch(function() {});   // GASを軽く起こしておく（結果は使わない）
+      loadTitleBoard();
 
       bindTap(document.getElementById('dpadControl'), triggerJump);
       // 確認中は、AボタンがYES、BボタンがNO（確認中でなければ、これまでどおりジャンプ）
@@ -1484,6 +1508,49 @@
         if (e.code === "KeyM" || e.code === "Backspace") selectPressed();
       });
     }
+
+    // ================= 🏆 ランキング（生き残った時間が記録＝秒数で送信） =================
+    let lbData = null;
+    function lbName(t) { return String(t).replace(/0x[0-9a-fA-F]{40}/g, function(a) { return a.slice(0, 6) + "\u2026" + a.slice(-4); }); }
+    function renderTitleBoard() {
+      const box = document.getElementById("lbRows"); if (!box) return;
+      box.textContent = "";
+      const d = lbData;
+      if (!d || !d.length) { const e = document.createElement("div"); e.className = "lb-empty"; e.textContent = d ? "No data yet" : "Loading..."; box.appendChild(e); return; }
+      d.slice(0, 5).forEach(function(r) {   // ベスト5
+        const row = document.createElement("div"); row.className = "lb-row";
+        const l = document.createElement("span"); l.textContent = lbName(r[0]);
+        const v = document.createElement("span"); v.className = "v"; v.textContent = r[1] + (r[2] ? " (" + r[2] + ")" : "");
+        row.appendChild(l); row.appendChild(v); box.appendChild(row);
+      });
+    }
+    function loadTitleBoard() {
+      lbData = null; renderTitleBoard();
+      callGasApi("getWinnerData", { mode: GAME_ID }).then(function(res) { lbData = (res && res.data) || []; renderTitleBoard(); }).catch(function() { lbData = []; renderTitleBoard(); });
+    }
+    function requestNewSessionToken(attemptsLeft) {   // 失敗しても数回リトライ
+      if (attemptsLeft === undefined) attemptsLeft = 4;
+      callGasApi("startSession").then(function(data) {
+        if (data && data.status === "success" && data.token) sessionToken = data.token;
+        else if (attemptsLeft > 1) setTimeout(function() { requestNewSessionToken(attemptsLeft - 1); }, 500);
+      }).catch(function() { if (attemptsLeft > 1) setTimeout(function() { requestNewSessionToken(attemptsLeft - 1); }, 500); });
+    }
+    function beginSave() {   // ゲームオーバー／クリアで、生き残った秒数を送る
+      isSaving = true; saveFailed = false;
+      sendScoreToGAS(playerIdentity(), Math.floor(stats.time));
+    }
+    function sendScoreToGAS(tId, sc, retriesLeft) {
+      isSaving = true;
+      if (!sessionToken && retriesLeft === undefined) retriesLeft = 50;   // トークン到着を最大5秒待つ
+      if (!sessionToken && retriesLeft > 0) { setTimeout(function() { sendScoreToGAS(tId, sc, retriesLeft - 1); }, 100); return; }
+      const safetyTimer = setTimeout(function() { if (isSaving) { saveFailed = true; isSaving = false; } }, 22000);   // 保険：22秒で強制解除
+      callGasApi("submitScoreFromGame", { playerId: tId, twitterId: tId, score: sc, mode: GAME_ID, sessionToken: sessionToken }).then(function(res) {
+        clearTimeout(safetyTimer);
+        if (res && res.status === "error") saveFailed = true;
+        isSaving = false;
+      }).catch(function() { clearTimeout(safetyTimer); saveFailed = true; isSaving = false; });
+    }
+    function playerIdentity() { return (typeof walletAddress === "string" && walletAddress) ? walletAddress.toLowerCase() : "Guest"; }   // 名前＝接続中のウォレットアドレス
 
     // ================= 🛒 アイテム（バネ／クローバー／ロボ） =================
     function drawItemSpring(cv) {   // 水色のバネ（ドット絵）
