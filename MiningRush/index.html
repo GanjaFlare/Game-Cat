@@ -126,6 +126,7 @@
     .item-price { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; color: #6ee7b7; margin-top: 2px; }
     #setupOverlay { overflow-y: auto; justify-content: safe center; }
     .lb-panel { width: 100%; }
+    .lb-title { text-align: center; color: #6ee7b7; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1.5px; margin-bottom: 6px; text-shadow: 0 0 10px rgba(52, 211, 153, 0.35); }
     .lb-tabs { display: flex; gap: 6px; margin-bottom: 6px; }
     .lb-tab { flex: 1; background: #0f172a; color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; padding: 7px 4px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.8px; cursor: pointer; touch-action: manipulation; }
     .lb-tab.on { color: #6ee7b7; border-color: #34d399; box-shadow: 0 0 10px rgba(52, 211, 153, 0.35); }
@@ -861,7 +862,7 @@ const $=id=>document.getElementById(id),ov=$('setupOverlay');
 const rnd=(a,b)=>a+Math.random()*(b-a),pick=a=>a[Math.random()*a.length|0];
 const LX=[40,120,200],GX=20,SY=50,K=3.6,COL=['#fff','#7efff5','#ff9a3c','#ffee55','#ff4a4a','#6bff7a','#ff6ad0'];
 /* ---------- ランキング（HIGH SCORES）：GCR2と同じ仕組み。記録するのは「何ラウンドまで行けたか」 ---------- */
-const WORKER_API_URL = "https://miningrush-proxy.ganjaflare.workers.dev";   // ★Cloudflare Workerを作ったら、そのURLに書き換える
+const WORKER_API_URL = "https://miningrushworker.ganjaflare.workers.dev";   // ★Cloudflare Workerを作ったら、そのURLに書き換える
 const SUBMIT_GUEST = false;   // true にするとウォレット未接続（Guest）も記録する。Guestは1行にまとまってしまうので false 推奨
 function callGasApi(action, payload) {
   var body = Object.assign({ action: action }, payload || {});
