@@ -1428,7 +1428,20 @@
     function answerTitleConfirm(yes) {   // A=YES / B=NO
       if (!confirmTitle) return;
       confirmTitle = false;
-      if (yes) showTitle();
+      if (yes) { saveOnQuit(); showTitle(); }   // 途中でやめる時も、そこまで生き残った時間を記録する
+    }
+    function saveOnQuit() {
+      const sec = Math.floor(fightT / 60);
+      if (sec < 1 || !sessionToken || isSaving) return;   // 戦闘が始まっていない／トークンなし／保存中は何もしない
+      const tok = sessionToken, id = playerIdentity();
+      sessionToken = "";   // このプレイ分のトークンは使い切り
+      const send = function(retry) {
+        callGasApi("submitScoreFromGame", { playerId: id, twitterId: id, score: sec, mode: GAME_ID, sessionToken: tok }).then(function(res) {
+          if (res && res.status === "error" && retry) { setTimeout(function() { send(false); }, 1500); return; }
+          if (mode === 'title') loadTitleBoard();   // 保存が済んだらタイトルのランキングを更新
+        }).catch(function() { if (retry) setTimeout(function() { send(false); }, 1500); });
+      };
+      send(true);
     }
     function showTitle() {
       try { loadTitleBoard(); } catch (e) {}
