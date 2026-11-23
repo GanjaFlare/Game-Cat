@@ -285,6 +285,10 @@
               <div id="walletMsg" class="item-note"></div>
             </div>
             <button id="btnMineStart" class="start-btn normal-btn">FREE PLAY</button>
+            <div class="lb-panel">
+              <div class="lb-title">HIGH SCORES</div>
+              <div id="lbRows" class="lb-rows"></div>
+            </div>
             <button id="btnBackSelect" class="start-btn" style="background:#334155;color:#e2e8f0;box-shadow:0 4px 0 #1e293b;font-size:12px;">&lt; BACK TO GAME SELECT</button>
           </div>
         </div>
@@ -856,11 +860,62 @@ F['+']='000010111010000';
 const $=id=>document.getElementById(id),ov=$('setupOverlay');
 const rnd=(a,b)=>a+Math.random()*(b-a),pick=a=>a[Math.random()*a.length|0];
 const LX=[40,120,200],GX=20,SY=50,K=3.6,COL=['#fff','#7efff5','#ff9a3c','#ffee55','#ff4a4a','#6bff7a','#ff6ad0'];
+/* ---------- ランキング（HIGH SCORES）：GCR2と同じ仕組み。記録するのは「何ラウンドまで行けたか」 ---------- */
+const WORKER_API_URL = "https://miningrush-proxy.ganjaflare.workers.dev";   // ★Cloudflare Workerを作ったら、そのURLに書き換える
+const SUBMIT_GUEST = false;   // true にするとウォレット未接続（Guest）も記録する。Guestは1行にまとまってしまうので false 推奨
+function callGasApi(action, payload) {
+  var body = Object.assign({ action: action }, payload || {});
+  var controller = new AbortController();
+  var timeoutId = setTimeout(function() { controller.abort(); }, 20000);
+  return fetch(WORKER_API_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal: controller.signal })
+    .then(function(response) { clearTimeout(timeoutId); if (!response.ok) throw new Error("HTTP " + response.status); return response.json(); })
+    .catch(function(error) { clearTimeout(timeoutId); throw error; });
+}
+function playerIdentity() { return (typeof walletAddress === "string" && walletAddress) ? walletAddress.toLowerCase() : "Guest"; }
+let lbData = null, sessionToken = null, isSaving = false, saveMsg = "";
+function lbName(t) { return String(t).replace(/0x[0-9a-fA-F]{40}/g, function(a) { return a.slice(0, 6) + "\u2026" + a.slice(-4); }); }
+function lbValue(v) { v = Number(v); return v >= 11 ? "ALL CLEAR" : "ROUND " + v; }   // 1〜10 = 到達ラウンド、11 = 全ラウンドクリア
+function renderTitleBoard() {
+  const box = document.getElementById("lbRows"); if (!box) return;
+  box.textContent = "";
+  const d = lbData;
+  if (!d || !d.length) { const e = document.createElement("div"); e.className = "lb-empty"; e.textContent = d ? "No data yet" : "Loading..."; box.appendChild(e); return; }
+  d.slice(0, 5).forEach(function(r) {   // ベスト5まで
+    const row = document.createElement("div"); row.className = "lb-row";
+    const l = document.createElement("span"); l.textContent = lbName(r[0]);
+    const v = document.createElement("span"); v.className = "v"; v.textContent = lbValue(r[1]) + (r[2] ? " (" + r[2] + ")" : "");
+    row.appendChild(l); row.appendChild(v); box.appendChild(row);
+  });
+}
+function loadTitleBoard() {
+  lbData = null; renderTitleBoard();
+  callGasApi("getWinnerData").then(function(res) { lbData = (res && res.data) || []; renderTitleBoard(); }).catch(function() { lbData = []; renderTitleBoard(); });
+}
+function requestNewSessionToken(attemptsLeft) {
+  if (attemptsLeft === undefined) attemptsLeft = 4;
+  callGasApi("startSession").then(function(data) {
+    if (data && data.status === "success" && data.token) { sessionToken = data.token; }
+    else if (attemptsLeft > 1) setTimeout(function() { requestNewSessionToken(attemptsLeft - 1); }, 500);
+  }).catch(function() { if (attemptsLeft > 1) setTimeout(function() { requestNewSessionToken(attemptsLeft - 1); }, 500); });
+}
+function submitRun(reached) {   // ゲームオーバー／全クリアのとき1回だけ送る
+  const who = playerIdentity();
+  if (who === "Guest" && !SUBMIT_GUEST) return;
+  isSaving = true; saveMsg = "";
+  const tryOnce = function(left) {
+    if (!sessionToken && left > 0) { setTimeout(function() { tryOnce(left - 1); }, 100); return; }
+    const safety = setTimeout(function() { isSaving = false; }, 22000);
+    callGasApi("submitScoreFromGame", { playerId: who, twitterId: who, score: reached, mode: "MININGRUSH", sessionToken: sessionToken }).then(function(res) {
+      clearTimeout(safety); isSaving = false; sessionToken = null;
+      if (res && res.status === "error") saveMsg = "SCORE MAY NOT BE SAVED"; else loadTitleBoard();
+    }).catch(function() { clearTimeout(safety); isSaving = false; saveMsg = "SCORE MAY NOT BE SAVED"; });
+  };
+  tryOnce(50);
+}
 const ITEM_PER_ROUND=false;   // true にすると、ラウンドをクリアするたびにアイテムが消える（毎ラウンド買い直し）
 const KS=['pico','dragon','hugo','fcat','wick','bull','gully','quantic','billy','smarty','fat'];
 let buf=0,itemPotion=false,itemPickaxe=false,itemShield=false,runAv=null,shFx=null,paused=false,confirmT=false,pauseImg=null,round=1,rc=0,win=false,clear=false,iv0=60,iv1=90,curses=[],cam=0,st='TITLE',af=0,ch=[],P=[],pops=[],lock=0,flash=0,shake=0,msg=null,best=0,order=0,firstAf=0,t0=0,cd=0,cn=3,rank=[],pf=0,goalT=0;
 let gx=0,gd=1,gs=2,zc=100,zw=36,pcd=0;
-try{best=+localStorage.getItem('gcMiningRushBest')||0}catch(e){}
 
 /* ---------- 背景（空は1枚、地中は縦にタイル → 掘ると画面がスライド） ---------- */
 const bg=document.createElement('canvas');bg.width=W;bg.height=SY+1;
@@ -994,6 +1049,7 @@ function firework(q){const x=rnd(30,210),y=rnd(34,80);spark(x,y,clear?40:26,COL)
 function newZone(){zw=rnd(26,46);zc=zw/2+Math.random()*(200-zw);gs=rnd(1.8,3.6)}
 function mkItems(){const a=[];let m=rnd(10,20);while(m<90){a.push({m,t:Math.random()<.65?'D':'S',got:false});m+=rnd(18,28)}return a}
 function newGame(){
+  if(round===1)requestNewSessionToken();
   const tt=Math.min(round-1,4)/4,u=Math.max(0,round-5)/5;iv0=60-18*tt-6*u;iv1=90-30*tt-10*u;
   if(itemPotion){if(!runAv)runAv=pick(KS)}else runAv=null;
   const ks=KS.filter(k=>k!==runAv).sort(()=>Math.random()-.5).slice(0,2);shFx=null;
@@ -1032,8 +1088,8 @@ function endGame(){
   rank=[...ch].sort((a,b)=>(a.rk<0)-(b.rk<0)||(a.rk>=0?a.rk-b.rk:b.d-a.d));
   win=rank[0]===ch[0];clear=win&&round===10;win?playKirarin():bossTone('sawtooth',300,80,.8,.15);
   if(!win||clear||ITEM_PER_ROUND)resetItems();
+  if(!win||clear)submitRun(clear?11:round);
   st='PODIUM';pf=0;lock=performance.now()+3500;flash=6;
-  if(rank[0]===ch[0]){const t=firstAf-t0;if(!best||t<best){best=t;try{localStorage.setItem('gcMiningRushBest',best)}catch(e){}}}
 }
 function upd(){
   af++;if(pcd>0)pcd--;if(msg&&--msg.l<=0)msg=null;
@@ -1106,10 +1162,11 @@ function podium(){
   if(pf>60)T('YOU',X[pr],TP[pr]-60,'#ffee55');
   if(pf>80){
     if(clear){T('ALL ROUNDS CLEAR!!',120,4,COL[(af>>2)%COL.length],2);T('CONGRATULATIONS!!',120,16,COL[((af>>2)+3)%COL.length],2)}
-    else if(win){T('YOU WIN!',120,6,(af>>3)&1?'#ffd700':'#fff',3);T('TIME '+((firstAf-t0)/60).toFixed(1)+'S',120,24,'#fff');T('BEST '+(best/60).toFixed(1)+'S',120,32,'#aaa')}
-    else{T('GAME OVER',120,6,'#ff4a4a',3);T('YOU: '+['1ST','2ND','3RD'][pr],120,24,'#fff',2)}
+    else if(win){T('YOU WIN!',120,6,(af>>3)&1?'#ffd700':'#fff',3);T('ROUND '+round+' CLEAR!',120,26,'#fff',2)}
+    else{T('GAME OVER',120,6,'#ff4a4a',3);T('YOU: '+['1ST','2ND','3RD'][pr],120,24,'#fff',2);T('REACHED ROUND '+round,120,38,'#ffd700')}
   }
-  if(pf>40){const w=performance.now()<lock;T(w?'WAIT...':clear?'TAP TO PLAY AGAIN':win?'TAP FOR ROUND '+(round+1):'TAP TO RETRY',120,150,w?'#888':clear?COL[(af>>2)%COL.length]:'#fff')}
+  if(saveMsg)T(saveMsg,120,136,'#ccc');
+  if(pf>40){const w=performance.now()<lock||isSaving;T(isSaving?'SAVING SCORE...':w?'WAIT...':clear?'TAP TO PLAY AGAIN':win?'TAP FOR ROUND '+(round+1):'TAP TO RETRY',120,150,w?'#888':clear?COL[(af>>2)%COL.length]:'#fff')}
 }
 function draw(){
   g.save();if(shake>0){g.translate((Math.random()*4-2)|0,(Math.random()*4-2)|0);shake--}
@@ -1161,11 +1218,12 @@ function resetItems(){itemPotion=false;itemPickaxe=false;itemShield=false;runAv=
  const tg2=(id,fn)=>{const el=$(id);if(el)el.addEventListener('click',()=>{fn();refreshItemUI();bossTone('square',880,1320,.06,.08)})};
  tg2('itemPotionCard',()=>{itemPotion=!itemPotion});tg2('itemPickaxeCard',()=>{itemPickaxe=!itemPickaxe});tg2('itemShieldCard',()=>{itemShield=!itemShield})}
 try{updateStartLabel()}catch(e){}
+loadTitleBoard();callGasApi("startSession").catch(function(){});   // 起動時にボードを読み、サーバーを軽く起こしておく
 
 /* ---------- タイトル／スタート／ポーズ ---------- */
 function returnToTitle(){
   paused=false;confirmT=false;resetItems();bgmOff();startPressed=false;
-  $('btnMineStart').classList.remove('pressed');st='TITLE';P=[];rollTitle();ov.style.display='flex'}
+  $('btnMineStart').classList.remove('pressed');st='TITLE';P=[];rollTitle();ov.style.display='flex';loadTitleBoard()}
 function beginRun(){round=1;runAv=null;newGame()}
 function pressStart(e){
   if(e&&e.preventDefault)e.preventDefault();
@@ -1176,7 +1234,7 @@ function pressStart(e){
     if(!ok){startPressed=false;b.classList.remove('pressed');return}
     setTimeout(()=>{bgmOn();ov.style.display='none';beginRun()},380)})}
 function act2(){if(paused||confirmT||ov.style.display!=='none')return;
-  if(st==='PLAY')act();else if(st==='PODIUM'&&performance.now()>=lock){if(win&&!clear)round++;else round=1;newGame()}}
+  if(st==='PLAY')act();else if(st==='PODIUM'&&performance.now()>=lock&&!isSaving){if(win&&!clear)round++;else round=1;newGame()}}
 function togglePause(){
   if(ov.style.display!=='none'||st==='TITLE'||st==='PODIUM')return;
   paused=!paused;confirmT=false;
@@ -1195,7 +1253,7 @@ function drawPause(){
   g.textAlign='left'}
 function onSelect(){
   if(ov.style.display!=='none')return;
-  if(st==='PODIUM'){returnToTitle();return}
+  if(st==='PODIUM'){if(isSaving)return;returnToTitle();return}
   if(confirmT||!paused)return;confirmT=true;drawPause()}
 function answerTitleConfirm(yes){if(!confirmT)return;confirmT=false;if(yes)returnToTitle();else drawPause()}
 $('btnMineStart').addEventListener('click',pressStart);$('btnMineStart').addEventListener('touchend',pressStart,{passive:false});
