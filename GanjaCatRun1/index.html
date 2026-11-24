@@ -593,7 +593,9 @@
     function shortAddr(a) { return a ? a.slice(0, 6) + "…" + a.slice(-4) : ""; }
     // ランキングに記録する名前＝接続中のウォレットアドレス（小文字にそろえる）。未接続は Guest
     // 💡 プレイの方法は「ウォレット接続」か「Xアカ入力」のどちらか一方。どちらも無ければゲスト（記録されない）
-    function xId() { const el = document.getElementById("xInput"); return el ? el.value.replace(/[^A-Za-z0-9_]/g, "").slice(0, 15) : ""; }
+    // X IDに使える文字：英数字・アンダースコアに加えて、日本語など各国の文字もOK（記号・空白・絵文字は除く）。15文字まで
+    function cleanX(v) { return Array.from(String(v || "").replace(/[^\p{L}\p{N}\p{M}_]/gu, "")).slice(0, 15).join(""); }
+    function xId() { const el = document.getElementById("xInput"); return el ? cleanX(el.value) : ""; }
     function playMode() { return walletAddress ? "wallet" : (xId() ? "x" : "guest"); }
     function playerIdentity() { const m = playMode(); return m === "wallet" ? walletAddress.toLowerCase() : (m === "x" ? "@" + xId() : "Guest"); }
     function updateRewardUI() {   // クリア画面：ウォレット／Xアカ／ゲストで表示を切り替える
@@ -757,17 +759,22 @@
     (function() {
       const xi = document.getElementById("xInput"), xc = document.getElementById("xClear");
       const saved = lsGet("ganjaCatRunId");
-      if (xi && saved) xi.value = String(saved).replace(/[^A-Za-z0-9_]/g, "").slice(0, 15);
+      if (xi && saved) xi.value = cleanX(saved);
       const persist = function() {   // 入力したIDは、いつも自動で記憶する
         const v = xId();
         if (v) lsSet("ganjaCatRunId", v); else lsDel("ganjaCatRunId");
       };
       if (xi) {
-        xi.addEventListener("input", function() {
-          const c = xi.value.replace(/[^A-Za-z0-9_]/g, "").slice(0, 15);
+        // 日本語入力（変換中）は、確定するまで文字をいじらない
+        let composing = false;
+        const onXInput = function() {
+          const c = cleanX(xi.value);
           if (c !== xi.value) xi.value = c;
           persist(); updateWalletUI();
-        });
+        };
+        xi.addEventListener("compositionstart", function() { composing = true; });
+        xi.addEventListener("compositionend", function() { composing = false; onXInput(); });
+        xi.addEventListener("input", function(e) { if (composing || e.isComposing) return; onXInput(); });
         // ウォレット接続中にXアカ欄を選んだら、確認してからウォレットを切断する
         xi.addEventListener("focus", function() {
           if (!walletAddress) return;
@@ -822,7 +829,7 @@
       const s = String(t).trim();
       if (/0x[0-9a-fA-F]{40}/.test(s)) return s.replace(/0x[0-9a-fA-F]{40}/g, function(a) { return a.slice(0, 6) + "\u2026" + a.slice(-4); });
       // 「ID名だけ」のときだけ @ を補う（"1st ..." などの順位ラベル付きや、すでに @ があるものはそのまま）
-      return /^[A-Za-z0-9_]{1,15}$/.test(s) && !/^guest$/i.test(s) && !/^\d+(st|nd|rd|th)$/i.test(s) ? "@" + s : s;
+      return /^[\p{L}\p{N}\p{M}_]{1,15}$/u.test(s) && !/^guest$/i.test(s) && !/^\d+(st|nd|rd|th)$/i.test(s) ? "@" + s : s;
     }
     // 自分の行を見つける用：順位ラベルを外して比べる
     function lbNorm(t) {
