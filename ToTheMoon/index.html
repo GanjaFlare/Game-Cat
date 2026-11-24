@@ -134,6 +134,7 @@
     .lb-row { display: flex; justify-content: space-between; gap: 8px; font-family: 'Courier New', monospace; font-weight: 700; font-size: 11px; line-height: 15px; color: #fff; }
     .lb-row .v { color: #ffd700; white-space: nowrap; }
     .lb-empty { text-align: center; color: #94a3b8; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; padding-top: 30px; }
+    .item-note:empty { display: none; }
     .item-note { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 9px; color: #94a3b8; margin-top: 6px; text-align: center; }
     .dpad { position: absolute; left: 35px; bottom: 180px; width: 80px; height: 80px; cursor: pointer; z-index: 5; }
     .dpad-axis { position: absolute; background: #2b2b2b; border-radius: 3px; box-shadow: 0 4px 0 #111; }
@@ -611,7 +612,7 @@ const au=()=>{const c=ensureAudioCtx();if(c&&c.state==='suspended')c.resume().ca
     const DONATE_ADDRESS = "0xE809127d1927EE013834B9E95A53E0b37B688eF7";   // GanjaFlareの寄付用アドレス
     const WFLR_TOKEN = "0x1D80c49BbBCd1C0911346656B529DF9E5c2F783d";       // WFLR（Flare上のWrapped FLR）
     const FLARE_CHAIN = { chainId: "0xe", chainName: "Flare Mainnet", nativeCurrency: { name: "Flare", symbol: "FLR", decimals: 18 }, rpcUrls: ["https://flare-api.flare.network/ext/bc/C/rpc"], blockExplorerUrls: ["https://flare-explorer.flare.network"] };
-    const DEFAULT_NOTE = DONATE_LIVE ? "Donations are sent in WFLR. Use a wallet browser." : "TEST MODE: donations are simulated (no real payment).";
+    const DEFAULT_NOTE = DONATE_LIVE ? "" : "TEST MODE: donations are simulated (no real payment).";
     let walletAddress = "", ethProv = null, walletResolve = null;
     const discovered = [];           // EIP-6963：端末にあるウォレットの一覧
     window.addEventListener("eip6963:announceProvider", function(ev) {
@@ -1958,10 +1959,10 @@ function drawLangTab(){
 /* ===== タイトル画面の説明文：EN / JP 切り替え（ゲーム内の文字は英語のみ） ===== */
 const LANGS={
   en:{lead:"LET'S SEND GANJA CAT TO THE MOON, TOGETHER!",help:'HOW TO PLAY',
-      t1:"Every WFLR donated moves the cat along the road on everyone's screen. At the end of each mountain, a transport gate carries the cat to the next, higher mountain. Climb all seven, then launch the rocket to the Moon! Free to play. Tap the screen to poke the world.",
-      t2:"GanjaFlare is a non-profit community project. Donations help cover server and infrastructure costs. They are voluntary and carry no rewards, rights, or financial returns."},
-  jp:{lead:"みんなでガンジャキャットを月へ送ろう！",help:'操作説明',
-      t1:"寄付されたWFLRの分だけ、みんなの画面でネコが道を進みます。山のゴールにある転送ゲートで、次の高い山へ。7つの山をのぼったら、ロケットで月へ！ゲームは無料で遊べます。画面をタップすると、いろいろ動きます。",
+      t1:"Every WFLR donated brings GANJA CAT closer to the Moon. Cross seven mountains, and at the very end...",
+      t2:"GanjaFlare is a non-profit community project. Donations help cover server and other running costs. They are voluntary and carry no perks, rights, or financial returns."},
+  jp:{lead:"みんなでGANJA CATを月へ送ろう！",help:'操作説明',
+      t1:"寄付されたWFLRの分だけ、GANJA CATが月に近づきます。7つの山を越え、最後には...",
       t2:"GanjaFlareは非営利のコミュニティプロジェクトです。寄付はサーバーなどの運営費に使われます。寄付は任意で、特典・権利・金銭的なリターンはありません。"}};
 function setLang(l){
   if(!LANGS[l])l='en';const d=LANGS[l];uiLang=l;
