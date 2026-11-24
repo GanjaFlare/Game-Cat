@@ -668,7 +668,7 @@ const DEV=false,MAXR=30;
 let fp=0,chg=0,fExt=0,pExt=0,pe=0,peak=0,tw=[],st='TITLE',rd=1,cp=0,cs=0,cf=0,ip=0,af=0,P=[],win=null,fx=0,lock=0,taps=[],stun=0,rock=null,flash=0,boomed=0,best=0;
 try{best=+localStorage.getItem('gcBeamStruggleBest')||0}catch(e){}
 const go=s=>{st=s;if(s==='WIN'||s==='LOSE'||s==='CLEAR')lock=performance.now()+1200;if(s==='LOSE'||s==='CLEAR'){sel=0;try{refreshItemUI()}catch(e){}submitScore()}};   // 死亡・クリアでアイテムは使い切り（再購入が必要）
-function start(n){rd=n;fp=0;chg=0;PAL[1]=E[n-1].b;if(n===1){peak=0;tw=[];sessionToken='';requestNewSessionToken()}cp=0;P=[];ip=0;stun=0;rock=null;taps=[];win=null;boomed=0;flash=0;st='INTRO'}
+function start(n){rd=n;fp=0;chg=0;PAL[1]=E[n-1].b;if(n===1){peak=0;tw=[];sessionToken='';scoreSent=false;requestNewSessionToken()}cp=0;P=[];ip=0;stun=0;rock=null;taps=[];win=null;boomed=0;flash=0;st='INTRO'}
 
 const clouds=[];for(let i=0;i<4;i++)clouds.push({x:Math.random()*W,y:15+Math.random()*30,s:.2+Math.random()*.4,w:20+Math.random()*20});
 const COL=['#fff','#7efff5','#ff9a3c','#ffee55','#ff4a4a'];
@@ -780,14 +780,15 @@ function loadTitleBoard() {
       lbData = null; renderTitleBoard();
       callGasApi("getWinnerData").then(function(res) { lbData = (res && res.data) || []; renderTitleBoard(); }).catch(function() { lbData = []; renderTitleBoard(); });
     }
-let statusTimer=null;
+let statusTimer=null,scoreSent=false;   // scoreSent：その挑戦のスコアを、もう送ったか（二重送信を防ぐ）
 function setStatus(t,ms){
   const el=$('statusMessage');if(!el)return;
   el.innerText=t;clearTimeout(statusTimer);
   if(ms)statusTimer=setTimeout(function(){el.innerText=''},ms);
 }
-function submitScore(){   // ゲームオーバー／全クリアのとき、その挑戦の「1秒間の最大連打数」を送る
-  if(!(peak>0))return;
+function submitScore(){   // ゲームオーバー／全クリア／途中でやめたとき、その挑戦の「1秒間の最大連打数」を送る
+  if(scoreSent||!(peak>0))return;
+  scoreSent=true;
   const id=(typeof walletAddress==='string'&&walletAddress)?walletAddress:'Guest';   // 未接続はGuest（ランキングには載らない）
   setStatus('Saving score...');
   sendScore(id,peak,0);
@@ -795,7 +796,7 @@ function submitScore(){   // ゲームオーバー／全クリアのとき、そ
 function sendScore(id,sc,tries){
   if(!sessionToken&&tries<50){setTimeout(function(){sendScore(id,sc,tries+1)},100);return}   // トークンが届くのを最大5秒待つ
   callGasApi('submitScoreFromGame',{playerId:id,twitterId:id,score:sc,mode:'NORMAL',sessionToken:sessionToken}).then(function(r){
-    if(r&&r.status==='success')setStatus(id==='Guest'?'Score saved (connect a wallet to rank)':'Score saved!',4000);
+    if(r&&r.status==='success'){setStatus(id==='Guest'?'Score saved (connect a wallet to rank)':'Score saved!',4000);if(ov.style.display!=='none')loadTitleBoard()}
     else setStatus('Save failed',4000);
   }).catch(function(){setStatus('Save failed',4000)});
 }
@@ -1082,6 +1083,7 @@ function refreshItemUI(){
     
 const playing=()=>st==='INTRO'||st==='COUNT'||st==='BATTLE'||st==='FIN';
 function returnToTitle(){   // タイトル画面に戻る：BGMを消し、アイテムも使い切り扱い
+  if(playing())submitScore();   // ポーズ→SELECT→YESで途中でやめたときも、ここまでの記録を保存する
   confirmTitle=false;isPaused=false;sel=0;act=0;
   try{refreshItemUI()}catch(e){}
   bgmOff();startPressed=false;$('btnNormal').classList.remove('pressed');
