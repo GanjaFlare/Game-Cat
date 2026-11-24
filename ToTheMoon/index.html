@@ -126,6 +126,7 @@
     .item-price { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; color: #6ee7b7; margin-top: 2px; }
     #setupOverlay { overflow-y: auto; justify-content: safe center; }
     .lb-panel { width: 100%; }
+    .lb-title { text-align: center; color: #6ee7b7; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1.5px; margin-bottom: 6px; text-shadow: 0 0 10px rgba(52, 211, 153, 0.35); }
     .lb-tabs { display: flex; gap: 6px; margin-bottom: 6px; }
     .lb-tab { flex: 1; background: #0f172a; color: #94a3b8; border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; padding: 7px 4px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 0.8px; cursor: pointer; touch-action: manipulation; }
     .lb-tab.on { color: #6ee7b7; border-color: #34d399; box-shadow: 0 0 10px rgba(52, 211, 153, 0.35); }
@@ -271,6 +272,10 @@
               <div class="lang-sw"><button id="langEN" class="on" type="button">EN</button><button id="langJP" type="button">JP</button></div>
             </div>
             <div style="display:flex;gap:8px;width:100%;"><button id="btnGameStart" class="start-btn normal-btn" style="flex:1;width:auto;">START</button><button id="btnHelp" class="start-btn" type="button" style="flex:1;width:auto;font-size:12px;border-color:#34d399;background:linear-gradient(135deg, rgba(52,211,153,0.22) 0%, #0f172a 70%);">HOW TO PLAY</button></div>
+            <div class="lb-panel">
+              <div class="lb-title">TOP DONORS</div>
+              <div id="lbRows" class="lb-rows"></div>
+            </div>
             <button id="btnBackSelect" class="start-btn" style="background:#334155;color:#e2e8f0;box-shadow:0 4px 0 #1e293b;font-size:12px;">&lt; BACK TO GAME SELECT</button>
           </div>
         </div>
@@ -975,6 +980,7 @@ function applyData(d){
   if(!d||typeof d.total!=='number')return false;dataLoaded=true;
   if(Array.isArray(d.ranking))ranking=d.ranking.slice().sort((a,b)=>b.amt-a.amt);
   if(Array.isArray(d.donations))donations=d.donations;
+  renderTitleBoard();
   const delta=d.total-total;
   if(delta>0){total=d.total;const rc=d.recent&&d.recent[d.recent.length-1];showToast(rc?sAddr(rc.addr)+' SENT '+fmt(rc.amt)+' WFLR!':'NEW DONATION! +'+fmt(delta)+' WFLR')}
   return true;
@@ -1022,15 +1028,30 @@ function drawLoading(){
     TX('A:RETRY   B:TITLE',120,124,'#94a3b8',10,'c');
   }
 }
+/* ---------- TOP画面のTOP DONORS（ベスト5）。表示の作りは Mining Rush の HIGH SCORES と同じ ---------- */
+let lbFailed=false;
+function lbName(t){return String(t).replace(/0x[0-9a-fA-F]{40}/g,function(a){return a.slice(0,6)+'\u2026'+a.slice(-4)})}
+function renderTitleBoard(){
+  const box=document.getElementById('lbRows');if(!box)return;
+  box.textContent='';
+  const d=ranking;
+  if(!d||!d.length){const e=document.createElement('div');e.className='lb-empty';e.textContent=(dataLoaded||USE_DUMMY_DATA||lbFailed)?'No data yet':'Loading...';box.appendChild(e);return}
+  d.slice(0,5).forEach(function(r){
+    const row=document.createElement('div');row.className='lb-row';
+    const l=document.createElement('span');l.textContent=lbName(r.addr);
+    const v=document.createElement('span');v.className='v';v.textContent=fmt(r.amt)+' WFLR';
+    row.appendChild(l);row.appendChild(v);box.appendChild(row);
+  });
+}
 function showToast(text){if(lch||warp)return;toast={t:0,text:text};tone(1200,1800,.1,.1,'triangle');later(90,()=>tone(1800,2400,.12,.08,'triangle'))}
-if(USE_DUMMY_DATA)initDummy();else pollData();
+if(USE_DUMMY_DATA)initDummy();else pollData(ok=>{if(!ok)lbFailed=true;renderTitleBoard()});
+renderTitleBoard();
 
 /* ===== 課金アイテムは無し（常に無料）。寄付は下の選択項目「SUPPORT」 ===== */
 
 /* ---------- 寄付メニュー・ランキング・マップ ---------- */
 const amtOf=m=>parseInt(m.d.join(''),10)||0;
 function openMenu(){menu={stage:'AMT',d:[0,0,0,0,0,0],cur:3,msg:'',t:0,rankOff:0,amt:0};tone(880,1320,.08,.1)}
-function openRank(){menu={stage:'RANK',d:[],cur:0,msg:'',t:0,rankOff:0,amt:0};tone(660,990,.08,.1)}
 function openMap(){menu={stage:'MAP',d:[],cur:0,msg:'',t:0,rankOff:0,amt:0,sel:viewM};tone(520,780,.1,.1,'triangle')}
 function closeMenu(){const was=menu;menu=null;if(was&&was.stage==='DONE')afterThanks()}
 function afterThanks(){   // 「THANK YOU」の枠を閉じたあとで、ネコが歩き出す
@@ -1043,9 +1064,6 @@ function menuDir(k){
     if(k==='u')m.d[m.cur]=(m.d[m.cur]+1)%10;else if(k==='d')m.d[m.cur]=(m.d[m.cur]+9)%10;
     else if(k==='l')m.cur=Math.max(0,m.cur-1);else if(k==='r')m.cur=Math.min(5,m.cur+1);
     m.msg='';tone(k==='u'||k==='d'?660:440,k==='u'||k==='d'?880:520,.04,.07)}
-  else if(m.stage==='RANK'){
-    if(k==='u'||k==='l')m.rankOff=Math.max(0,m.rankOff-1);else m.rankOff=Math.max(0,Math.min(ranking.length-7,m.rankOff+1));
-    tone(500,600,.03,.06)}
   else if(m.stage==='MAP'){
     const o=m.sel;m.sel=clamp(m.sel+((k==='u'||k==='r')?1:-1),0,NM-1);if(m.sel!==o)tone(600+m.sel*60,700+m.sel*60,.05,.08,'triangle')}
 }
@@ -1054,7 +1072,7 @@ function menuA(){
   if(m.stage==='AMT'){const a=amtOf(m);if(a<1){m.msg='ENTER 1 OR MORE';tone(200,150,.15,.1,'sawtooth');return}m.amt=a;m.stage='CONF';m.msg='';tone(880,1320,.08,.1)}
   else if(m.stage==='CONF'){m.stage='SEND';m.msg='';m.t=0;doDonate(m)}
   else if(m.stage==='ERR'){m.stage='AMT';m.msg=''}
-  else if(m.stage==='DONE'||m.stage==='RANK'){closeMenu()}
+  else if(m.stage==='DONE'){closeMenu()}
   else if(m.stage==='MAP'){
     if(m.sel>realM){tone(200,150,.2,.1,'sawtooth');return}          // まだ着いていない山には行けない
     const to=m.sel;menu=null;if(to!==viewM)startWarp(to,true);else tone(900,1200,.08,.1,'triangle')
@@ -1079,9 +1097,9 @@ const walletOpen=()=>{const m=$('walletModal');return !!m&&m.style.display==='fl
 const ready=()=>summitDone&&!lch&&viewM===6&&dP>=0.9999;
 
 /* ---------- 下の選択項目（十字キー左右で選び、Aで決定） ---------- */
-const ITEMS=['SUPPORT','PIZZA','SMOKE','TENT','TOP DONORS','MAP'];
+const ITEMS=['SUPPORT','PIZZA','SMOKE','CAMPFIRE','TENT','MAP'];
 function activateItem(i){
-  if(i===0)openMenu();else if(i===1)startAct('pizza');else if(i===2)startAct('cig');else if(i===3)startAct('tent');else if(i===4)openRank();else openMap();
+  if(i===0)openMenu();else if(i===1)startAct('pizza');else if(i===2)startAct('cig');else if(i===3)startAct('fire');else if(i===4)startAct('tent');else openMap();
 }
 function moveSel(k){const o=selIdx;selIdx=clamp(selIdx+(k==='r'?1:k==='l'?-1:0),0,5);if(selIdx!==o)tone(700,900,.04,.07,'triangle')}
 const busyUI=()=>st!=='PLAY'||paused||confirmT||!!lch||!!warp||walletOpen()||ov.style.display!=='none';
@@ -1366,6 +1384,14 @@ function stepAct(){
     if(t>40&&t<560){if(t%90===5)tone(110,85,.5,.09,'sawtooth');if(t%90===50)tone(85,120,.4,.07,'sawtooth')}
     if(t===572)tone(700,400,.12,.1,'triangle');
     if(t>=600){doing=null;hopT=24;spawn(cx,gy+22,12,['#fff','#ffd700'],1.6,0.03,36,2)}
+  }else if(d.k==='fire'){      // 焚き火で休憩する（10秒。テントと同じ）
+    if(t===1)bossNoise(.3,.14,1200);
+    if(t>30&&t<560){
+      if(t%7===0&&Math.random()<.7)tone(1800+Math.random()*1800,300+Math.random()*200,.03,.04,'square');   // ぱちぱち
+      if(t%2===0)parts.push({x:cx+26+(Math.random()*6-3),y:gy+8+Math.random()*4,vx:(Math.random()-.5)*.3,vy:.5+Math.random()*.5,g:-0.004,l:44,m:44,c:pick(['#fbbf24','#f97316','#fef08a']),s:2});
+    }
+    if(t===572)tone(700,400,.12,.1,'triangle');
+    if(t>=600){doing=null;hopT=24;spawn(cx,gy+22,12,['#fff','#ffd700'],1.6,0.03,36,2)}
   }else if(d.k==='pizza'){     // ピザを食べる
     if(t<150&&t%24===10){tone(260,180,.06,.1);later(70,()=>tone(320,200,.06,.1));spawn(cx+24,gy+14,4,['#fbbf24','#d97706','#dc2626'],0.9,0.05,24,1)}
     if(t===190){doing=null;hopT=24;tone(900,1400,.1,.1,'triangle');spawn(cx,gy+24,10,['#ff7ab8','#ff9ec8'],1.4,-0.02,40,2)}
@@ -1473,7 +1499,7 @@ function upd(){
   if(dP>=0.9999&&!summitDone&&viewM===NM-1&&realM===NM-1)startSummit();
   if(summitDone)summitT++;
   // 見た目だけの前進：寄付がなくても、いつも歩き続けている（距離のカウントも地面の色も変わらない）
-  let f=1;if(lch||menu||paused||warp)f=0;if(doing&&(doing.k==='tent'||doing.k==='pizza'))f=0;
+  let f=1;if(lch||menu||paused||warp)f=0;if(doing&&(doing.k==='tent'||doing.k==='pizza'||doing.k==='fire'))f=0;
   if(viewM===realM)f*=clamp((endX(viewM)-catX()-210)/80,0,1);   // ゴールの手前では止まる
   visV+=(0.42*f-visV)*0.08;vis+=visV;walking=visV>0.12||advancing;
   if(lch){lch.t++;stepLaunch()}
@@ -1689,6 +1715,15 @@ function rocketState(){
   else if(l.s===5){wy=H6+FLY;rx=44;has=false}
   return{wy:wy,fl:fl,has:has,rx:rx};
 }
+function drawCampfire(fx,fy,s){   // 焚き火（ネコの右がわ）。s＝0〜1の大きさ
+  if(s<=0)return;
+  const f=(af>>2)%3,h=(n)=>Math.max(1,Math.round(n*s));
+  g.globalAlpha=(0.13+0.03*f)*s;g.fillStyle='#fb923c';g.beginPath();g.arc(fx,fy-8,24,0,Math.PI*2);g.fill();g.globalAlpha=1;
+  R(fx-9,fy-3,18,3,'#7c2d12');R(fx-7,fy-5,14,2,'#92400e');R(fx-10,fy-2,5,2,'#451a03');R(fx+5,fy-2,5,2,'#451a03');
+  R(fx-6,fy-5-h(10+f),12,h(10+f),'#f97316');R(fx-4,fy-5-h(15+f*2),8,h(15+f*2),'#f97316');R(fx-1+(f-1),fy-5-h(20+f*2),3,h(20+f*2),'#f97316');
+  R(fx-4,fy-5-h(8+f),8,h(8+f),'#fbbf24');R(fx-2,fy-5-h(13+f),4,h(13+f),'#fbbf24');
+  R(fx-2,fy-5-h(5),4,h(5),'#fef08a');
+}
 function drawTent(cx,fy,s,sh){
   if(s<=0.03)return;const hw=Math.round(24*s),h=Math.round(30*s),bx=cx+(sh?Math.round(Math.sin(af)*1.5):0);
   for(let r=0;r<h;r++){const w=Math.max(1,Math.round(hw*(r+1)/h));R(bx-w,fy-h+r+3,w,1,'#f59e0b');R(bx,fy-h+r+3,w,1,'#d97706')}
@@ -1729,6 +1764,10 @@ function drawActors(){
       const w=warp;
       if(w.t<40){const dx=w.visit?0:Math.round(22*sm(clamp(w.t/20,0,1))),s=w.t<20?1:1-sm((w.t-20)/20);drawCatScaled(sx+dx,fy,s,af,false)}
       else if(w.t>=45)drawCatScaled(sx,fy,sm(clamp((w.t-45)/35,0,1)),af,false);
+    }else if(doing&&doing.k==='fire'){
+      const t=doing.t,s=t<20?sm(t/20):t>570?1-sm((t-570)/30):1,hop=hopT>0?Math.sin(hopT/24*Math.PI)*10:0;
+      drawCat(sx-14,Math.round(fy-18-hop),0,1,(af%200)<8);
+      drawCampfire(sx+26,fy,s);
     }else if(doing&&doing.k==='tent'){
       const t=doing.t,s=t<20?sm(t/20):t>570?1-sm((t-570)/30):1;
       if(t<16||t>584){const hop=hopT>0?Math.sin(hopT/24*Math.PI)*10:0;drawCat(sx-14,Math.round(fy-18-hop),0,1,false)}
@@ -1773,8 +1812,8 @@ function iconList(i,w){   // 下の項目のイラスト（ゲーム内と操作
   if(i===0){P(-5,-4,4,3,'#ef4444');P(1,-4,4,3,'#ef4444');P(-6,-3,12,4,'#ef4444');P(-5,1,10,2,'#ef4444');P(-3,3,6,2,'#ef4444');P(-1,5,2,1,'#ef4444');P(-4,-3,2,2,'#fca5a5')}   // ハート（サポート）
   else if(i===1){P(-7,-6,14,3,'#d97706');for(let r=0;r<10;r++){const ww=Math.max(1,Math.round(14*(1-r/10)));P(-(ww>>1),-3+r,ww,1,'#fbbf24')}P(-3,-2,3,3,'#dc2626');P(2,0,2,2,'#dc2626');P(-1,3,2,2,'#dc2626')}   // ピザ
   else if(i===2){P(-6,1,12,3,'#f8fafc');P(-6,1,4,3,'#f59e0b');P(6,1,2,3,'#ef4444');P(5+w,-3,2,2,'#9ca3af');P(3-w,-7,2,2,'#6b7280')}   // タバコ
-  else if(i===3){for(let r=0;r<10;r++){const ww=Math.max(1,Math.round(7*(r+1)/10));P(-ww,-5+r,ww,1,'#f59e0b');P(0,-5+r,ww,1,'#d97706')}P(-1,1,3,4,'#7c2d12');P(0,-7,1,3,'#e5e7eb')}   // テント
-  else if(i===4){P(-4,-6,8,6,'#fbbf24');P(-6,-5,2,4,'#f59e0b');P(4,-5,2,4,'#f59e0b');P(-1,0,2,3,'#fbbf24');P(-4,3,8,2,'#d97706');P(-2,-5,2,3,'#fde68a')}   // トロフィー
+  else if(i===3){P(-7,3,14,2,'#7c2d12');P(-5,2,10,1,'#92400e');P(-4,-1+w,8,3,'#f97316');P(-3,-4,6,4,'#f97316');P(-2,-7+w,4,4,'#fbbf24');P(-1,-3,2,4,'#fef08a');P(2,-6-w,1,1,'#fbbf24')}   // 焚き火
+  else if(i===4){for(let r=0;r<10;r++){const ww=Math.max(1,Math.round(7*(r+1)/10));P(-ww,-5+r,ww,1,'#f59e0b');P(0,-5+r,ww,1,'#d97706')}P(-1,1,3,4,'#7c2d12');P(0,-7,1,3,'#e5e7eb')}   // テント
   else{P(-7,-5,14,11,'#e8d9b5');P(-7,-5,14,1,'#c9b98a');P(-5,2,4,3,'#6b7280');P(-3,-1,4,6,'#6b7280');P(-1,-3,3,2,'#fff');P(3,-2,3,3,'#ef4444');P(4,1,1,3,'#ef4444')}   // マップ
   return L;
 }
@@ -1782,7 +1821,7 @@ function drawBarIcon(i,cx,cy){iconList(i,(af>>3)&1).forEach(r=>R(cx+r[0],cy+r[1]
 function drawBar(){
   if(lch||menu||warp)return;
   R(0,138,240,22,'#0b1020');R(0,138,240,1,'#34d399');
-  const act=doing?{pizza:1,cig:2,tent:3}[doing.k]:-1;
+  const act=doing?{pizza:1,cig:2,fire:3,tent:4}[doing.k]:-1;
   for(let i=0;i<6;i++){
     const x=4+i*37,sel=i===selIdx,on=i===act;
     R(x,141,35,18,sel?'#134e4a':'#111a2e');
@@ -1833,7 +1872,7 @@ function drawMenuBase(){
   if(!menu)return;const m=menu;
   g.globalAlpha=.82;R(0,0,240,160,'#0b1020');g.globalAlpha=1;
   R(14,6,212,148,'#0f172a');R(14,6,212,1,'#34d399');R(14,153,212,1,'#34d399');R(14,6,1,148,'#34d399');R(225,6,1,148,'#34d399');
-  if(!DONATE_LIVE&&m.stage!=='RANK')TX('TEST MODE',221,9,'#fca5a5',8,'r');
+  if(!DONATE_LIVE)TX('TEST MODE',221,9,'#fca5a5',8,'r');
   if(m.stage!=='SEND')drawLangTab();
   const jp=uiLang==='jp';
   if(m.stage==='AMT'){
@@ -1857,13 +1896,6 @@ function drawMenuBase(){
     TX(L('THANK YOU!','ありがとう！'),120,24,'#ffd700',22,'c');TX(L(fmt(m.amt)+' WFLR SENT',fmt(m.amt)+' WFLRを送りました'),120,64,'#fff',12,'c');TX(L('THE CAT WILL CLIMB HIGHER!','ネコがもっと進みます！'),120,86,'#6ee7b7',10,'c');TX(L('A:CLOSE','A:閉じる'),120,116,'#94a3b8',10,'c');
   }else if(m.stage==='ERR'){
     TX(L('OOPS!','エラー'),120,24,'#fca5a5',22,'c');TX(MS(m.msg),120,68,'#fff',10,'c');TX(L('A:RETRY   B:CLOSE','A:もう一度   B:閉じる'),120,108,'#94a3b8',10,'c');
-  }else if(m.stage==='RANK'){
-    TX(L('TOP DONORS','寄付ランキング'),120,10,'#ffd700',jp?16:18,'c');
-    if(!ranking.length)TX(L('NO DONORS YET','まだ寄付はありません'),120,70,'#94a3b8',10,'c');
-    for(let i=0;i<7;i++){const r=ranking[m.rankOff+i];if(!r)break;const y=36+i*13,rk=m.rankOff+i+1,me=walletAddress&&r.addr.toLowerCase()===walletAddress.toLowerCase();
-      const col=me?'#6ee7b7':rk===1?'#ffd700':rk===2?'#d1d5db':rk===3?'#d97706':'#fff';
-      R(20,y-1,200,12,i%2?'#0f172a':'#16203a');TX(rk,24,y,col,10,'l');TX(sAddr(r.addr),42,y,col,10,'l');TX(fmt(r.amt),214,y,col,10,'r')}
-    TX(L('UP/DOWN:SCROLL   A/B:CLOSE','上下:スクロール   A/B:閉じる'),120,138,'#94a3b8',8,'c');
   }
 }
 
@@ -1945,10 +1977,10 @@ $('langEN').addEventListener('click',()=>setLang('en'));$('langJP').addEventList
 /* 自分の画像を使うときは、同じフォルダに ToTheMoon_help_en.webp / ToTheMoon_help_jp.webp を置く。無いときは、下の内蔵の説明画像を出す */
 const HELP_TXT={
   en:{title:'HOW TO PLAY',dpad:['LEFT / RIGHT','Choose an item at the bottom.','In menus: UP / DOWN change numbers.'],a:['A  OK','Confirm the selected item.'],b:['B  CLOSE','Close menus and the map.'],start:'Pause',select:'Back to title (while paused)',
-     head:'BOTTOM MENU',rows:[['SUPPORT','Donate WFLR to move the cat.'],['PIZZA','Eat a pizza.'],['SMOKE','Smoke from the cigarette.'],['TENT','Sleep in a tent for 10 seconds.'],['TOP DONORS','See the top donors.'],['MAP','Warp to mountains you reached.']],
+     head:'BOTTOM MENU',rows:[['SUPPORT','Donate WFLR to move the cat.'],['PIZZA','Eat a pizza.'],['SMOKE','Smoke from the cigarette.'],['CAMPFIRE','Rest by a campfire for 10 seconds.'],['TENT','Sleep in a tent for 10 seconds.'],['MAP','Warp to mountains you reached.']],
      foot:['TAP THE SCREEN to poke the world.','At the summit, tap the red button to launch!']},
   jp:{title:'操作説明',dpad:['左 / 右','下の項目をえらびます。','メニュー内は ↑↓ で数字を変更。'],a:['A  決定','えらんだ項目を実行します。'],b:['B  閉じる','メニューやマップを閉じます。'],start:'ポーズ',select:'タイトルへ（ポーズ中）',
-     head:'下のメニュー',rows:[['サポート','WFLRを寄付して、ネコを進めます。'],['ピザ','ピザを食べます。'],['タバコ','タバコから煙が出ます。'],['テント','10秒、テントで寝ます。'],['TOP DONORS','寄付ランキングを見ます。'],['マップ','着いた山へワープします。']],
+     head:'下のメニュー',rows:[['サポート','WFLRを寄付して、ネコを進めます。'],['ピザ','ピザを食べます。'],['タバコ','タバコから煙が出ます。'],['たき火','10秒、たき火で休みます。'],['テント','10秒、テントで寝ます。'],['マップ','着いた山へワープします。']],
      foot:['画面をタップすると、いろいろ動きます。','頂上では、赤いボタンをタップして発射！']}
 };
 function helpSvgUri(lang){
@@ -1985,7 +2017,7 @@ updHelp(document.getElementById('langJP').classList.contains('on')?'jp':'en');
 
 /* ===================== ここから下は共通（触らない） ===================== */
 function returnToTitle(){
-  loadG=null;paused=false;confirmT=false;menu=null;dpadSet(null);bgmOff();startPressed=false;
+  renderTitleBoard();loadG=null;paused=false;confirmT=false;menu=null;dpadSet(null);bgmOff();startPressed=false;
   $('btnGameStart').classList.remove('pressed');st='TITLE';ov.style.display='flex'}
 function pressStart(e){
   if(e&&e.preventDefault)e.preventDefault();
