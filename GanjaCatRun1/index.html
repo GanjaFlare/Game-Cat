@@ -7,11 +7,11 @@
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われる名前(titleより優先される) -->
   <meta name="apple-mobile-web-app-title" content="GanjaCatRun">
   <!-- 📱 iPhoneの「ホーム画面に追加」で使われるアイコン -->
-  <link rel="apple-touch-icon" href="icon.png">
+  <link rel="apple-touch-icon" href="../icon.png">
   <!-- 🌐 ブラウザのタブに表示されるアイコン -->
-  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="icon" type="image/png" href="../icon.png">
   <!-- 📱 Brave・Android Chrome等が参照するWebアプリマニフェスト -->
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="../manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
@@ -122,7 +122,6 @@
     .lb-rows { border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 8px; padding: 6px 10px 0; height: 83px; box-sizing: border-box; text-align: left; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: #34d399 transparent; }
     .lb-rows::-webkit-scrollbar { width: 4px; }
     .lb-rows::-webkit-scrollbar-thumb { background: #34d399; border-radius: 2px; }
-    .lb-row.me, .lb-row.me .v { color: #6ee7b7; }
     .lb-row { display: flex; justify-content: space-between; gap: 8px; font-family: 'Courier New', monospace; font-weight: 700; font-size: 11px; line-height: 15px; color: #fff; }
     .lb-row .v { color: #ffd700; white-space: nowrap; }
     .lb-empty { text-align: center; color: #94a3b8; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; padding-top: 28px; }
@@ -197,7 +196,7 @@
 </head>
 <body>
 <audio id="bgmMusic" loop preload="auto">
-  <source src="https://ganjaflare.github.io/GanjaCatRun-Web/iwashiro_tebasakioroshi.mp3" type="audio/mpeg">
+  <source src="../iwashiro_tebasakioroshi.mp3" type="audio/mpeg">
 </audio>
 
   <div class="game-container">
@@ -264,6 +263,7 @@
               </div>
               <div id="lbRows" class="lb-rows"></div>
             </div>
+            <button id="btnBackSelect" class="start-btn" style="background:#334155;color:#e2e8f0;box-shadow:0 4px 0 #1e293b;font-size:12px;">&lt; BACK TO GAME SELECT</button>
           </div>
         </div>
 
@@ -417,7 +417,7 @@
     function getBgmUrl() {
       const el = document.getElementById("bgmMusic");
       const src = el ? el.querySelector("source") : null;
-      return src ? src.src : "iwashiro_tebasakioroshi.mp3";
+      return src ? src.src : "../iwashiro_tebasakioroshi.mp3";
     }
 
     function ensureAudioCtx() {
@@ -613,7 +613,6 @@
       if (xi) xi.classList.toggle("on", !!xId() && !walletAddress);
       if (xc) xc.style.display = (xi && xi.value) ? "block" : "none";
       updateRewardUI();
-      try { renderTitleBoard(); } catch (e) {}   // 自分の行の色を更新
     }
     function clearXId() {   // ウォレットを選んだら、Xアカ入力は消す（どちらか一方だけ）
       const xi = document.getElementById("xInput"); if (xi) xi.value = "";
@@ -831,16 +830,9 @@
       // 「ID名だけ」のときだけ @ を補う（"1st ..." などの順位ラベル付きや、すでに @ があるものはそのまま）
       return /^[\p{L}\p{N}\p{M}_]{1,15}$/u.test(s) && !/^guest$/i.test(s) && !/^\d+(st|nd|rd|th)$/i.test(s) ? "@" + s : s;
     }
-    // 自分の行を見つける用：順位ラベルを外して比べる
-    function lbNorm(t) {
-      const s = String(t).trim(), a = s.match(/0x[0-9a-fA-F]{40}/);
-      if (a) return a[0].toLowerCase();
-      return "@" + s.replace(/^\d+(st|nd|rd|th)\b[\s:.\-]*/i, "").replace(/^@/, "").toLowerCase();
-    }
     function renderTitleBoard() {
       const box = document.getElementById("lbRows"); if (!box) return;
       const keepScroll = box.scrollTop;
-      const me = playMode() === "guest" ? "" : playerIdentity().toLowerCase();
       box.textContent = "";
       [["lbTabScore", "score"], ["lbTabPlays", "plays"], ["lbTabLegend", "legend"]].forEach(function(pr) {
         const t = document.getElementById(pr[0]); if (t) t.classList.toggle("on", lbTab === pr[1]);
@@ -849,7 +841,7 @@
       const d = lbData[lbTab] ? lbData[lbTab].filter(function(r) { return !/^guest$/i.test(String(r[0]).trim().replace(/^\d+(st|nd|rd|th)\b[\s:.\-]*/i, "").replace(/^@/, "")); }) : lbData[lbTab];
       if (!d || !d.length) { const e = document.createElement("div"); e.className = "lb-empty"; e.textContent = d ? "No data yet" : "Loading..."; box.appendChild(e); return; }
       d.slice(0, 10).forEach(function(r) {
-        const row = document.createElement("div"); row.className = "lb-row" + (me && lbNorm(r[0]) === me ? " me" : "");
+        const row = document.createElement("div"); row.className = "lb-row";
         const l = document.createElement("span"); l.textContent = lbName(r[0]);
         const v = document.createElement("span"); v.className = "v"; v.textContent = r[1] + (r[2] ? " (" + r[2] + ")" : "");
         row.appendChild(l); row.appendChild(v); box.appendChild(row);
@@ -891,6 +883,14 @@
       attachStartBtn("btnNormal", "NORMAL");
       attachStartBtn("btnBoost", "BOOST");
       attachStartBtn("btnHell", "HELL");
+
+      // ゲーム選択（TOP）に戻る
+      const btnBack = document.getElementById("btnBackSelect");
+      if (btnBack) {
+        const goBack = function(e) { e.preventDefault(); stopBgmAndClose(); window.location.href = "../"; };
+        btnBack.addEventListener("click", goBack);
+        btnBack.addEventListener("touchstart", goBack, {passive: false});
+      }
 
       // タイトル画面のボードのタブ切り替え
       [["lbTabScore", "score"], ["lbTabPlays", "plays"], ["lbTabLegend", "legend"]].forEach(function(pr) {
