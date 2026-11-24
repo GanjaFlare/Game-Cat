@@ -845,7 +845,8 @@
       [["lbTabScore", "score"], ["lbTabPlays", "plays"], ["lbTabLegend", "legend"]].forEach(function(pr) {
         const t = document.getElementById(pr[0]); if (t) t.classList.toggle("on", lbTab === pr[1]);
       });
-      const d = lbData[lbTab];
+      // 👤 ゲスト（Guest）はランキングに載せない（過去の記録が残っていても表示しない）
+      const d = lbData[lbTab] ? lbData[lbTab].filter(function(r) { return !/^guest$/i.test(String(r[0]).trim().replace(/^\d+(st|nd|rd|th)\b[\s:.\-]*/i, "").replace(/^@/, "")); }) : lbData[lbTab];
       if (!d || !d.length) { const e = document.createElement("div"); e.className = "lb-empty"; e.textContent = d ? "No data yet" : "Loading..."; box.appendChild(e); return; }
       d.slice(0, 10).forEach(function(r) {
         const row = document.createElement("div"); row.className = "lb-row" + (me && lbNorm(r[0]) === me ? " me" : "");
