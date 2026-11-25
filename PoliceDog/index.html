@@ -107,6 +107,15 @@
     .wallet-top-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #065f46; }
     .wallet-top-btn.on { background: #0f172a; color: #e2e8f0; border-color: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, 0.35); }
     .wallet-top-btn.on::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #34d399; }
+    .wallet-top { width: 156px; }
+    .wallet-top .wallet-top-btn { width: 100%; height: 40px; box-sizing: border-box; justify-content: center; font-size: 13px; padding: 8px 10px; }
+    .x-box { position: absolute; top: 14px; left: 14px; right: 178px; z-index: 20; }   /* 左上：右上のCONNECTと同じ高さの横並び */
+    .x-at { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; pointer-events: none; }
+    #xInput { width: 100%; height: 40px; box-sizing: border-box; padding: 0 30px 0 38px; border: 2px solid #475569; border-radius: 12px; background: #0f172a; color: #ffffff; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 16px; text-align: left; box-shadow: none; }
+    #xInput::placeholder { color: #64748b; font-weight: 700; }
+    #xInput:focus { outline: none; border-color: #e2e8f0; box-shadow: 0 0 12px rgba(226, 232, 240, 0.35); }
+    #xInput.on { border-color: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, 0.35); }
+    .x-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #ef4444; font-size: 20px; font-weight: 800; line-height: 1; cursor: pointer; display: none; }
     .wallet-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; background: rgba(2, 6, 23, 0.82); display: flex; justify-content: center; align-items: center; border-radius: 10px 10px 40px 10px; }
     .wallet-box { width: 78%; box-sizing: border-box; background: #0f172a; border: 2px solid #34d399; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 0 24px rgba(52, 211, 153, 0.35); }
     .wallet-box-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 1px; color: #6ee7b7; margin-bottom: 4px; }
@@ -254,11 +263,23 @@
 
                 <div id="setupOverlay" class="overlay">
           <div class="wallet-top"><button id="btnWallet" class="wallet-top-btn" type="button">CONNECT</button></div>
+          <div class="x-box">
+            <span class="x-at">@</span>
+            <input type="text" id="xInput" maxlength="15" placeholder="X ID" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+            <span id="xClear" class="x-clear" title="Clear ID">×</span>
+          </div>
           <div id="walletModal" class="wallet-modal" style="display: none;">
             <div class="wallet-box">
               <div id="walletTitle" class="wallet-box-title">CONNECT WALLET</div>
               <div id="walletList"></div>
               <button id="walletClose" class="wallet-close" type="button">CLOSE</button>
+            </div>
+          </div>
+          <div id="switchModal" class="wallet-modal" style="display: none;">
+            <div class="wallet-box">
+              <div id="switchMsg" class="wallet-hint" style="font-size: 13px; color: #e2e8f0; margin: 0 0 8px; line-height: 1.6; white-space: pre-line;"></div>
+              <button id="switchYes" class="wallet-item" type="button" style="justify-content: center;">YES</button>
+              <button id="switchNo" class="wallet-close" type="button">NO</button>
             </div>
           </div>
           <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:0;">
@@ -881,7 +902,7 @@
       run.spring = itemSpring; run.clover = itemClover; run.robo = itemRobo;   // アイテムは使い切り：このプレイ限り
       itemSpring = itemClover = itemRobo = false; try { refreshItemUI(); } catch (e) {}
       confirmTitle = false;
-      sessionToken = ""; isSaving = false; saveFailed = false; requestNewSessionToken();   // ランキング用：プレイ開始のたびに新しいトークンを発行
+      sessionToken = ""; isSaving = false; saveFailed = false; if (playMode() !== "guest") requestNewSessionToken();   // ランキング用：プレイ開始のたびに新しいトークンを発行（ゲストは不要）
       cat.hpMax = run.robo ? LIFE_MAX * 2 : LIFE_MAX; cat.hp = cat.hpMax; cat.healQ = 0; cat.dead = false; cat.y = CAT_REST; cat.vy = 0; cat.jumpBuf = 0; cat.hitFlash = 0; cat.gauge = 0; cat.charge = 0; cat.laserT = 0; cat.glint = 0; cat.nitro = 0; cat.pop = 0; cat.powerFlash = 0;
       deathMode = false; dog.healQ = 0; dog.spirit = false; dog.angry = false;
       dog.x = 270; dog.hp = LIFE_MAX; dog.hits = 0; dog.flash = 0; dog.muzzle = 0; dog.mouth = false; dog.walking = false; dog.healT = 0; dog.hurtT = 0; dog.gone = false;
@@ -1513,6 +1534,7 @@
         mb.addEventListener('touchend', tog, { passive: false });
       }
       window.addEventListener("keydown", function(e) {
+        if (e.target && e.target.id === 'xInput') return;   // X ID入力中は、ゲームのキー操作を無効にする
         if (confirmTitle) {
           e.preventDefault();
           if (e.code === "KeyA" || e.code === "KeyZ") answerTitleConfirm(true);
@@ -1527,15 +1549,16 @@
 
     // ================= 🏆 ランキング（生き残った時間が記録＝秒数で送信） =================
     let lbData = null;
-    function lbName(t) { return String(t).replace(/0x[0-9a-fA-F]{40}/g, function(a) { return a.slice(0, 6) + "\u2026" + a.slice(-4); }); }
+    var LB_ORD = ["1st", "2nd", "3rd", "4th", "5th"];   // 順位の表示
+    function lbName(t) { return String(t).replace(/^@/, "").replace(/0x[0-9a-fA-F]{40}/g, function(a) { return a.slice(0, 6) + "\u2026" + a.slice(-4); }); }
     function renderTitleBoard() {
       const box = document.getElementById("lbRows"); if (!box) return;
       box.textContent = "";
       const d = lbData;
       if (!d || !d.length) { const e = document.createElement("div"); e.className = "lb-empty"; e.textContent = d ? "No data yet" : "Loading..."; box.appendChild(e); return; }
-      d.slice(0, 5).forEach(function(r) {   // ベスト5
+      d.slice(0, 5).forEach(function(r, i) {   // ベスト5
         const row = document.createElement("div"); row.className = "lb-row";
-        const l = document.createElement("span"); l.textContent = lbName(r[0]);
+        const l = document.createElement("span"); l.textContent = LB_ORD[i] + ": " + lbName(r[0]);   // 例：1st: 0x6298…c132 ／ 2nd: GanjaFlare（Xアカは@なしで表示）
         const v = document.createElement("span"); v.className = "v"; v.textContent = r[1] + (r[2] ? " (" + r[2] + ")" : "");
         row.appendChild(l); row.appendChild(v); box.appendChild(row);
       });
@@ -1551,7 +1574,8 @@
         else if (attemptsLeft > 1) setTimeout(function() { requestNewSessionToken(attemptsLeft - 1); }, 500);
       }).catch(function() { if (attemptsLeft > 1) setTimeout(function() { requestNewSessionToken(attemptsLeft - 1); }, 500); });
     }
-    function beginSave() {   // ゲームオーバー／クリアで、生き残った秒数を送る
+    function beginSave() {   // ゲームオーバー／クリアで、生き残った秒数を送る（ゲストは記録しない）
+      if (playMode() === "guest") { isSaving = false; saveFailed = false; return; }
       isSaving = true; saveFailed = false;
       sendScoreToGAS(playerIdentity(), Math.floor(stats.time));
     }
@@ -1566,7 +1590,7 @@
         isSaving = false;
       }).catch(function() { clearTimeout(safetyTimer); saveFailed = true; isSaving = false; });
     }
-    function playerIdentity() { return (typeof walletAddress === "string" && walletAddress) ? walletAddress.toLowerCase() : "Guest"; }   // 名前＝接続中のウォレットアドレス
+    function playerIdentity() { const m = playMode(); return m === "wallet" ? walletAddress.toLowerCase() : (m === "x" ? "@" + xId() : "Guest"); }   // ウォレット＝小文字アドレス／Xアカ＝@付き／ゲスト＝記録しない
 
     // ================= 🛒 アイテム（バネ／クローバー／ロボ） =================
     function drawItemSpring(cv) {   // 水色のバネ（ドット絵）
@@ -1636,10 +1660,38 @@
     function eth() { return ethProv || window.ethereum || null; }
     function walletMsg(text, isErr) { const el = document.getElementById("walletMsg"); if (el) { el.textContent = text || ""; el.classList.toggle("err", !!isErr); } }
     function shortAddr(a) { return a ? a.slice(0, 6) + "…" + a.slice(-4) : ""; }
-    function updateWalletUI() {
+    // 💡 プレイの方法は「ウォレット接続」か「Xアカ入力」のどちらか一方。どちらも無ければゲスト（記録されない）
+    // X IDに使える文字：英数字・アンダースコアに加えて、日本語など各国の文字もOK（記号・空白・絵文字は除く）。15文字まで
+    function cleanX(v) { return Array.from(String(v || "").replace(/[^\p{L}\p{N}\p{M}_]/gu, "")).slice(0, 15).join(""); }
+    function xId() { const el = document.getElementById("xInput"); return el ? cleanX(el.value) : ""; }
+    function playMode() { return walletAddress ? "wallet" : (xId() ? "x" : "guest"); }
+    function updateWalletUI() {   // ウォレット／Xアカ、どちらが変わった時でも、画面の表示をまとめて更新する
       const b = document.getElementById("btnWallet");
       if (b) { b.textContent = walletAddress ? shortAddr(walletAddress) : "CONNECT"; b.classList.toggle("on", !!walletAddress); }
+      const xi = document.getElementById("xInput"), xc = document.getElementById("xClear");
+      if (xi) xi.classList.toggle("on", !!xId() && !walletAddress);
+      if (xc) xc.style.display = (xi && xi.value) ? "block" : "none";
     }
+    function clearXId() {   // ウォレットを選んだら、Xアカ入力は消す（どちらか一方だけ）
+      const xi = document.getElementById("xInput"); if (xi) xi.value = "";
+      lsDel("ganjaCatRunId");
+    }
+    function disconnectWallet() {
+      if (ethProv && ethProv.isWalletConnect) { try { ethProv.disconnect(); } catch (e) {} }
+      walletAddress = ""; ethProv = null; lsDel("gcr2Wallet"); lsSet("gcr2WalletOff", "1"); updateWalletUI();
+    }
+    // 🔀 切り替えの確認メッセージ
+    let switchYesCb = null;
+    function askSwitch(msg, onYes) {
+      const m = document.getElementById("switchModal"), t = document.getElementById("switchMsg");
+      if (!m || !t) { onYes(); return; }
+      t.textContent = msg; switchYesCb = onYes; m.style.display = "flex";
+    }
+    (function() {
+      const y = document.getElementById("switchYes"), n = document.getElementById("switchNo"), m = document.getElementById("switchModal");
+      if (y) y.addEventListener("click", function() { if (m) m.style.display = "none"; const cb = switchYesCb; switchYesCb = null; if (cb) cb(); });
+      if (n) n.addEventListener("click", function() { if (m) m.style.display = "none"; switchYesCb = null; });
+    })();
     function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
     function lsSet(k, v) { try { window.localStorage.setItem(k, v); } catch (e) {} }
     function lsDel(k) { try { window.localStorage.removeItem(k); } catch (e) {} }
@@ -1660,7 +1712,7 @@
       if (!p || !p.on || p.__gcHooked) return;
       p.__gcHooked = true;
       if (p.isWalletConnect) p.on("disconnect", function() { walletAddress = ""; ethProv = null; updateWalletUI(); });
-      p.on("accountsChanged", function(a) { walletAddress = (a && a[0]) || ""; if (!walletAddress) ethProv = null; updateWalletUI(); fillRewardWallet(); });
+      p.on("accountsChanged", function(a) { walletAddress = (a && a[0]) || ""; if (!walletAddress) ethProv = null; else clearXId(); updateWalletUI(); fillRewardWallet(); });
     }
     function closeWalletModal(connected) {
       const m = document.getElementById("walletModal");
@@ -1743,7 +1795,7 @@
         const a = p.accounts && p.accounts[0];
         if (!a) throw new Error("no account");
         ethProv = p; walletAddress = a;
-        hookProvider(p); updateWalletUI(); walletMsg(DEFAULT_NOTE);
+        clearXId(); hookProvider(p); updateWalletUI(); walletMsg(DEFAULT_NOTE);
         saveWalletChoice(p); fillRewardWallet();
         closeWalletModal(true);
       } catch (e) {
@@ -1759,7 +1811,7 @@
         if (!acc || !acc[0]) throw new Error("no account");
         ethProv = provider; walletAddress = acc[0];
         await ensureFlare();
-        hookProvider(provider); updateWalletUI(); walletMsg(DEFAULT_NOTE);
+        clearXId(); hookProvider(provider); updateWalletUI(); walletMsg(DEFAULT_NOTE);
         saveWalletChoice(provider); fillRewardWallet();
         closeWalletModal(true);
       } catch (e) {
@@ -1820,9 +1872,43 @@
     }
     (function() {
       const b = document.getElementById("btnWallet"), c = document.getElementById("walletClose");
-      if (b) b.addEventListener("click", function() { openWalletModal(); });
+      if (b) b.addEventListener("click", function() {
+        if (!walletAddress && xId()) {
+          askSwitch("Clear your X ID and play with a wallet?", function() { openWalletModal(); });
+        } else { openWalletModal(); }
+      });
       if (c) c.addEventListener("click", function() { closeWalletModal(!!walletAddress); });
       walletMsg(DEFAULT_NOTE);
+      updateWalletUI();
+    })();
+    // 🐦 Xアカ入力。保存キーは ganjaCatRunId（他のGAME CATゲームと共通なので、前に入れたIDもそのまま戻る）
+    (function() {
+      const xi = document.getElementById("xInput"), xc = document.getElementById("xClear");
+      const saved = lsGet("ganjaCatRunId");
+      if (xi && saved) xi.value = cleanX(saved);
+      const persist = function() {   // 入力したIDは、いつも自動で記憶する
+        const v = xId();
+        if (v) lsSet("ganjaCatRunId", v); else lsDel("ganjaCatRunId");
+      };
+      if (xi) {
+        // 日本語入力（変換中）は、確定するまで文字をいじらない
+        let composing = false;
+        const onXInput = function() {
+          const c = cleanX(xi.value);
+          if (c !== xi.value) xi.value = c;
+          persist(); updateWalletUI();
+        };
+        xi.addEventListener("compositionstart", function() { composing = true; });
+        xi.addEventListener("compositionend", function() { composing = false; onXInput(); });
+        xi.addEventListener("input", function(e) { if (composing || e.isComposing) return; onXInput(); });
+        // ウォレット接続中にXアカ欄を選んだら、確認してからウォレットを切断する
+        xi.addEventListener("focus", function() {
+          if (!walletAddress) return;
+          xi.blur();
+          askSwitch("Disconnect your wallet and play with an X ID?", function() { disconnectWallet(); xi.focus(); });
+        });
+      }
+      if (xc) xc.addEventListener("click", function() { if (xi) xi.value = ""; lsDel("ganjaCatRunId"); updateWalletUI(); });
       updateWalletUI();
     })();
     // 🔁 以前つないだウォレットを、確認なしで自動的に再接続する（選んだウォレットも覚えている）
@@ -1841,6 +1927,7 @@
     }
     async function tryRestoreWallet() {
       if (walletAddress) return true;
+      if (xId()) return false;   // Xアカでプレイ中は、ウォレットを自動で戻さない
       let sv = null;
       try { sv = JSON.parse(lsGet("gcr2Wallet") || "null"); } catch (e) {}
       if (sv && sv.wc) {   // WalletConnectで接続していた場合：保存されたセッションから戻す
