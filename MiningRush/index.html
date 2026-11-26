@@ -298,7 +298,7 @@
                   <div class="item-price">300 GANJA</div>
                 </div>
                 <div id="itemShieldCard" class="item-card" role="button" aria-pressed="false">
-                  <div class="item-name">Shield</div>
+                  <div class="item-name">Defense Boost</div>
                   <canvas id="imgShield" class="item-img" width="32" height="32"></canvas>
                   <div class="item-desc">Defense x2</div>
                   <div class="item-price">400 GANJA</div>
@@ -1027,7 +1027,7 @@ for(let i=0;i<520;i++)q(rn()*W|0,(rn()*150)|0,1+(rn()*2|0),1,rn()<.5?'#3a2410':'
 /* ---------- キャラ（矩形ドット絵） ---------- */
 const WR=[[[5,6]],[[5,6]],[[4,7]],[[2,2],[4,7],[9,9]],[[1,3],[5,7],[9,10]],[[1,10]],[[0,11]],[[0,11]],[[0,11]],[[0,11]],[[0,11]],[[0,11]],[[1,10]],[[2,9]],[[3,8]],[[4,7]]];
 let bk=0,gm=0,cx0=0,fy0=0;
-const Q=(x,y,w,h,c)=>R(cx0+x*2,fy0+y*2,w*2,h*2,bk?(c==='#fff'?'#555':'#1c1c1c'):gm===1?(c==='#fff'||c==='#ddd'?'#fff6b0':'#ffd34a'):gm===2?'#fff2a0':c);
+const Q=(x,y,w,h,c)=>R(cx0+x*2,fy0+y*2,w*2,h*2,bk?(c==='#fff'?'#555':'#1c1c1c'):gm===1?(c==='#fff'||c==='#ddd'?'#fff6b0':'#ffd34a'):gm===2?'#fff2a0':gm===3?'#5ac8ff':c);
 function body(k){
   const B='#87CEEB',S='#4169E1',sk='#f0c090';
   if(k==='cat'){
@@ -1040,7 +1040,7 @@ function body(k){
   }else if(k==='dragon'){
     Q(-9,-14,4,7,'#2a2a34');Q(5,-14,4,7,'#2a2a34');Q(5,-4,6,2,'#1c1c24');Q(10,-7,2,4,'#1c1c24');
     Q(-5,-11,10,8,'#1c1c24');Q(-3,-9,6,5,'#4a4a56');Q(-5,-19,10,8,'#1c1c24');Q(-5,-22,2,3,'#999');Q(3,-22,2,3,'#999');
-    Q(-3,-16,2,2,'#f22');Q(1,-16,2,2,'#f22');Q(-2,-12,4,2,'#2a2a34');Q(-4,-3,3,3,'#1c1c24');Q(1,-3,3,3,'#1c1c24')
+    Q(-3,-16,2,2,'#3ab4ff');Q(1,-16,2,2,'#3ab4ff');Q(-3,-16,1,1,'#bfe8ff');Q(1,-16,1,1,'#bfe8ff');Q(-2,-12,4,2,'#2a2a34');Q(-4,-3,3,3,'#1c1c24');Q(1,-3,3,3,'#1c1c24')
   }else if(k==='hugo'){
     Q(-5,-9,10,5,'#ff8ac0');Q(-4,-4,8,3,'#3a5aa0');Q(-5,-1,4,1,'#fff');Q(1,-1,4,1,'#fff');
     Q(-4,-16,8,7,sk);Q(-5,-19,10,3,'#6a4020');Q(-5,-16,1,2,'#6a4020');Q(4,-16,1,2,'#6a4020');Q(-5,-16,4,5,'#111');Q(1,-16,4,5,'#111');Q(-1,-15,2,1,'#111');Q(-4,-15,2,3,'#fff');Q(2,-15,2,3,'#fff');Q(-3,-14,1,1,'#000');Q(3,-14,1,1,'#000');Q(-2,-10,4,1,'#c06040')
@@ -1069,7 +1069,7 @@ function body(k){
     Q(-7,-10,2,7,'#ff77bb');Q(5,-10,2,7,'#ff77bb');Q(-7,-3,2,2,'#3a3a42');Q(5,-3,2,2,'#3a3a42');
     Q(-6,-11,12,8,'#ff77bb');Q(-3,-3,3,3,'#3a3a42');Q(1,-3,3,3,'#3a3a42');
     Q(-3,-20,6,1,'#5a5a68');Q(-4,-19,8,8,'#5a5a68');Q(-3,-14,6,4,'#8a8a92');Q(-1,-12,1,1,'#222');Q(0,-12,1,1,'#222');Q(-2,-11,4,1,'#555');
-    Q(-4,-17,4,3,'#0a0a0a');Q(0,-17,4,3,'#0a0a0a');Q(-1,-17,2,1,'#0a0a0a');Q(-3,-16,1,1,'#8ab4d0');Q(1,-16,1,1,'#8ab4d0');
+    Q(-4,-17,4,3,'#ffe040');Q(0,-17,4,3,'#ffe040');Q(-1,-17,2,1,'#ffe040');Q(-3,-16,2,1,'#14101e');Q(1,-16,2,1,'#14101e');
     Q(-4,-11,8,2,'#e05a9f');Q(2,-8,2,2,'#ffe040');Q(-1,-9,1,4,'#fff')
   }else if(k==='billy'){
     Q(-5,-10,10,5,'#f2c030');Q(-1,-9,2,2,'#e62058');Q(-6,-9,1,4,'#d8a060');Q(5,-9,1,4,'#d8a060');
@@ -1105,7 +1105,12 @@ function tool(k,ph){
   else{if(!ph){Q(6,-27,1,1,'#fff');Q(6,-26,1,12,'#dfe4ee');Q(4,-14,5,1,'#d8b030');Q(6,-13,1,3,'#6a3a1a');Q(6,-10,1,1,'#d8b030')}else{Q(6,-9,1,3,'#6a3a1a');Q(4,-6,5,1,'#d8b030');Q(6,-5,1,10,'#dfe4ee');Q(6,5,1,1,'#fff')}}
 }
 function drawCh(k,x,fy,an,bkd,gold){
-  cx0=x;fy0=fy;bk=bkd?1:0;body(k);
+  cx0=x;fy0=fy;bk=bkd?1:0;
+  if(k==='dragon'&&an>0&&an<=10&&!bkd){   // 火を吐く瞬間：うっすら青いオーラ
+    gm=3;g.globalAlpha=.26+.12*Math.sin(af*.5);
+    [[-4,0],[4,0],[0,-4],[0,4],[-3,-3],[3,3],[-3,3],[3,-3]].forEach(o=>{cx0=x+o[0];fy0=fy+o[1];body(k)});
+    g.globalAlpha=1;cx0=x;fy0=fy;gm=0}
+  body(k);
   if(an>0){const ph=an<=10?1:0;
     if(gold&&!bkd){gm=2;g.globalAlpha=.4+.2*Math.sin(af*.4);[[-3,0],[3,0],[0,-3],[0,3]].forEach(o=>{cx0=x+o[0];fy0=fy+o[1];tool(k,ph)});g.globalAlpha=1;cx0=x;fy0=fy;gm=1}
     tool(k,ph);gm=0}
@@ -1275,31 +1280,17 @@ function draw(){
 
 /* ---------- 入力・メニュー ---------- */
 /* ---------- アイテムUI（タイトル画面） ---------- */
-function drawItemPotion(cv){const c=cv.getContext('2d'),A=[9,23],B=[23,9],r=5;
-  for(let y=0;y<32;y++)for(let x=0;x<32;x++){
-    const dx=B[0]-A[0],dy=B[1]-A[1],L2=dx*dx+dy*dy;let u=((x-A[0])*dx+(y-A[1])*dy)/L2;u=Math.max(0,Math.min(1,u));
-    const px=A[0]+dx*u,py=A[1]+dy*u,d=Math.hypot(x-px,y-py);
-    if(d>r+1)continue;
-    if(d>r){c.fillStyle='#2a2a38'}
-    else{const side=((x-A[0])*dy-(y-A[1])*dx)/Math.sqrt(L2);let col=u<.5?'#f4f4f8':'#e84a4a';
-      if(u>.47&&u<.53)col='#2a2a38';
-      else if(side<-2&&side>-4)col=u<.5?'#ffffff':'#ff8a8a';else if(side>3)col=u<.5?'#c8c8d4':'#b83030';
-      c.fillStyle=col}
-    c.fillRect(x,y,1,1)}}
-function drawItemPickaxe(cv){const c=cv.getContext('2d'),dot=(x,y,r,col)=>{c.fillStyle=col;for(let yy=-r;yy<=r;yy++)for(let xx=-r;xx<=r;xx++)if(xx*xx+yy*yy<=r*r+.5)c.fillRect(Math.round(x+xx),Math.round(y+yy),1,1)};
-  for(let t=0;t<=1;t+=.01){const x=18-t*12,y=11+t*16;dot(x,y,2.2,'#4a2a10')}
-  for(let t=0;t<=1;t+=.01){const x=18-t*12,y=11+t*16;dot(x,y,1.3,'#b0742a')}
-  const P0=[2,5],P1=[21,6],P2=[30,25];
-  const bz=t=>[(1-t)*(1-t)*P0[0]+2*(1-t)*t*P1[0]+t*t*P2[0],(1-t)*(1-t)*P0[1]+2*(1-t)*t*P1[1]+t*t*P2[1]],wd=t=>3.1*Math.pow(Math.sin(Math.PI*t),.7);
-  for(let t=0;t<=1;t+=.004){const p=bz(t);dot(p[0],p[1],wd(t)+.9,'#8a6000')}
-  for(let t=0;t<=1;t+=.004){const p=bz(t),w=wd(t);if(w>.3)dot(p[0],p[1],w,'#ffd700')}
-  for(let t=.12;t<=.85;t+=.01){const p=bz(t);dot(p[0]-.7,p[1]-.9,Math.max(.4,wd(t)*.35),'#fff6a0')}}
-function drawItemShield(cv){const c=cv.getContext('2d'),hw=y=>y<=14?11:11*Math.sqrt(Math.max(0,1-Math.pow((y-14)/14,2))),inM=(x,y)=>y>=4&&y<=28&&Math.abs(x-15.5)<=hw(y);
-  for(let y=4;y<=28;y++)for(let x=0;x<32;x++){if(!inM(x,y))continue;
-    const inner=inM(x-2,y)&&inM(x+2,y)&&inM(x,y-2)&&inM(x,y+2);let col;
-    if(!inner)col=(!inM(x-1,y)||!inM(x+1,y)||!inM(x,y-1)||!inM(x,y+1))?'#8a6000':'#f0c030';
-    else{const dx=Math.abs(x-15.5);col=x<16?'#3a68d8':'#2a50b0';if((dx<1.6&&y>=8&&y<=25)||(y>=11&&y<=12&&dx<=8))col='#ffffff'}
-    c.fillStyle=col;c.fillRect(x,y,1,1)}}
+/* アイテムの絵（ドット絵）：ピッケルは参考画像の16×16を2倍、腕は参考画像の32×32、薬瓶は16×16を2倍 */
+function drawGrid(cv,rows,pal,sc){const c=cv.getContext('2d');rows.forEach((r,y)=>{for(let x=0;x<r.length;x++){const k=r[x];if(k==='.'||!pal[k])continue;c.fillStyle=pal[k];c.fillRect(x*sc,y*sc,sc,sc)}})}
+function drawItemPotion(cv){   // 怪しい薬瓶：コルク栓、紫の液体、緑の泡、ドクロのラベル
+  drawGrid(cv,["................",".....OOOOOO.....",".....OcCCcO.....",".....OccccO.....","......OOOO......",".....OGGGGO.....",".....OGWGGO.....","....OOGGGGOO....","...OLLLLLLLLO...","..OLlWLLLLBLLO..",".OLLlLWWWLLLLdO.",".OLLLLWoWLBLLdO.",".OLLLLLWWLLLddO.","..OLLBLLLLLddO..","...OOLLLLddOO...",".....OOOOOO....."],
+    {O:'#2a1038',c:'#8a5a28',C:'#c08a48',G:'#bfe0ee',W:'#ffffff',L:'#9a3ee0',l:'#c878ff',d:'#5a1a96',B:'#7cff6a',o:'#2a1038'},2)}
+function drawItemPickaxe(cv){   // 黄金のツルハシ（参考画像）
+  drawGrid(cv,["................","................","......DDDDD.....",".....DIFEEFDCG..","......DAAAEEHB..","..........CFEA..",".........CGBEFA.","........CHB.AEA.",".......CGB..AEA.","......CHB...AFA.",".....CGB....AIA.","....CHB......A..","...CGB..........","..CHB...........","..BB............","................"],
+    {A:'#3f2e0e',B:'#281e0b',C:'#493615',D:'#825d16',E:'#e9b115',F:'#eaee57',G:'#684e1e',H:'#896727',I:'#fdff76'},2)}
+function drawItemShield(cv){   // Defense Boost：力こぶの腕（参考画像）。ゲーム内で被弾した瞬間に浮き上がる絵も、これを使う
+  drawGrid(cv,["................................","................................","..........CCCC..................","........CCAAABCD................",".......CBAAAAABC................",".......CAAAAAABC................","......CBAAABCBCD................","......CBAAAABCED................","......CBAABAAABC................",".....CBBBACEBEC.................",".....DBAAACDCD..................",".....CAAAAC.....................","....CBAAABC.....................","....CAAAABC.....................","....CAAAAED.....................","....CAAABED.....................","...CBAAABED.....................","...CAAAABCD.....................","...CAAAABCD....CCCCDD...........","...CAAAAEDD..CCAABBEECD.........","..CBAAABEDDDCFAAAAAAABECD.......","..CBAAABECDCBAAAAAAAAAABECD.....","..CBAABBEECBAAAAAAAAAAAAABC.....","..CBAAABEBAAAAAAAAAAAAAAAAED....","..CBAAAABAABAAAAAAAAAAAAAABC....","...CAABAAAABBAAAAAAAAABAABBC....","...CBABEABBABBBAAAAABBBBBBED....","....CEEDEBBBAAEEBBBBBBEBBEC.....","....DDDDCEEBBBBBEEBBEEEEECD.....","........DDDCEEEEEEEEEECDD.......","............DDDDDDDDDD..........","................................"],
+    {A:'#fbd556',B:'#f6b740',C:'#34240a',D:'#2c1907',E:'#e99521',F:'#f7b63d'},1)}
 const shCv=document.createElement('canvas');shCv.width=32;shCv.height=32;drawItemShield(shCv);
 const PRICE_LABEL=()=>{const ids=selectedItemIds();return ids.length?(BILLING_ENABLED?'START \u00B7 '+totalPrice(ids)+' GANJA':'START'):'FREE PLAY'};
 function updateStartLabel(){const sb=$('btnMineStart');if(!sb)return;const t=PRICE_LABEL();if(sb.textContent!==t)sb.textContent=t}
