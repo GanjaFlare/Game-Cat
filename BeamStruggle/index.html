@@ -725,6 +725,7 @@ function press(e){
   if(e&&e.repeat)return; // キー長押しは無視
   if(confirmTitle||isPaused)return;
   au();
+  if(st==='READY'){bgmOn();st='INTRO';return}   // タップを待っていた状態から、ゲーム開始
   if(st==='TITLE')return;
   else if(st==='BATTLE')tap();
   else if(st==='WIN'||st==='LOSE'||st==='CLEAR'){
@@ -1220,7 +1221,13 @@ function startGame(){
   playBoing();unlockAudio();   // 音の許可だけ先に。BGMは、支払いが済んでゲーム本編が始まってから
   Promise.resolve(purchaseItems()).then(function(ok){   // 選んだアイテムがあれば、先に$GANJAをバーンして支払う
     if(!ok){startPressed=false;b.classList.remove('pressed');return}
-    setTimeout(function(){bgmOn();act=sel;ov.style.display='none';start(1)},380);
+    setTimeout(function(){
+      act=sel;ov.style.display='none';
+      if(sel>0){   // 課金したとき：ウォレットの画面でゲーム画面の操作が外れているので、1回タップするまで始めない
+        try{window.focus()}catch(e){}
+        start(1);st='READY';
+      }else{bgmOn();start(1)}
+    },380);
   });
 }
 {const press1=function(e){e.preventDefault();startGame()};
@@ -1237,6 +1244,7 @@ $('btnBackSelect').addEventListener('touchstart',goBack,{passive:false})}
 [['btnA',true],['btnB',false]].forEach(function(p){
   $(p[0]).addEventListener('pointerdown',function(e){if(!confirmTitle)return;e.preventDefault();e.stopPropagation();answerTitleConfirm(p[1])});
 });
+addEventListener('pointerdown',function(e){if(st==='READY'&&!isPaused){e.preventDefault();au();bgmOn();st='INTRO'}});
 ['gameCanvas','btnArea'].forEach(id=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();press(e)}));
 addEventListener('keydown',e=>{
   if(e.target&&e.target.id==='xInput')return;   // X ID入力中は、ゲームのキー操作を無効にする
@@ -1412,6 +1420,12 @@ function overlay(){
     if(best)T('BEST: ROUND '+best,120,138,'#aaa');
   }else if(st==='COUNT'){
     if(cs===0){const e=E[rd-1];T('ROUND '+rd,120,34,'#ffd700',4);T(e.n,120,64,e.b[1],2);T(e.a,120,82,'#fff')}else T('FIGHT!',120,48,'#ff3a1a',4);
+  }else if(st==='READY'){
+    g.globalAlpha=.55;R(0,0,W,H,'#000');g.globalAlpha=1;
+    T('PAYMENT COMPLETE!',120,30,'#6bff7a',2);
+    T('READY?',120,52,'#ffd700',4);
+    T('TAP THE SCREEN TO START',120,98,'#fff',1);
+    if((af>>5)&1)T('> TAP <',120,114,'#ffe14a',2);
   }else if(st==='BATTLE'){
     const s=Math.ceil(chg/60);T(s,120,36,s<=2?'#ff6a3c':'#fff',6);if((af>>3)&1)T('MASH THE BUTTON!',120,76,'#ffe14a');
   }else if(st==='WIN'){
