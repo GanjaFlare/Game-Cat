@@ -107,7 +107,6 @@
     .wallet-top-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #065f46; }
     .wallet-top-btn.on { background: #0f172a; color: #e2e8f0; border-color: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, 0.35); }
     .wallet-top-btn.on::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #34d399; }
-    @keyframes readyBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
     .wallet-top { width: 156px; }
     .wallet-top .wallet-top-btn { width: 100%; height: 40px; box-sizing: border-box; justify-content: center; font-size: 13px; padding: 8px 10px; }
     .x-box { position: absolute; top: 14px; left: 14px; right: 178px; z-index: 20; }   /* 左上：右上のCONNECTと同じ高さの横並び */
@@ -251,11 +250,6 @@
           <div class="gb-speaker-line"></div>
         </div>
 
-        <div id="readyOverlay" class="overlay" style="display: none; z-index: 110; background: rgba(15, 23, 42, 0.94); cursor: pointer;">
-          <div style="color: #34d399; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 13px; letter-spacing: 1px; margin-bottom: 10px;">PAYMENT COMPLETE!</div>
-          <div style="color: #ffd700; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 34px; letter-spacing: 2px; margin-bottom: 12px; text-shadow: 0 0 14px rgba(255, 215, 0, 0.45);">READY?</div>
-          <div style="color: #e2e8f0; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.5px; animation: readyBlink 1.2s infinite;">TAP THE SCREEN TO START</div>
-        </div>
         <div id="setupOverlay" class="overlay">
           <div class="wallet-top"><button id="btnWallet" class="wallet-top-btn" type="button">CONNECT</button></div>
           <div class="x-box">
@@ -766,16 +760,37 @@
     }
 
     // ⏸️ 課金したあとの「タップ待ち（READY?）」：ウォレットの画面から、ゲームの画面へ、キー入力を戻すため。BGMも、このタップで始まる
-    let readyPending = false, readyMode = "NORMAL", readyShownAt = 0;
+    //    表示は、ゲームボーイの画面（キャンバス）の中だけに描く
+    let readyPending = false, readyMode = "NORMAL", readyShownAt = 0, readyFrame = 0;
+    function drawReadyScreen() {
+      const keepMode = visualMode, keepFrozen = sceneFrozen;
+      visualMode = 'NORMAL'; sceneFrozen = true;   // 背景は、いつもの昼の街で固定
+      ctx.fillStyle = bgColor(); ctx.fillRect(0, 0, 240, 160);
+      drawClouds(); drawGround();
+      drawGanjaCat(20, 115, 'run', 0);
+      visualMode = keepMode; sceneFrozen = keepFrozen;
+      ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(0, 0, 240, 160);   // 少し暗くする
+      ctx.textAlign = "center";
+      const t = function(str, y, size, color) {   // 影つきの文字
+        ctx.font = "bold " + size + "px 'Courier New'";
+        ctx.fillStyle = "#000"; ctx.fillText(str, 121, y + 1);
+        ctx.fillStyle = color;  ctx.fillText(str, 120, y);
+      };
+      t("PAYMENT COMPLETE!", 50, 12, "#6ee7b7");
+      t("READY?", 86, 32, "#ffd700");
+      if (Math.floor(readyFrame / 30) % 2 === 0) t("TAP THE SCREEN TO START", 112, 9, "#ffffff");   // 点滅
+      ctx.textAlign = "left";
+    }
+    function readyLoop() { if (!readyPending) return; readyFrame++; drawReadyScreen(); requestAnimationFrame(readyLoop); }
     function showReadyScreen(mode) {
-      readyMode = mode; readyPending = true; readyShownAt = Date.now();
+      readyMode = mode; readyPending = true; readyShownAt = Date.now(); readyFrame = 0;
       try { window.focus(); } catch (e) {}
-      const o = document.getElementById("readyOverlay"); if (o) o.style.display = "flex";
+      const so = document.getElementById("setupOverlay"); if (so) so.style.display = "none";   // タイトル画面を閉じて、ゲームの画面を見せる
+      readyLoop();
     }
     function startFromReady() {
       if (!readyPending || Date.now() - readyShownAt < 400) return;   // 表示した直後の、うっかりタップでは始めない
       readyPending = false;
-      const o = document.getElementById("readyOverlay"); if (o) o.style.display = "none";
       try { unlockAudio(); } catch (e) {}
       initAudioAndStart(readyMode);
     }
@@ -1308,20 +1323,21 @@
     }
     scrollCity(cityFar, 0, 'far'); scrollCity(cityNear, 0, 'near');
 
+    let sceneFrozen = false;   // true の間は、雲・街・地面が動かない（READY?の画面用）
     function drawClouds() {
       ctx.fillStyle = (visualMode === 'HELL') ? "rgba(255, 100, 100, 0.15)" : (visualMode === 'ZOMBIE') ? "rgba(225, 205, 255, 0.35)" : (visualMode === 'GOLD') ? "rgba(255, 235, 140, 0.35)" : "rgba(225, 228, 210, 0.38)";
       clouds.forEach(function(c) {
         ctx.fillRect(c.x, c.y, c.width, 10);
         ctx.fillRect(c.x + 5, c.y - 5, c.width - 10, 5);
         ctx.fillRect(c.x + 10, c.y - 10, c.width - 20, 5);
-        if (!isPaused && !gameOver && !isReviving) c.x -= c.speed;
+        if (!isPaused && !gameOver && !isReviving && !sceneFrozen) c.x -= c.speed;
         if (c.x + c.width < 0) {
           c.x = 240 + Math.random() * 50;
           c.y = 15 + Math.random() * 30;
         }
       });
       // 雲のあとに廃墟の街を描く（ビルの動きはゲームの速さに連動。ボス戦で止まると、街も止まる）
-      if (!isPaused && !gameOver && !isReviving) { scrollCity(cityFar, gameSpeed * 0.1, 'far'); scrollCity(cityNear, gameSpeed * 0.22, 'near'); }
+      if (!isPaused && !gameOver && !isReviving && !sceneFrozen) { scrollCity(cityFar, gameSpeed * 0.1, 'far'); scrollCity(cityNear, gameSpeed * 0.22, 'near'); }
       const pal = cityPal();
       drawCityLayer(cityFar, pal.far, pal);
       drawCityLayer(cityNear, pal.near, pal);
@@ -1337,7 +1353,7 @@
     }
     function drawGround() {
       const p = groundPal();
-      const moving = (!isPaused && !gameOver && !isReviving);
+      const moving = (!isPaused && !gameOver && !isReviving && !sceneFrozen);
       ctx.fillStyle = p.body; ctx.fillRect(0, 133, 240, 27);
       ctx.fillStyle = p.top;  ctx.fillRect(0, 133, 240, 3);               // 路面のフチ（明るい線）
       ctx.fillStyle = p.edge; ctx.fillRect(0, 136, 240, 1);
@@ -1521,7 +1537,7 @@
       confirmTitle = false;
       itemLife = false; itemPizza = false; itemMagnet = false; if (typeof refreshItemUI === 'function') refreshItemUI();
       bgmOff(); startPressed = false;   // タイトル画面に戻ったらBGMを消し、STARTボタンの状態も戻す
-      readyPending = false; { const ro = document.getElementById("readyOverlay"); if (ro) ro.style.display = "none"; }
+      readyPending = false;
       try { loadTitleBoard(); } catch (e) {}
       const sbtn = document.getElementById("btnNormal"); if (sbtn) sbtn.classList.remove("pressed");
       const overlay = document.getElementById("setupOverlay");
