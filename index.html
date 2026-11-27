@@ -161,7 +161,7 @@
     .cart-face { position: relative; transition: transform 0.12s, filter 0.12s; }
     .cart-face img { width: 100%; height: auto; display: block; pointer-events: none; filter: drop-shadow(0 6px 8px rgba(0,0,0,0.55)); }
     .cart:active .cart-face { transform: translateY(2px) scale(0.98); filter: brightness(1.15); }
-    .cart-name { margin: 10px -12px 0; text-align: center; white-space: nowrap; font-family: 'Courier New', Courier, monospace; font-weight: bold; font-size: 17px; color: #a7f3d0; text-shadow: 0 0 8px rgba(52, 211, 153, 0.45); }
+    .cart-name { margin: 10px -12px 0; text-align: center; white-space: nowrap; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: 0.8px; color: #a7f3d0; text-shadow: 0 0 8px rgba(52, 211, 153, 0.45); }
     /* 画像がまだ無いときの代わりの表示（細いフレームだけ。名前は下に出る） */
     .cart-face.noimg { aspect-ratio: 462 / 527; box-sizing: border-box; border: 2px solid; border-image: linear-gradient(135deg, #ffffff 0%, #34d399 100%) 1; }
     .sel-arrows { display: flex; gap: 26px; margin-top: 6px; }
@@ -173,16 +173,17 @@
     .cart-soon { aspect-ratio: 462 / 527; box-sizing: border-box; border: 2px solid; border-image: linear-gradient(135deg, #ffffff 0%, #34d399 100%) 1; display: flex; justify-content: center; align-items: center; }
     .cart-soon span { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 13px; letter-spacing: 3px; background: linear-gradient(135deg, #ffffff 0%, #34d399 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; opacity: 0.8; }
     /* 🔗 関連プロジェクトのリンク一覧（ゲームと間違えないよう、細いフレームと小さなアイコンだけ） */
-    .more-box { width: 88%; margin-top: 16px; box-sizing: border-box; padding: 0; text-align: left; }
-    .more-title { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; letter-spacing: 1.5px; color: #94a3b8; margin-bottom: 4px; }
-    .more-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-bottom: 10px; }
-    .more-link { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 10px 4px 8px; border: 1px solid rgba(148, 163, 184, 0.25); color: #e2e8f0; text-decoration: none; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 12px; -webkit-tap-highlight-color: transparent; }
-    .more-link:active { opacity: 0.65; }
-    .more-link .ico, .more-link img { width: 34px; height: 34px; box-sizing: border-box; object-fit: contain; background: #1e293b; border: 1px solid rgba(52, 211, 153, 0.5); flex-shrink: 0; }
-    .more-link .ico { display: flex; justify-content: center; align-items: center; color: #6ee7b7; font-weight: 800; font-size: 15px; }
-    .more-link .nm { white-space: nowrap; text-align: center; }
-    .more-link .ext { color: #6ee7b7; font-size: 12px; margin-left: 3px; }
-    @media (hover: hover) { .more-link:hover { color: #6ee7b7; } }
+    .more-box { position: absolute; left: 6%; bottom: 34px; width: 88%; box-sizing: border-box; padding: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .neon-btn { position: relative; display: block; width: 66%; padding: 2px; border-radius: 999px; text-decoration: none; text-align: center; -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+      background: linear-gradient(135deg, #ffffff 0%, #34d399 100%);
+      filter: drop-shadow(0 0 7px rgba(52, 211, 153, 0.45)); transition: transform 0.12s, filter 0.12s; }
+    .neon-btn .in { display: flex; align-items: center; justify-content: center; padding: 8px 12px; border-radius: 999px; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 13px; letter-spacing: 2px; white-space: nowrap; }
+    /* メインボタン：塗りつぶし */
+    .neon-btn.primary .in { background: linear-gradient(135deg, #a7f3d0 0%, #34d399 100%); color: #052e1f; }
+    /* サブボタン：枠だけ */
+    .neon-btn.ghost .in { background: #0f172a; color: #a7f3d0; text-shadow: 0 0 8px rgba(52, 211, 153, 0.5); }
+    .neon-btn:active { transform: translateY(2px) scale(0.98); filter: drop-shadow(0 0 4px rgba(52, 211, 153, 0.35)) brightness(1.1); }
+    @media (hover: hover) { .neon-btn:hover { transform: translateY(-2px); filter: drop-shadow(0 0 14px rgba(52, 211, 153, 0.8)); } .neon-btn.ghost:hover .in { background: #12263a; } }
     @media (hover: hover) {
       .cart:hover .cart-face { transform: translateY(-6px) scale(1.05); filter: brightness(1.12) drop-shadow(0 0 14px rgba(52, 211, 153, 0.8)); }
     }
@@ -315,13 +316,8 @@
             <button id="selNext" class="sel-arrow next" type="button" aria-label="Next game"></button>
           </div>
           <div class="more-box">
-            <div class="more-title">LINK</div>
-            <div class="more-grid">
-              <a class="more-link" href="https://app.blazeswap.xyz/swap/?outputCurrency=0x9aa42de5ec6f3b3bbf252bf8ac81acb338d888b7&amp;tokenList=https://raw.githubusercontent.com/GanjaFlare/ganjaflare-assets/main/ganjaflare-tokenlist.json" target="_blank" rel="noopener noreferrer"><img src="icon.png" alt="" onerror="this.outerHTML='<span class=&quot;ico&quot;>B</span>'"><span class="nm">Buy GANJA<span class="ext" aria-hidden="true">&#8599;</span></span></a>
-              <a class="more-link" href="https://picoflr.xyz/" target="_blank" rel="noopener noreferrer"><img src="PICO.webp" alt="" onerror="this.outerHTML='<span class=&quot;ico&quot;>P</span>'"><span class="nm">PICO<span class="ext" aria-hidden="true">&#8599;</span></span></a>
-              <a class="more-link" href="https://botlockcrypto.com/onboarding" target="_blank" rel="noopener noreferrer"><img src="FlareTopia.webp" alt="" onerror="this.outerHTML='<span class=&quot;ico&quot;>F</span>'"><span class="nm">FlareTopia<span class="ext" aria-hidden="true">&#8599;</span></span></a>
-              <a class="more-link" href="https://www.flamix.trade/" target="_blank" rel="noopener noreferrer"><img src="Flamix%20trade.webp" alt="" onerror="this.outerHTML='<span class=&quot;ico&quot;>F</span>'"><span class="nm">Flamix trade<span class="ext" aria-hidden="true">&#8599;</span></span></a>
-            </div>
+            <a class="neon-btn primary" href="https://app.blazeswap.xyz/swap/?outputCurrency=0x9aa42de5ec6f3b3bbf252bf8ac81acb338d888b7&amp;tokenList=https://raw.githubusercontent.com/GanjaFlare/ganjaflare-assets/main/ganjaflare-tokenlist.json" target="_blank" rel="noopener noreferrer"><span class="in">BUY GANJA</span></a>
+            <a class="neon-btn ghost" href="https://ganjaflare.github.io/" target="_blank" rel="noopener noreferrer"><span class="in">WEBSITE</span></a>
           </div>
         </div>
 
