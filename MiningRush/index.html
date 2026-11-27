@@ -1005,9 +1005,10 @@ function submitOnQuit() {   // ポーズ→SELECT→YES、または次のラウ�
   if (runSubmitted || st === "TITLE") return;
   submitRun(round);
 }
+const CAM_MAX=330;   // 画面を一番下（ゴール側）へ動かしたときの限界
 const ITEM_PER_ROUND=false;   // true にすると、ラウンドをクリアするたびにアイテムが消える（毎ラウンド買い直し）
 const KS=['pico','dragon','hugo','fcat','wick','bull','gully','quantic','billy','smarty','fat'];
-let buf=0,itemPotion=false,itemPickaxe=false,itemShield=false,runAv=null,shFx=null,paused=false,confirmT=false,pauseImg=null,round=1,rc=0,win=false,clear=false,iv0=60,iv1=90,curses=[],cam=0,st='TITLE',af=0,ch=[],P=[],pops=[],lock=0,flash=0,shake=0,msg=null,best=0,order=0,firstAf=0,t0=0,cd=0,cn=3,rank=[],pf=0,goalT=0;
+let camMan=false,camV=0,camDir=0,buf=0,itemPotion=false,itemPickaxe=false,itemShield=false,runAv=null,shFx=null,paused=false,confirmT=false,pauseImg=null,round=1,rc=0,win=false,clear=false,iv0=60,iv1=90,curses=[],cam=0,st='TITLE',af=0,ch=[],P=[],pops=[],lock=0,flash=0,shake=0,msg=null,best=0,order=0,firstAf=0,t0=0,cd=0,cn=3,rank=[],pf=0,goalT=0;
 let gx=0,gd=1,gs=2,zc=100,zw=36,pcd=0;
 
 /* ---------- 背景（空は1枚、地中は縦にタイル → 掘ると画面がスライド） ---------- */
@@ -1152,7 +1153,7 @@ function newGame(){
   if(itemPotion){if(!runAv)runAv=pick(KS)}else runAv=null;
   const ks=KS.filter(k=>k!==runAv).sort(()=>Math.random()-.5).slice(0,2);shFx=null;
   ch=[runAv||'cat',ks[0],ks[1]].map((k,i)=>({k,x:LX[i],d:0,dd:0,an:0,pg:0,t:rnd(45,80),sk:rnd(.3+.4*tt+.3*u,.75+.25*tt+.25*u),fz:0,dm:0,cu:0,it:null,rk:-1,ms:0,items:mkItems()}));
-  order=0;buf=0;curses=[];P=[];pops=[];msg=null;cd=0;cn=3;goalT=0;pcd=0;gx=0;gd=1;newZone();st='ROUND';rc=0;flash=0;
+  order=0;buf=0;camMan=false;camDir=0;curses=[];P=[];pops=[];msg=null;cd=0;cn=3;goalT=0;pcd=0;gx=0;gd=1;newZone();st='ROUND';rc=0;flash=0;
 }
 function item(c,i,t){
   const y=SY+c.dd*K-cam;c.it={t,l:60};
@@ -1190,7 +1191,8 @@ function endGame(){
   st='PODIUM';pf=0;lock=performance.now()+3500;flash=6;
 }
 function upd(){
-  af++;if(pcd>0)pcd--;if(msg&&--msg.l<=0)msg=null;
+  af++;
+  if(camDir&&!paused&&(st==='PLAY'||st==='COUNT')){if(!camMan){camMan=true;camV=cam}camV=Math.max(0,Math.min(CAM_MAX,camV+camDir*5))}if(pcd>0)pcd--;if(msg&&--msg.l<=0)msg=null;
   pops.forEach(p=>{p.y-=.4;p.l--});pops=pops.filter(p=>p.l>0);
   for(let i=P.length-1;i>=0;i--){const p=P[i];p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;if(--p.l<=0||p.y>H)P.splice(i,1)}
   curses.forEach(q=>{q.t++;if(q.t===10)playSound('thunder');
@@ -1209,7 +1211,7 @@ function upd(){
 
 /* ---------- 描画 ---------- */
 function scene(){
-  const p0=ch[0];cam=Math.max(0,SY+2+p0.dd*K-85);
+  const p0=ch[0],fcam=Math.max(0,SY+2+p0.dd*K-85);cam=camMan?camV:fcam;   // 通常は主人公を追う。十字キー上下で、自由に動かせる
   let y0=(SY+1-cam)%150;if(y0>0)y0-=150;
   for(let y=y0;y<123;y+=150)g.drawImage(dt,0,Math.round(y));
   g.drawImage(bg,0,-Math.round(cam));
@@ -1235,6 +1237,11 @@ function scene(){
   if(gy<123){for(let x=0;x<W;x+=4)R(x,gy,4,2,(x>>2)&1?'#fff':'#000');T('100M',3,gy-7,'#ffee55',1,'l')}
   R(0,123,W,H-123,'#140e26');R(0,123,W,1,'#556');
   pops.forEach(p=>T(p.t,p.x,p.y,p.c));
+  if(camMan){   // 自由に見ているとき：ラベルと、主人公が画面の外にいる側の矢印
+    T('FREE CAM',120,3,'#ffee55');
+    const hy=SY+p0.dd*K-cam,ax=p0.x;
+    if(hy<10){T('YOU',ax,14,'#ffee55');R(ax-3,9,7,1,'#ffee55');R(ax-2,8,5,1,'#ffee55');R(ax-1,7,3,1,'#ffee55');R(ax,6,1,1,'#ffee55')}
+    else if(hy>120){T('YOU',ax,103,'#ffee55');R(ax-3,114,7,1,'#ffee55');R(ax-2,115,5,1,'#ffee55');R(ax-1,116,3,1,'#ffee55');R(ax,117,1,1,'#ffee55')}}
   const p=ch[0],zE=Math.min(200,zw*(p.dm>0?1.7:1)),zr=(a,b,c)=>{const l=Math.round(Math.max(0,a)),h=Math.round(Math.min(200,b));if(h>l)R(GX+l,142,h-l,8,c)};
   R(GX-1,141,202,10,p.dm>0?'#7ef':'#556');R(GX,142,200,8,'#10182c');
   zr(zc-zE/2,zc+zE/2,'#3a8a3a');zr(zc-zE*.3,zc+zE*.3,'#e8c030');zr(zc-zE*.125,zc+zE*.125,'#ff5a3a');R(GX+Math.round(zc),142,1,8,'#fff');
@@ -1273,7 +1280,12 @@ function draw(){
   if(flash>0){g.globalAlpha=flash/6*.7;R(0,0,W,H,'#fff');g.globalAlpha=1;flash--}
   g.restore();
   if(st!=='PODIUM')T('ROUND '+round,237,3,'#ffd700',1,'r');
-  if(st==='ROUND'){g.globalAlpha=.45;R(0,0,W,123,'#000');g.globalAlpha=1;T('ROUND '+round,120,40,'#ffd700',5);T(round===10?'FINAL ROUND!':'GET 1ST PLACE!',120,80,round===10&&((af>>3)&1)?'#ff5a3a':'#fff',2)}
+  if(st==='READY'){
+    g.globalAlpha=.55;R(0,0,W,123,'#000');g.globalAlpha=1;
+    T('PAYMENT COMPLETE!',120,58,'#6bff7a',2);   // キャラと旗は、上にそのまま見せておく
+    T('READY?',120,74,((af>>4)&1)?'#ffd700':'#fff',5);
+    if((af>>5)&1)T('TAP THE SCREEN TO START',120,106,'#fff')}
+  else if(st==='ROUND'){g.globalAlpha=.45;R(0,0,W,123,'#000');g.globalAlpha=1;T('ROUND '+round,120,40,'#ffd700',5);T(round===10?'FINAL ROUND!':'GET 1ST PLACE!',120,80,round===10&&((af>>3)&1)?'#ff5a3a':'#fff',2)}
   else if(st==='COUNT')T(cn?cn:'GO!',120,50,cn?'#ffd700':'#6bff7a',cn?8:6);
   else if(st==='PLAY'&&goalT>0&&((af>>2)&1))T('GOAL!',120,50,'#ffd700',5);
 }
@@ -1316,11 +1328,16 @@ function pressStart(e){
   playBoing();unlockAudio();
   Promise.resolve(purchaseItems()).then(ok=>{
     if(!ok){startPressed=false;b.classList.remove('pressed');return}
-    setTimeout(()=>{bgmOn();ov.style.display='none';beginRun()},380)})}
+    setTimeout(()=>{
+      ov.style.display='none';beginRun();
+      if(selectedItemIds().length>0){try{window.focus()}catch(e){}st='READY'}   // 課金したときだけ：1回タップするまで始めない（BGMもそのとき開始）
+      else bgmOn()},380)})}
+function readyStart(){if(st!=='READY')return;unlockAudio();bgmOn();st='ROUND';rc=0}
 function act2(){if(paused||confirmT||ov.style.display!=='none')return;
+  if(st==='READY'){readyStart();return}
   if(st==='PLAY')act();else if(st==='PODIUM'&&performance.now()>=lock&&!isSaving){if(win&&!clear)round++;else round=1;newGame()}}
 function togglePause(){
-  if(ov.style.display!=='none'||st==='TITLE'||st==='PODIUM')return;
+  if(ov.style.display!=='none'||st==='TITLE'||st==='PODIUM'||st==='READY')return;
   paused=!paused;confirmT=false;
   if(paused){pauseImg=g.getImageData(0,0,W,H);drawPause()}else{last=performance.now();acc=0}}
 function drawPause(){
@@ -1347,14 +1364,25 @@ $('btnSelect').addEventListener('click',onSelect);$('btnSelect').addEventListene
 $('btnStart').addEventListener('click',togglePause);$('btnStart').addEventListener('touchstart',e=>{e.preventDefault();togglePause()},{passive:false});
 [['btnA',true],['btnB',false]].forEach(a=>{const el=$(a[0]);if(!el)return;const h=e=>{if(!confirmT)return;e.preventDefault();e.stopPropagation();answerTitleConfirm(a[1])};
   el.addEventListener('pointerdown',h)});
+addEventListener('pointerdown',e=>{if(st==='READY'&&!paused){if(e.target&&e.target.id==='btnMusicToggle')return;e.preventDefault();readyStart()}});   // 画面のどこをタップしても始められる
 ['gameCanvas','btnArea'].forEach(id=>$(id).addEventListener('pointerdown',e=>{e.preventDefault();act2()}));
 addEventListener('keydown',e=>{
   if(e.target&&e.target.id==='xInput')return;   // X ID入力中は、ゲームのキー操作を無効にする
   if(confirmT){e.preventDefault();if(e.code==='KeyA'||e.code==='KeyZ')answerTitleConfirm(true);else if(e.code==='KeyB'||e.code==='KeyX'||e.code==='Escape')answerTitleConfirm(false);return}
-  if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();if(!e.repeat)act2()}
+  if(e.code==='Space'){e.preventDefault();if(!e.repeat)act2()}
+  if(e.code==='ArrowUp'||e.code==='ArrowDown'){e.preventDefault();camDir=e.code==='ArrowUp'?-1:1}   // 上：スタート側へ／下：ゴール側へ（押している間、動く）
+  if(e.code==='ArrowLeft'||e.code==='ArrowRight'){e.preventDefault();camMan=false}   // 左右：主人公の追いかけに戻る
   if(e.code==='Enter'){e.preventDefault();if(!e.repeat)togglePause()}
   if(e.code==='KeyM'||e.code==='Backspace')onSelect();
 });
+addEventListener('keyup',e=>{if((e.code==='ArrowUp'&&camDir<0)||(e.code==='ArrowDown'&&camDir>0))camDir=0});
+addEventListener('blur',()=>{camDir=0});
+{const dp=$('dpadControl');   // ゲームボーイの十字キー（画面タッチ／マウス）：上下＝画面を動かす、左右＝主人公に戻る
+ if(dp){const rd=e=>{const r=dp.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
+   if(Math.abs(dx)>Math.abs(dy)){camDir=0;camMan=false}else camDir=dy<0?-1:1};
+  dp.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();try{dp.setPointerCapture(e.pointerId)}catch(x){}rd(e)});
+  dp.addEventListener('pointermove',e=>{if(e.buttons)rd(e)});
+  ['pointerup','pointercancel','lostpointercapture'].forEach(t=>dp.addEventListener(t,()=>{camDir=0}))}}
 function resizeGame(){const w=$('gameWrapper');w.style.transform='translate(-50%,-50%) scale('+Math.min(innerWidth/340,innerHeight/680)+')'}
 addEventListener('resize',resizeGame);resizeGame();
 preloadBgm();
