@@ -107,6 +107,7 @@
     .wallet-top-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #065f46; }
     .wallet-top-btn.on { background: #0f172a; color: #e2e8f0; border-color: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, 0.35); }
     .wallet-top-btn.on::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #34d399; }
+    @keyframes readyBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
     .wallet-top { width: 156px; }
     .wallet-top .wallet-top-btn { width: 100%; height: 40px; box-sizing: border-box; justify-content: center; font-size: 13px; padding: 8px 10px; }
     .x-box { position: absolute; top: 14px; left: 14px; right: 178px; z-index: 20; }   /* 左上：右上のCONNECTと同じ高さの横並び */
@@ -250,6 +251,11 @@
           <div class="gb-speaker-line"></div>
         </div>
 
+        <div id="readyOverlay" class="overlay" style="display: none; z-index: 110; background: rgba(15, 23, 42, 0.94); cursor: pointer;">
+          <div style="color: #34d399; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 13px; letter-spacing: 1px; margin-bottom: 10px;">PAYMENT COMPLETE!</div>
+          <div style="color: #ffd700; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 34px; letter-spacing: 2px; margin-bottom: 12px; text-shadow: 0 0 14px rgba(255, 215, 0, 0.45);">READY?</div>
+          <div style="color: #e2e8f0; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 12px; letter-spacing: 0.5px; animation: readyBlink 1.2s infinite;">TAP THE SCREEN TO START</div>
+        </div>
         <div id="setupOverlay" class="overlay">
           <div class="wallet-top"><button id="btnWallet" class="wallet-top-btn" type="button">CONNECT</button></div>
           <div class="x-box">
@@ -688,7 +694,8 @@
           unlockAudio();   // 音の許可だけ取っておく（指を離した瞬間の操作の中で）。BGMは、支払いが済んでゲーム本編が始まってから
           Promise.resolve(purchaseItems()).then(function(ok) {   // 選んだアイテムがあれば、先に$GANJAをバーンして支払う
             if (!ok) { startPressed = false; btn.classList.remove("pressed"); return; }
-            setTimeout(function() { initAudioAndStart(modeStr); }, 380);
+            if (BILLING_ENABLED && selectedItemIds().length) { showReadyScreen(modeStr); return; }   // 課金したとき：1回タップするまで始めない
+            setTimeout(function() { initAudioAndStart(modeStr); }, 380);   // FREE PLAY：すぐ始める
           });
         };
         btn.addEventListener("click", press);
@@ -757,6 +764,27 @@
       window.addEventListener('DOMContentLoaded', initializeEvents);
       window.addEventListener('load', initializeEvents);
     }
+
+    // ⏸️ 課金したあとの「タップ待ち（READY?）」：ウォレットの画面から、ゲームの画面へ、キー入力を戻すため。BGMも、このタップで始まる
+    let readyPending = false, readyMode = "NORMAL", readyShownAt = 0;
+    function showReadyScreen(mode) {
+      readyMode = mode; readyPending = true; readyShownAt = Date.now();
+      try { window.focus(); } catch (e) {}
+      const o = document.getElementById("readyOverlay"); if (o) o.style.display = "flex";
+    }
+    function startFromReady() {
+      if (!readyPending || Date.now() - readyShownAt < 400) return;   // 表示した直後の、うっかりタップでは始めない
+      readyPending = false;
+      const o = document.getElementById("readyOverlay"); if (o) o.style.display = "none";
+      try { unlockAudio(); } catch (e) {}
+      initAudioAndStart(readyMode);
+    }
+    window.addEventListener("pointerup", function(e) { if (readyPending) { e.preventDefault(); startFromReady(); } }, true);   // 画面のどこをタップしても始まる
+    window.addEventListener("keydown", function(e) {   // キーボードのSPACE / ENTERでも始まる。READYの間は、ほかのキーを無効にする
+      if (!readyPending) return;
+      e.stopImmediatePropagation();
+      if (e.code === "Space" || e.code === "Enter") { e.preventDefault(); startFromReady(); }
+    }, true);
 
     function initAudioAndStart(mode) {
       bgmOn();
@@ -1493,6 +1521,7 @@
       confirmTitle = false;
       itemLife = false; itemPizza = false; itemMagnet = false; if (typeof refreshItemUI === 'function') refreshItemUI();
       bgmOff(); startPressed = false;   // タイトル画面に戻ったらBGMを消し、STARTボタンの状態も戻す
+      readyPending = false; { const ro = document.getElementById("readyOverlay"); if (ro) ro.style.display = "none"; }
       try { loadTitleBoard(); } catch (e) {}
       const sbtn = document.getElementById("btnNormal"); if (sbtn) sbtn.classList.remove("pressed");
       const overlay = document.getElementById("setupOverlay");
