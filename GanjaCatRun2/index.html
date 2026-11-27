@@ -283,19 +283,19 @@
                   <div class="item-name">Life Boost</div>
                   <canvas id="imgLife" class="item-img" width="32" height="32"></canvas>
                   <div class="item-desc">Start with 5 lives</div>
-                  <div class="item-price">222 GANJA</div>
+                  <div class="item-price">500 GANJA</div>
                 </div>
                 <div id="itemPizzaCard" class="item-card" role="button" aria-pressed="false">
                   <div class="item-name">Jumping Pizza</div>
                   <canvas id="imgPizza" class="item-img" width="32" height="32"></canvas>
                   <div class="item-desc">Enables double jump</div>
-                  <div class="item-price">222 GANJA</div>
+                  <div class="item-price">500 GANJA</div>
                 </div>
                 <div id="itemMagnetCard" class="item-card" role="button" aria-pressed="false">
                   <div class="item-name">Magnet</div>
                   <canvas id="imgMagnet" class="item-img" width="32" height="32"></canvas>
                   <div class="item-desc">Attracts nearby items</div>
-                  <div class="item-price">222 GANJA</div>
+                  <div class="item-price">500 GANJA</div>
                 </div>
               </div>
               <div id="walletMsg" class="item-note"></div>
@@ -1918,7 +1918,7 @@
     const BILLING_ENABLED = true;    // true＝STARTで、選んだアイテムの代金を$GANJAでバーン／false＝無課金テスト
     const GANJA_TOKEN = "0x9aA42de5eC6f3B3BbF252bf8ac81ACB338D888b7";
     const BURN_ADDRESS = "0x000000000000000000000000000000000000dEaD";
-    const ITEM_PRICE = 222;          // 1アイテムあたり（$GANJA）。GAS側の ITEM_PRICE_GANJA と同じ数にする
+    const ITEM_PRICE = 500;          // 1アイテムあたり（$GANJA）。GAS側の ITEM_PRICE_GANJA と同じ数にする
     const FLARE_CHAIN = { chainId: "0xe", chainName: "Flare Mainnet", nativeCurrency: { name: "Flare", symbol: "FLR", decimals: 18 }, rpcUrls: ["https://flare-api.flare.network/ext/bc/C/rpc"], blockExplorerUrls: ["https://flare-explorer.flare.network"] };
     const DEFAULT_NOTE = BILLING_ENABLED ? "Items are paid with $GANJA (burned). Use a wallet browser." : "TEST MODE: items are free for now";
     let walletAddress = "", ethProv = null, walletResolve = null;
