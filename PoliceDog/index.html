@@ -892,6 +892,7 @@
     let itemSpring = false, itemClover = false, itemRobo = false;   // タイトルで選んだアイテム（1回きり）
     const run = { spring: false, clover: false, robo: false };       // 今回のプレイで有効なアイテム
     let confirmTitle = false;   // 「タイトルに戻る？」確認中
+    let lastReadyStart = 0;     // 課金後の「タップ待ち」から始まった時刻（その1タップで、ジャンプやポーズが誤作動しないように）
     let sessionToken = "", isSaving = false, saveFailed = false;   // ランキング：ワンタイムトークン／保存中／保存失敗
     let deathMode = false;   // 2段階目（Death mode）に入ったか
     const mini = { x: 0, yoff: 0, vy: 0, flip: false, mouth: false, run: false };   // 正体：ミニポリスドッグ
@@ -1046,6 +1047,7 @@
       frameCount++;
       if (mode === 'title') { titleStep(); return; }
       if (paused) return;
+      if (mode === 'ready') return;   // 課金後のタップ待ち：時間・敵・カウントダウンは動かさない
       t++;
       if (cat.hitFlash > 0) cat.hitFlash--;
       if (cat.powerFlash > 0) cat.powerFlash--;
@@ -1209,7 +1211,7 @@
         drawLifeBar(2, Math.min(cat.hp, LIFE_MAX), '#22d3ee', cat.hitFlash > 38 ? 1 : 0);
         drawLifeBar(11, Math.max(0, cat.hp - LIFE_MAX), '#67e8f9', cat.hitFlash > 38 ? 1 : 0);
       } else drawLifeBar(3, cat.hp, '#22d3ee', cat.hitFlash > 38 ? 1 : 0);
-      if (!(mode === 'intro' && t < 60)) drawLifeBar(229, dog.hp, '#ef4444', dog.flash);
+      if (!((mode === 'intro' && t < 60) || mode === 'ready')) drawLifeBar(229, dog.hp, '#ef4444', dog.flash);
       // レーザーゲージ（ガンジャキャットの下＝左下）
       outlineText('LASER', 5, 156, 8, '#a5f3fc');
       const full = cat.gauge >= GAUGE_MAX;
@@ -1252,7 +1254,7 @@
       if (shake > 0) ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
 
       // ポリスDOG
-      if (!dog.gone && (mode !== 'intro' || dog.x < 268)) {
+      if (!dog.gone && ((mode !== 'intro' && mode !== 'ready') || dog.x < 268)) {
         let jx = 0, jy = 0;
         if (mode === 'rage' || dog.spirit) {
           glow(ctx, dog.x + 26, 100, 56 + 5 * Math.sin(frameCount * 0.35), 'rgba(255,40,30,' + (0.38 + 0.08 * Math.sin(frameCount * 0.5)) + ')', 'rgba(255,40,30,0)');
@@ -1328,6 +1330,7 @@
       // クリア画面
       if (mode === 'clear') drawClear();
       if (mode === 'gameover') drawGameOver();
+      if (mode === 'ready') drawReady();
       if (paused) drawPause();
     }
     function fmtTime(sec) { sec = Math.floor(sec); const m = Math.floor(sec / 60), r = sec % 60; return m + ':' + (r < 10 ? '0' : '') + r; }
@@ -1363,6 +1366,14 @@
       ctx.fillStyle = '#FFD700'; ctx.font = "bold 12px 'Courier New'"; ctx.fillText('YOU SURVIVED ' + fmtTime(stats.time), 120, 82);
       ctx.restore();
       drawSaveStatus();
+    }
+    function drawReady() {   // 課金後のタップ待ち：暗くした背景に、READY?とタップの案内（キャラ・背景は開始前の姿のまま）
+      ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, W, H);
+      ctx.save(); ctx.textAlign = 'center';
+      ctx.fillStyle = '#6ee7b7'; ctx.font = "bold 12px 'Courier New'"; ctx.fillText('PAYMENT COMPLETE!', 120, 62);
+      ctx.fillStyle = '#ffffff'; ctx.font = "bold 24px 'Courier New'"; ctx.fillText('READY?', 120, 92);
+      if (Math.floor(frameCount / 30) % 2 === 0) { ctx.fillStyle = '#cccccc'; ctx.font = "bold 9px 'Courier New'"; ctx.fillText('TAP THE SCREEN TO START', 120, 116); }
+      ctx.restore();
     }
     function drawPause() {   // GCR2と同じ見た目
       ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, 0, 240, 160);
@@ -1425,8 +1436,16 @@
       rings.push({ cx: 34, cy: GROUND, r: 1, a: 0.8, w: 2, c: '255,255,255', grow: 0.55, ell: 0.22 });
       for (let i = 0; i < 8; i++) parts.push({ x: 34 + (Math.random() - 0.5) * 6, y: GROUND - 1, vx: (i % 2 ? 1 : -1) * (0.4 + Math.random() * 0.9), vy: -(0.1 + Math.random() * 0.5), g: 0.04, life: 12 + Math.random() * 6, size: 2, color: ['#bae6fd', '#7dd3fc', '#ffffff'][i % 3] });
     }
+    function startFromReady() {   // 課金後のタップ待ちから、ゲーム開始（このタップで、ゲーム画面に操作の対象が戻る）
+      if (mode !== 'ready') return;
+      lastReadyStart = Date.now();
+      unlockAudio(); bgmOn();
+      mode = 'intro'; t = 0;
+    }
     function triggerJump() {
       if (confirmTitle) return;
+      if (mode === 'ready') { startFromReady(); return; }
+      if (Date.now() - lastReadyStart < 300) return;   // 開始のタップが、そのままジャンプにならないように
       if (mode === 'title') return;
       if (mode === 'clear' || mode === 'gameover') { if (t > 70 && !isSaving) startGame(); return; }
       if (mode === 'catdie') return;
@@ -1434,13 +1453,15 @@
       if (cat.y >= CAT_REST) doJump(); else cat.jumpBuf = 10;
     }
     function setPaused(p) {
-      if (mode === 'title' || mode === 'clear' || mode === 'boom' || mode === 'catdie' || mode === 'gameover') return;
+      if (mode === 'title' || mode === 'clear' || mode === 'boom' || mode === 'catdie' || mode === 'gameover' || mode === 'ready') return;
       paused = p;
       if (p) stopNitroSoundSoft();
     }
     function stopNitroSoundSoft() { /* ニトロ音は短いのでそのまま */ }
-    function togglePause() { if (mode === 'title' || mode === 'clear' || mode === 'boom' || mode === 'catdie' || mode === 'gameover') return; setPaused(!paused); confirmTitle = false; }
-    function selectPressed() {   // SELECT：ポーズ中なら「タイトルに戻る？」確認／クリア・ゲームオーバー画面ならタイトルへ
+    function togglePause() {
+      if (Date.now() - lastReadyStart < 300) return; if (mode === 'title' || mode === 'clear' || mode === 'boom' || mode === 'catdie' || mode === 'gameover' || mode === 'ready') return; setPaused(!paused); confirmTitle = false; }
+    function selectPressed() {
+      if (mode === 'ready' || Date.now() - lastReadyStart < 300) return;   // 支払い済みのアイテムを失わないため   // SELECT：ポーズ中なら「タイトルに戻る？」確認／クリア・ゲームオーバー画面ならタイトルへ
       if (mode === 'clear' || mode === 'gameover') { if (isSaving) return; showTitle(); return; }
       if (confirmTitle) return;
       if (!paused) return;
@@ -1500,9 +1521,13 @@
         btn.classList.remove("pressed"); void btn.offsetWidth; btn.classList.add("pressed");   // ボタンが押された演出
         sfxBoing();      // 「ぴょいん！」
         unlockAudio();   // 音の許可だけ先に取る。BGMは、支払いが済んでゲーム本編が始まってから
+        const sel = (itemSpring ? 1 : 0) + (itemClover ? 1 : 0) + (itemRobo ? 1 : 0);   // 課金したアイテムの数
         Promise.resolve(purchaseItems()).then(function(ok) {   // 選んだアイテムがあれば、先に$GANJAをバーンして支払う
           if (!ok) { startPressed = false; btn.classList.remove("pressed"); return; }
-          setTimeout(function() { document.getElementById('setupOverlay').style.display = 'none'; startGame(); }, 380);
+          setTimeout(function() { document.getElementById('setupOverlay').style.display = 'none';
+            if (sel > 0) { try { window.focus(); } catch (e) {} resetGame(); mode = 'ready'; }   // 課金したとき：1回タップするまで始めない（READY?）
+            else startGame();   // FREE PLAYは、そのまま始める
+          }, 380);
         });
       };
       btn.addEventListener("click", press);
@@ -1515,6 +1540,7 @@
       callGasApi("startSession").catch(function() {});   // GASを軽く起こしておく（結果は使わない）
       loadTitleBoard();
 
+      window.addEventListener('pointerdown', function(e) { if (mode === 'ready' && !paused) { e.preventDefault(); startFromReady(); } });   // ゲーム画面の外をタップしても始まる
       bindTap(document.getElementById('dpadControl'), triggerJump);
       // 確認中は、AボタンがYES、BボタンがNO（確認中でなければ、これまでどおりジャンプ）
       [["btnA", true], ["btnB", false]].forEach(function(pr) {
