@@ -286,19 +286,19 @@
                   <div class="item-name">Berserker Potion</div>
                   <canvas id="imgBerserk" class="item-img" width="32" height="32"></canvas>
                   <div class="item-desc">1.5x Power</div>
-                  <div class="item-price">200 GANJA</div>
+                  <div class="item-price">500 GANJA</div>
                 </div>
                 <div id="itemRocketCard" class="item-card" role="button" aria-pressed="false">
                   <div class="item-name">Rocket Launcher</div>
                   <canvas id="imgRocket" class="item-img" width="32" height="32"></canvas>
                   <div class="item-desc">2.5x Power</div>
-                  <div class="item-price">400 GANJA</div>
+                  <div class="item-price">1000 GANJA</div>
                 </div>
                 <div id="itemSsjCard" class="item-card" role="button" aria-pressed="false">
                   <div class="item-name">Super Saiyan</div>
                   <canvas id="imgSsj" class="item-img" width="32" height="32"></canvas>
                   <div class="item-desc">3x Power</div>
-                  <div class="item-price">1000 GANJA</div>
+                  <div class="item-price">2000 GANJA</div>
                 </div>
               </div>
               <div id="walletMsg" class="item-note"></div>
@@ -827,7 +827,7 @@ function sendScore(id,sc,tries){
 }
 // 🛒 アイテム：1つだけ選べる（選び直すと前の選択は解除）。使えるのは1回きり（死亡・クリアで消える）
 let isPaused=false,confirmTitle=false,pauseFrame=null,sel=0,act=0;   // sel=選択中(0なし 1〜3) act=この挑戦で有効なアイテム
-const TAPM=[1,1.5,2.5,3],THK=[1,2,1,3],ITEM_PRICES=[0,200,400,1000];   // 連打の効果／ビームの太さ／価格（act: 1=巨大化の薬 2=ロケットランチャー 3=スーパーサイヤ人）
+const TAPM=[1,1.5,2.5,3],THK=[1,2,1,3],ITEM_PRICES=[0,500,1000,2000];   // 連打の効果／ビームの太さ／価格（act: 1=巨大化の薬 2=ロケットランチャー 3=スーパーサイヤ人）
 const AUC=[['#7efff5','#fff','#bff'],['#8b1a1a','#ff2a2a','#ff7a6a'],['#7efff5','#fff','#bff'],['#ffe14a','#fff6b0','#ffe98a']],ASC=[1,1,1,2];   // オーラの色／大きさ
 function drawSyringe(cv){   // 巨大化の薬：注射器
   const c=cv.getContext('2d');c.clearRect(0,0,32,32);
