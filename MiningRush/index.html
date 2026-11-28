@@ -289,19 +289,19 @@
                   <div class="item-name">Morph Potion</div>
                   <canvas id="imgPotion" class="item-img" width="32" height="32"></canvas>
                   <div class="item-desc">Change character</div>
-                  <div class="item-price">222 GANJA</div>
+                  <div class="item-price">500 GANJA</div>
                 </div>
                 <div id="itemPickaxeCard" class="item-card" role="button" aria-pressed="false">
                   <div class="item-name">Golden Pickaxe</div>
                   <canvas id="imgPickaxe" class="item-img" width="32" height="32"></canvas>
                   <div class="item-desc">Mining power x1.5</div>
-                  <div class="item-price">300 GANJA</div>
+                  <div class="item-price">800 GANJA</div>
                 </div>
                 <div id="itemShieldCard" class="item-card" role="button" aria-pressed="false">
                   <div class="item-name">Defense Boost</div>
                   <canvas id="imgShield" class="item-img" width="32" height="32"></canvas>
                   <div class="item-desc">Defense x2</div>
-                  <div class="item-price">400 GANJA</div>
+                  <div class="item-price">1000 GANJA</div>
                 </div>
               </div>
               <div id="walletMsg" class="item-note"></div>
@@ -637,7 +637,7 @@ const au=()=>{const c=ensureAudioCtx();if(c&&c.state==='suspended')c.resume().ca
     const BILLING_ENABLED = true;    // true＝STARTで、選んだアイテムの代金を$GANJAでバーン／false＝無課金テスト
     const GANJA_TOKEN = "0x9aA42de5eC6f3B3BbF252bf8ac81ACB338D888b7";
     const BURN_ADDRESS = "0x000000000000000000000000000000000000dEaD";
-    const PRICES = { potion: 222, pickaxe: 300, shield: 400 };   // 各アイテムの価格（$GANJA）
+    const PRICES = { potion: 500, pickaxe: 800, shield: 1000 };   // 各アイテムの価格（$GANJA）
     function totalPrice(ids) { let t = 0; ids.forEach(function(id) { t += PRICES[id] || 0; }); return t; }
     const VERIFY_ON_SERVER = false;   // GAS側に新アイテム(potion/pickaxe/shield)の価格を登録したら true に
     const FLARE_CHAIN = { chainId: "0xe", chainName: "Flare Mainnet", nativeCurrency: { name: "Flare", symbol: "FLR", decimals: 18 }, rpcUrls: ["https://flare-api.flare.network/ext/bc/C/rpc"], blockExplorerUrls: ["https://flare-explorer.flare.network"] };
